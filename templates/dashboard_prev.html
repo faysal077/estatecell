@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2 class="mb-4 fw-bold text-success">🌱 BSCIC Land Management Dashboard</h2>
+
+<div class="row g-4">
+
+    <!-- Total Lands -->
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0" style="border-left: 6px solid #4caf50;">
+            <div class="card-body">
+                <h1 class="text-success">{{ total_lands }}</h1>
+                <p class="mb-0">Total Lands</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Documents -->
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0" style="border-left: 6px solid #795548;">
+            <div class="card-body">
+                <h1 class="text-brown">{{ total_documents }}</h1>
+                <p class="mb-0">Documents Archived</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Verifications -->
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0" style="border-left: 6px solid #ff9800;">
+            <div class="card-body">
+                <h1 class="text-warning">{{ pending_verifications }}</h1>
+                <p class="mb-0">Pending Verifications</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Legal Cases -->
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0" style="border-left: 6px solid #e53935;">
+            <div class="card-body">
+                <h1 class="text-danger">{{ legal_cases }}</h1>
+                <p class="mb-0">Open Land Cases</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Land sections -->
+<div class="row mt-5">
+
+    <!-- Land Archive -->
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <img src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=640" 
+                 class="card-img-top" alt="Land">
+            <div class="card-body">
+                <h5 class="card-title text-success">📚 Land Archive</h5>
+                <p class="card-text">View and manage all land records under the corporation.</p>
+                <a href="/lands/" class="btn btn-success w-100">Open Lands</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Document Archive -->
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <img src="https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=640" 
+                 class="card-img-top" alt="Documents">
+            <div class="card-body">
+                <h5 class="card-title text-success">📄 Document Archive</h5>
+                <p class="card-text">Digital archive for Gazette, Khatiyan, Mutation & Deeds.</p>
+                <a href="/documents/" class="btn btn-success w-100">View Documents</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tax & Case Monitoring -->
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <img src="https://images.unsplash.com/photo-1600585154606-3c31f83db1a3?w=640" 
+                 class="card-img-top" alt="Monitoring">
+            <div class="card-body">
+                <h5 class="card-title text-success">⚖️ Monitoring Zone</h5>
+                <p class="card-text">Monitor tax payments, land disputes and legal cases.</p>
+                <a href="#" class="btn btn-outline-success w-100">Open Monitoring</a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

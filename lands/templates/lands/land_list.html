@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h3>Land Records</h3>
+<a href="{% url 'lands:land_create' %}" class="btn btn-success mb-3">Add Land</a>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Owner</th>
+            <th>Division</th>
+            <th>District</th>
+            <th>Upazila</th>
+            <th>Mouza</th>
+            <th>Area (acres)</th>
+            <th>Actions</th>
+            <th>Add Documents</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for land in lands %}
+        <tr>
+            <td>{{ land.owner_name }}</td>
+            <td>{{ land.division }}</td>
+            <td>{{ land.district }}</td>
+            <td>{{ land.upazila }}</td>
+            <td>{{ land.mouza }}</td>
+            <td>{{ land.area }}</td>
+            <td>
+                <a href="{% url 'lands:land_update' land.pk %}" class="btn btn-primary btn-sm">Edit</a>
+                <a href="{% url 'lands:land_delete' land.pk %}" class="btn btn-danger btn-sm">Delete</a>
+            </td>
+            <td>
+                <a href="{% url 'documents:document_list' land.pk %}" class="btn btn-warning btn-sm">
+                    Add Documents
+                </a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-center">No land records found.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

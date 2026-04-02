@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container mt-4">
+    <h3 class="mb-3">Add Document for Land: {{ land.owner_name }}</h3>
+
+    <div id="successMessage" class="alert alert-success d-none"></div>
+    <div id="errorMessage" class="alert alert-danger d-none"></div>
+
+    <form id="documentForm" method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="mb-3">
+            <label class="form-label fw-bold">Document Type</label>
+            {{ form.document_type }}
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label fw-bold">Description</label>
+            {{ form.description }}
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label fw-bold">Upload Document</label>
+            {{ form.scanned_copy }}
+            <small class="form-text text-muted">Supported: PDF, JPG, PNG, DOCX</small>
+        </div>
+
+        <button class="btn btn-success" type="submit">Save Document</button>
+        <a href="{% url 'documents:document_list' land.id %}" class="btn btn-secondary ms-2">Back</a>
+    </form>
+</div>
+
+<script>
+document.getElementById("documentForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    let formData = new FormData(this);
+
+    fetch("", {
+        method: "POST",
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById("successMessage").innerHTML = "Document saved successfully!";
+            document.getElementById("successMessage").classList.remove("d-none");
+
+            setTimeout(() => {
+                window.location.href = "{% url 'documents:document_list' land.id %}";
+            }, 1200);
+
+        } else {
+            document.getElementById("errorMessage").innerHTML =
+                "Error: " + JSON.stringify(data.errors);
+            document.getElementById("errorMessage").classList.remove("d-none");
+        }
+    })
+    .catch(err => {
+        document.getElementById("errorMessage").innerHTML =
+            "Something went wrong!";
+        document.getElementById("errorMessage").classList.remove("d-none");
+    });
+});
+</script>
+
+{% endblock %}

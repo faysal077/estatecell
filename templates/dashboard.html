@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2 class="mb-4 fw-bold text-success">🌱 BSCIC Land Management Dashboard</h2>
+
+<div class="row g-4">
+
+    <!-- Total Lands -->
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0" style="border-left: 6px solid #4caf50;">
+            <div class="card-body">
+                <h1 class="text-success">{{ total_lands }}</h1>
+                <p class="mb-0">Total Lands</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Documents -->
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0" style="border-left: 6px solid #795548;">
+            <div class="card-body">
+                <h1 class="text-brown">{{ total_documents }}</h1>
+                <p class="mb-0">Documents Archived</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Verifications -->
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0" style="border-left: 6px solid #ff9800;">
+            <div class="card-body">
+                <h1 class="text-warning">{{ pending_verifications }}</h1>
+                <p class="mb-0">Pending Verifications</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Legal Cases -->
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0" style="border-left: 6px solid #e53935;">
+            <div class="card-body">
+                <h1 class="text-danger">{{ legal_cases }}</h1>
+                <p class="mb-0">Open Land Cases</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+
+{% endblock %}

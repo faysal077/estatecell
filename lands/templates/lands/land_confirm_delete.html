@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h3>Confirm Delete</h3>
+<p>Are you sure you want to delete the land record of <strong>{{ land.owner_name }}</strong> in <strong>{{ land.district }}</strong>?</p>
+
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Yes, Delete</button>
+    <a href="{% url 'lands:land_list' %}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

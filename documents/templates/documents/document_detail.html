@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h3>Document Details</h3>
+
+<ul class="list-group">
+    <li class="list-group-item"><strong>Type:</strong> {{ document.document_type }}</li>
+    <li class="list-group-item"><strong>Document Number:</strong> {{ document.document_number }}</li>
+    <li class="list-group-item"><strong>Issued By:</strong> {{ document.issued_by }}</li>
+    <li class="list-group-item"><strong>Issue Date:</strong> {{ document.issue_date }}</li>
+    <li class="list-group-item"><strong>Description:</strong> {{ document.description }}</li>
+    <li class="list-group-item"><strong>Verified:</strong> {{ document.verified }}</li>
+    {% if document.scanned_copy %}
+    <li class="list-group-item">
+        <strong>File:</strong> 
+        <a href="{{ document.scanned_copy.url }}" class="btn btn-primary btn-sm">Download</a>
+    </li>
+    {% endif %}
+</ul>
+
+<br>
+<a href="{% url 'documents:document_list' document.land.id %}" class="btn btn-secondary">Back</a>
+{% endblock %}
