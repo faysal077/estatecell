@@ -7,7 +7,7 @@
     {% csrf_token %}
     {% for field in form %}
         <div class="mb-3">
-            {{ field.label_tag }} 
+            {{ field.label_tag }}
             {{ field }}
             {% if field.errors %}
                 <div class="text-danger">{{ field.errors }}</div>
@@ -17,4 +17,36 @@
     <button type="submit" class="btn btn-success">Save</button>
     <a href="{% url 'lands:land_list' %}" class="btn btn-secondary">Cancel</a>
 </form>
+
+<script>
+    // District -> Division mapping from bd-districts.json
+    const districtDivisionMap = {
+        {% for d in districts_json %}
+        "{{ d.name }}": "{{ d.division_id }}",
+        {% endfor %}
+    };
+    const divisionNames = {
+        {% for k, v in divisions.items %}
+        "{{ k }}": "{{ v }}",
+        {% endfor %}
+    };
+
+    const districtSelect = document.querySelector("select[name='district']");
+    const divisionSelect = document.querySelector("select[name='division']");
+
+    if (districtSelect && divisionSelect) {
+        districtSelect.addEventListener("change", function () {
+            const divId = districtDivisionMap[this.value];
+            if (divId && divisionNames[divId]) {
+                // Find and set the option with that value
+                for (let opt of divisionSelect.options) {
+                    if (opt.value === divId) {
+                        opt.selected = true;
+                        break;
+                    }
+                }
+            }
+        });
+    }
+</script>
 {% endblock %}

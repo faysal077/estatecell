@@ -2,8 +2,11 @@
 
 {% block content %}
 
-<h2 class="mb-4 fw-bold text-success">🌱 BSCIC Land Management Dashboard</h2>
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
+<h2 class="mb-4 fw-bold text-success">🌱 BSCIC Land Management Dashboard</h2>
 <div class="row g-4">
 
     <!-- Total Lands -->
@@ -47,6 +50,221 @@
     </div>
 
 </div>
+<!-- Bangladesh Map -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-success text-white fw-bold">
+        <i class="bi bi-geo-alt"></i> Bangladesh District Map
+    </div>
+    <div class="card-body p-0">
+        <div class="row g-0">
+            <!-- Map Container -->
+            <div class="col-md-8" style="height: 520px;">
+                <div id="bangladeshMap" style="height: 100%; width: 100%;"></div>
+            </div>
+            <!-- Info Panel -->
+            <div class="col-md-4" style="height: 520px; overflow-y: auto; background: #f8f9fa;">
+                <div id="infoPanel" class="p-4">
+                    <div class="text-muted text-center mt-5">
+                        <i class="bi bi-info-circle" style="font-size: 3rem;"></i>
+                        <p class="mt-3">Click on a district to view information</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // District metadata - loaded from API
+    const districtData = {};
+
+    // Division mapping
+    const divisionNames = {
+        "1": "Barishal", "2": "Chattogram", "3": "Dhaka",
+        "4": "Khulna", "5": "Rajshahi", "6": "Rangpur",
+        "7": "Sylhet", "8": "Mymensingh"
+    };
+
+    // Initialize map centered on Bangladesh
+    const map = L.map('bangladeshMap', {
+        center: [23.685, 90.356],
+        zoom: 7,
+        zoomControl: true,
+        scrollWheelZoom: true
+    });
+
+    // Add OpenStreetMap tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 18
+    }).addTo(map);
+
+    // Store GeoJSON layer reference
+    let geojsonLayer;
+
+    // Style for GeoJSON features
+    function style(feature) {
+        return {
+            fillColor: '#4caf50',
+            weight: 1.5,
+            opacity: 1,
+            color: '#2e7d32',
+            fillOpacity: 0.4
+        };
+    }
+
+    // Highlight on hover
+    function highlightFeature(e) {
+        const layer = e.target;
+        layer.setStyle({
+            weight: 3,
+            color: '#ff9800',
+            fillOpacity: 0.7
+        });
+        layer.bringToFront();
+    }
+
+    // Reset highlight
+    function resetHighlight(e) {
+        geojsonLayer.resetStyle(e.target);
+    }
+
+    // Click handler - show district info
+    function onFeatureClick(e) {
+        const props = e.target.feature.properties;
+        // The new GeoJSON uses ADM2_EN for district name and ADM1_EN for division
+        const geoName = props.ADM2_EN || props.name || '';
+        const geoDivision = props.ADM1_EN || '';
+
+        // Try to find matching district in our metadata (case-insensitive)
+        const matchedKey = Object.keys(districtData).find(k =>
+            k.toLowerCase() === geoName.toLowerCase() ||
+            geoName.toLowerCase().includes(k.toLowerCase()) ||
+            k.toLowerCase().includes(geoName.toLowerCase())
+        );
+        const info = matchedKey ? districtData[matchedKey] : null;
+        const districtName = info ? info.name : geoName;
+        const divisionName = info ? (divisionNames[info.division_id] || 'Unknown') : (geoDivision || 'Unknown');
+
+        const panel = document.getElementById('infoPanel');
+        panel.innerHTML = `
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-success text-white fw-bold">
+                    <i class="bi bi-geo-alt-fill"></i> ${districtName}
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm table-borderless mb-0">
+                        ${info ? `
+                        <tr><td class="text-muted fw-bold">বাংলা নাম</td><td>${info.bn_name || 'N/A'}</td></tr>
+                        <tr><td class="text-muted fw-bold">Division</td><td>${divisionName}</td></tr>
+                        <tr><td class="text-muted fw-bold">Latitude</td><td>${info.lat || 'N/A'}</td></tr>
+                        <tr><td class="text-muted fw-bold">Longitude</td><td>${info.long || 'N/A'}</td></tr>
+                        <tr><td class="text-muted fw-bold">District ID</td><td>${info.id || 'N/A'}</td></tr>
+                        ` : `
+                        <tr><td class="text-muted fw-bold">District</td><td>${geoName || 'N/A'}</td></tr>
+                        <tr><td class="text-muted fw-bold">Division</td><td>${geoDivision || 'N/A'}</td></tr>
+                        <tr><td class="text-muted fw-bold">District Code</td><td>${props.ADM2_PCODE || 'N/A'}</td></tr>
+                        `}
+                    </table>
+                    <hr>
+                    <div id="districtLandInfo" class="text-center text-muted">
+                        <i class="bi bi-hourglass-split"></i> Loading land data...
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Try to fetch land data for this district via API
+        fetch(`/api/lands/by-district/${encodeURIComponent(districtName)}`)
+            .then(r => r.json())
+            .then(data => {
+                const landInfo = document.getElementById('districtLandInfo');
+                if (data.lands && data.lands.length > 0) {
+                    landInfo.innerHTML = `
+                        <div class="alert alert-success py-2 mb-2">
+                            <strong>${data.lands.length}</strong> land record(s) found in ${data.matched_district || districtName}
+                        </div>
+                        <div class="small text-start" style="max-height: 200px; overflow-y: auto;">
+                            ${data.lands.map(l => `
+                                <div class="border-bottom pb-2 mb-2">
+                                    <strong><i class="bi bi-house"></i> ${l.owner_name || 'Land #' + l.id}</strong>
+                                    <div class="text-muted small">
+                                        <div><i class="bi bi-geo"></i> ${l.upazila || 'N/A'}, ${l.mouza || 'N/A'}</div>
+                                        <div><i class="bi bi-rulers"></i> ${l.area} acres | Dag: ${l.dag_no || 'N/A'} | Khatian: ${l.khatian_no || 'N/A'}</div>
+                                        <div><i class="bi bi-building"></i> ${l.rd_office || 'N/A'}</div>
+                                    </div>
+                                    <a href="/lands/edit/${l.id}/" class="badge bg-success text-decoration-none mt-1">View / Edit</a>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                } else {
+                    landInfo.innerHTML = `
+                        <div class="alert alert-secondary py-2">No land records found in ${data.matched_district || districtName}</div>
+                        <a href="/lands/add/?district=${encodeURIComponent(data.matched_district || districtName)}" class="btn btn-sm btn-outline-success w-100">
+                            <i class="bi bi-plus-circle"></i> Add First Land Record
+                        </a>
+                    `;
+                }
+            })
+            .catch(() => {
+                document.getElementById('districtLandInfo').innerHTML = '<div class="text-muted small">Land data unavailable</div>';
+            });
+    }
+
+    function onEachFeature(feature, layer) {
+        layer.on({
+            mouseover: highlightFeature,
+            mouseout: resetHighlight,
+            click: onFeatureClick
+        });
+    }
+
+    // Load district metadata first, then GeoJSON
+    Promise.all([
+        fetch('/api/districts/').then(r => r.json()),
+        fetch('https://raw.githubusercontent.com/ahnaf-tahmid-chowdhury/Choropleth-Bangladesh/master/bangladesh_geojson_adm2_64_districts_zillas.json').then(r => r.json())
+    ]).then(([districtMeta, geoData]) => {
+        // Build district lookup from API response
+        if (districtMeta.districts) {
+            districtMeta.districts.forEach(d => {
+                districtData[d.name] = d;
+            });
+        }
+
+        // Add GeoJSON to map
+        geojsonLayer = L.geoJSON(geoData, {
+            style: style,
+            onEachFeature: onEachFeature
+        }).addTo(map);
+
+        map.fitBounds(geojsonLayer.getBounds());
+    }).catch(error => {
+        console.error('Error loading data:', error);
+        // Still try to load map even if district metadata fails
+        fetch('https://raw.githubusercontent.com/ahnaf-tahmid-chowdhury/Choropleth-Bangladesh/master/bangladesh_geojson_adm2_64_districts_zillas.json')
+            .then(r => r.json())
+            .then(data => {
+                geojsonLayer = L.geoJSON(data, {
+                    style: style,
+                    onEachFeature: onEachFeature
+                }).addTo(map);
+                map.fitBounds(geojsonLayer.getBounds());
+            })
+            .catch(() => {
+                document.getElementById('bangladeshMap').innerHTML = `
+                    <div class="d-flex align-items-center justify-content-center h-100 text-muted">
+                        <div class="text-center">
+                            <i class="bi bi-exclamation-triangle" style="font-size: 3rem;"></i>
+                            <p class="mt-2">Failed to load map data.<br>Please check your internet connection.</p>
+                        </div>
+                    </div>
+                `;
+            });
+    });
+</script>
+
+
 
 
 

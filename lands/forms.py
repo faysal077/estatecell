@@ -1,8 +1,21 @@
 # lands/forms.py
 from django import forms
 from .models import Land
+from esate_db.districts import DISTRICT_CHOICES_WITH_BN, DIVISION_NAMES
+
 
 class LandForm(forms.ModelForm):
+    district = forms.ChoiceField(
+        choices=DISTRICT_CHOICES_WITH_BN,
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        label="District"
+    )
+    division = forms.ChoiceField(
+        choices=[(k, v) for k, v in DIVISION_NAMES.items()],
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        label="Division"
+    )
+
     class Meta:
         model = Land
         fields = [
@@ -11,8 +24,6 @@ class LandForm(forms.ModelForm):
         ]
         widgets = {
             'rd_office': forms.TextInput(attrs={'class': 'form-control'}),
-            'division': forms.TextInput(attrs={'class': 'form-control'}),
-            'district': forms.TextInput(attrs={'class': 'form-control'}),
             'upazila': forms.TextInput(attrs={'class': 'form-control'}),
             'mouza': forms.TextInput(attrs={'class': 'form-control'}),
             'dag_no': forms.TextInput(attrs={'class': 'form-control'}),
