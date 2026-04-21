@@ -38,7 +38,8 @@
                         </div>
                         <div class="small text-muted mb-1">Doc No: {{ d.document_number|default:"N/A" }}</div>
                         {% if d.scanned_copy %}
-                        <button class="btn btn-outline-primary btn-sm w-100" onclick="selectDocument({{ d.pk }})">
+                        <!-- <button class="btn btn-outline-primary btn-sm w-100" onclick="selectDocument({{ d.pk }});"> -->
+                            <button class="btn btn-outline-primary btn-sm w-100" onclick="selectDocument('{{ d.pk }}');">
                             <i class="bi bi-eye"></i> Preview
                         </button>
                         {% endif %}
