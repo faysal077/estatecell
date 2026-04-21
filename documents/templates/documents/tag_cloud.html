@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3 class="mb-4">Tag Cloud</h3>
+
+    <p><a href="{% url 'documents:search_by_tag' %}" class="btn btn-primary mb-3">Search by Tag</a></p>
+
+    {% if tags %}
+    <div class="p-3 border rounded" style="background:#f9f9f9;">
+        {% for tag in tags %}
+        <a href="{% url 'documents:search_by_tag' %}?q={{ tag.name }}"
+            class="badge bg-info text-dark m-1 p-2"
+            style="font-size: 1rem; text-decoration: none;">
+            {{ tag.name }} <span class="badge bg-dark">{{ tag.page_tags.count }}</span>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">No tags created yet. Tags are created when you add them to document pages.</div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,23 +1,231 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h3>Document Details</h3>
+<h3>Document Details: {{ document.document_type }} (#{{ document.document_number }})</h3>
 
-<ul class="list-group">
+<ul class="list-group mb-3">
+    <li class="list-group-item"><strong>Land Owner:</strong> {{ document.land.owner_name }}</li>
     <li class="list-group-item"><strong>Type:</strong> {{ document.document_type }}</li>
-    <li class="list-group-item"><strong>Document Number:</strong> {{ document.document_number }}</li>
     <li class="list-group-item"><strong>Issued By:</strong> {{ document.issued_by }}</li>
     <li class="list-group-item"><strong>Issue Date:</strong> {{ document.issue_date }}</li>
     <li class="list-group-item"><strong>Description:</strong> {{ document.description }}</li>
     <li class="list-group-item"><strong>Verified:</strong> {{ document.verified }}</li>
-    {% if document.scanned_copy %}
+    <li class="list-group-item"><strong>Total Pages:</strong> {{ pages|length }}</li>
+    {% if document.merged_pdf %}
     <li class="list-group-item">
-        <strong>File:</strong> 
-        <a href="{{ document.scanned_copy.url }}" class="btn btn-primary btn-sm">Download</a>
+        <strong>Merged PDF:</strong>
+        <a href="{{ document.merged_pdf.url }}" class="btn btn-primary btn-sm" target="_blank">Download Merged PDF</a>
     </li>
     {% endif %}
 </ul>
 
-<br>
-<a href="{% url 'documents:document_list' document.land.id %}" class="btn btn-secondary">Back</a>
+<div class="mb-3">
+    <a href="{% url 'documents:document_list' document.land.id %}" class="btn btn-secondary">Back</a>
+    <button class="btn btn-success" onclick="addPages()">Add Pages</button>
+    {% if pages %}
+    <button class="btn btn-warning" onclick="mergePDF()">Merge All Pages to PDF</button>
+    {% endif %}
+</div>
+
+<!-- Add Pages Form (toggle) -->
+<div id="addPagesPanel" class="card mb-4 d-none">
+    <div class="card-body">
+        <h5>Upload Pages</h5>
+        <form id="pageUploadForm" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label fw-bold">Select Files (multiple allowed)</label>
+                <input type="file" name="files" id="id_files" class="form-control" multiple
+                    accept=".pdf,.jpg,.jpeg,.png,.gif,.bmp,.tiff,.webp">
+                <small class="text-muted">PDF, JPG, PNG, GIF, BMP, TIFF, WEBP</small>
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-bold">Tags (comma-separated)</label>
+                <input type="text" name="tags" id="id_tags" class="form-control"
+                    placeholder="e.g. deed, 2020, khajna, mutation">
+                <small class="text-muted">These tags will be applied to all uploaded pages.</small>
+            </div>
+            <button type="submit" class="btn btn-primary">Upload Pages</button>
+            <button type="button" class="btn btn-secondary" onclick="hideAddPages()">Cancel</button>
+        </form>
+        <div id="uploadMsg" class="mt-2"></div>
+    </div>
+</div>
+
+<hr>
+
+<!-- Pages Table -->
+<h5>Pages</h5>
+{% if pages %}
+<table class="table table-bordered table-sm">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Preview</th>
+            <th>File Name</th>
+            <th>Type</th>
+            <th>Tags</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for page in pages %}
+        <tr id="page-row-{{ page.id }}">
+            <td>{{ page.page_number }}</td>
+            <td>
+                {% if page.file_type == 'pdf' %}
+                <a href="{{ page.file.url }}" target="_blank">
+                    <img src="{{ page.file.url }}" alt="Page {{ page.page_number }}"
+                        style="height:60px; object-fit:cover; border:1px solid #ddd;">
+                </a>
+                {% else %}
+                <a href="{{ page.file.url }}" target="_blank">
+                    <img src="{{ page.file.url }}" alt="Page {{ page.page_number }}"
+                        style="height:60px; width:45px; object-fit:cover; border:1px solid #ddd;">
+                </a>
+                {% endif %}
+            </td>
+            <td>{{ page.file_name }}</td>
+            <td><span class="badge bg-secondary">{{ page.file_type|upper }}</span></td>
+            <td>
+                <div id="tags-{{ page.id }}">
+                    {% for pt in page.page_tags.all %}
+                        <span class="badge bg-primary tag-badge" style="cursor:pointer;"
+                            onclick="removeTag({{ page.id }}, '{{ pt.tag.name }}')"
+                            title="Click to remove">
+                            {{ pt.tag.name }} &times;
+                        </span>
+                    {% empty %}
+                        <span class="text-muted">No tags</span>
+                    {% endfor %}
+                </div>
+                <button class="btn btn-link btn-sm p-0 mt-1" onclick="showTagInput({{ page.id }})">+ Add Tag</button>
+                <div id="tag-input-{{ page.id }}" class="d-none mt-1">
+                    <input type="text" id="new-tag-{{ page.id }}" class="form-control form-control-sm"
+                        placeholder="Enter tag" style="width:150px; display:inline;">
+                    <button class="btn btn-sm btn-success" onclick="addTag({{ page.id }})">Add</button>
+                    <button class="btn btn-sm btn-secondary" onclick="hideTagInput({{ page.id }})">Cancel</button>
+                </div>
+            </td>
+            <td>
+                <a href="{{ page.file.url }}" class="btn btn-info btn-sm" target="_blank">View</a>
+                <button class="btn btn-danger btn-sm" onclick="deletePage({{ page.id }})">Delete</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="text-muted">No pages uploaded yet. Use "Add Pages" to upload attachments.</p>
+{% endif %}
+
+<script>
+function addPages() {
+    document.getElementById('addPagesPanel').classList.remove('d-none');
+}
+function hideAddPages() {
+    document.getElementById('addPagesPanel').classList.add('d-none');
+}
+
+// Upload pages
+document.getElementById('pageUploadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    let formData = new FormData(this);
+    formData.append('files', ...document.getElementById('id_files').files);
+
+    fetch("{% url 'documents:document_add_pages' document.pk %}", {
+        method: 'POST',
+        body: formData,
+        headers: {'X-CSRFToken': '{{ csrf_token }}'}
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('uploadMsg').innerHTML =
+                `<div class="alert alert-success">${data.pages_added} page(s) uploaded! Reloading...</div>`;
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            document.getElementById('uploadMsg').innerHTML =
+                `<div class="alert alert-danger">Error: ${JSON.stringify(data.errors)}</div>`;
+        }
+    });
+});
+
+// Merge PDF
+function mergePDF() {
+    if (!confirm('Merge all pages into one PDF?')) return;
+    fetch("{% url 'documents:document_merge_pdf' document.pk %}", {
+        method: 'POST',
+        headers: {'X-CSRFToken': '{{ csrf_token }}'}
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('PDF merged successfully!');
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Unknown error'));
+        }
+    });
+}
+
+// Add tag to a page
+function showTagInput(pageId) {
+    document.getElementById('tag-input-' + pageId).classList.remove('d-none');
+}
+function hideTagInput(pageId) {
+    document.getElementById('tag-input-' + pageId).classList.add('d-none');
+}
+
+function addTag(pageId) {
+    const tagName = document.getElementById('new-tag-' + pageId).value.trim();
+    if (!tagName) return;
+
+    fetch(`{% url 'documents:tag_page' 0 %}`.replace('0', pageId), {
+        method: 'POST',
+        body: new URLSearchParams({tag_name: tagName}),
+        headers: {'X-CSRFToken': '{{ csrf_token }}'}
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    });
+}
+
+// Remove tag from a page
+function removeTag(pageId, tagName) {
+    fetch(`{% url 'documents:untag_page' 0 %}`.replace('0', pageId), {
+        method: 'POST',
+        body: new URLSearchParams({tag_name: tagName}),
+        headers: {'X-CSRFToken': '{{ csrf_token }}'}
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+// Delete a page
+function deletePage(pageId) {
+    if (!confirm('Delete this page?')) return;
+    fetch(`{% url 'documents:delete_page' 0 %}`.replace('0', pageId), {
+        method: 'POST',
+        headers: {'X-CSRFToken': '{{ csrf_token }}'}
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('page-row-' + pageId).remove();
+        } else {
+            alert('Error deleting page');
+        }
+    });
+}
+</script>
 {% endblock %}

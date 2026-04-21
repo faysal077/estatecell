@@ -1,39 +1,591 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block content %}
-<h3>Documents for Land: {{ land.owner_name }}</h3>
+<div class="row mb-3">
+    <div class="col-md-8">
+        <h4>Documents for Land: {{ land.owner_name }}</h4>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'documents:document_list' land.id %}" class="btn btn-secondary btn-sm">Back to List</a>
+    </div>
+</div>
 
-<a href="{% url 'documents:document_create' land.id %}" class="btn btn-primary mb-3">
-    Add New Document
-</a>
+<div class="row">
+    <!-- Left Side: PDF Preview (3/4 screen) -->
+    <div class="col-md-9">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>PDF Preview</span>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-secondary" onclick="scrollToPage('prev')">&#9664; Prev</button>
+                    <input type="number" id="pageInput" class="form-control form-control-sm" style="width: 70px;" min="1" placeholder="Page">
+                    <button class="btn btn-outline-secondary" onclick="scrollToPage('next')">Next &#9654;</button>
+                    <button class="btn btn-outline-secondary" onclick="zoomIn()">+ Zoom In</button>
+                    <button class="btn btn-outline-secondary" onclick="zoomOut()">- Zoom Out</button>
+                </div>
+            </div>
+            <div class="card-body p-2" style="height: 600px; overflow: auto;" id="pdfContainer">
+                <div id="pdfViewer" class="text-center text-muted p-5">
+                    <p>No PDF selected. Upload a document to preview.</p>
+                </div>
+                <iframe id="pdfFrame" style="display: none; width: 100%; height: 100%; border: none;" frameborder="0"></iframe>
+            </div>
+        </div>
 
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>Type</th>
-            <th>Document No</th>
-            <th>Issued By</th>
-            <th>Issue Date</th>
-            <th>Verified</th>
-            <th>View</th>
-        </tr>
-    </thead>
+        <!-- Index Table -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <span>Document Index</span>
+                <button class="btn btn-primary btn-sm float-end" onclick="addIndexEntry()">+ Add Entry</button>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-striped" id="indexTable">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Page</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="indexTableBody">
+                        <tr><td colspan="3" class="text-center text-muted">No index entries yet.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
-    <tbody>
-        {% for d in documents %}
-        <tr>
-            <td>{{ d.document_type }}</td>
-            <td>{{ d.document_number }}</td>
-            <td>{{ d.issued_by }}</td>
-            <td>{{ d.issue_date }}</td>
-            <td>{{ d.verified }}</td>
-            <td>
-                <a href="{% url 'documents:document_detail' d.pk %}" class="btn btn-info btn-sm">View</a>
-            </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="6" class="text-center">No documents available.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+    <!-- Right Side: Upload Form (1/4 screen) -->
+    <div class="col-md-3">
+        <!-- Upload Document Section -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <span>Upload Document</span>
+            </div>
+            <div class="card-body">
+                <form id="pdfUploadForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <!-- PDF File Upload -->
+                    <div class="mb-3">
+                        <label class="form-label">Select PDF File</label>
+                        <input type="file" class="form-control" id="pdfFile" name="pdf_file" accept="application/pdf" required>
+                    </div>
+
+                    <!-- Upload Button -->
+                    <div class="d-grid mb-2">
+                        <button type="button" class="btn btn-primary" id="uploadBtn" onclick="uploadPdfFile()">
+                            Upload PDF
+                        </button>
+                    </div>
+
+                    <!-- Upload Status -->
+                    <div id="uploadStatus" class="small text-muted text-center"></div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Document Tag Section -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <span>Document Tag</span>
+            </div>
+            <div class="card-body">
+                <form id="documentTagForm">
+                    {% csrf_token %}
+
+                    <!-- Document Type -->
+                    <div class="mb-3">
+                        <label class="form-label">Document Type</label>
+                        <select class="form-select" id="documentType" name="document_type" required>
+                            <option value="">-- Select Type --</option>
+                            <option value="Gazette">Gazette</option>
+                            <option value="Deed (Sale Deed / Registry Deed)">Deed (Sale Deed / Registry Deed)</option>
+                            <option value="Khatiyan">Khatiyan</option>
+                            <option value="Mutation (Namjari)">Mutation (Namjari)</option>
+                            <option value="Lease Deed">Lease Deed</option>
+                            <option value="Land Tax (Khajna / DCR)">Land Tax (Khajna / DCR)</option>
+                            <option value="Porcha">Porcha</option>
+                            <option value="Mouza Map">Mouza Map</option>
+                            <option value="Baina / Agreement for Sale">Baina / Agreement for Sale</option>
+                            <option value="Land Survey Report">Land Survey Report</option>
+                            <option value="Building Plan Approval">Building Plan Approval</option>
+                        </select>
+                    </div>
+
+                    <!-- Survey Type (conditional) -->
+                    <div class="mb-3" id="surveyTypeContainer" style="display: none;">
+                        <label class="form-label">Survey Type</label>
+                        <select class="form-select" id="surveyType" name="survey_type">
+                            <option value="">-- Select Survey Type --</option>
+                            <option value="CS">CS</option>
+                            <option value="SA">SA</option>
+                            <option value="RS">RS</option>
+                            <option value="BDS">BDS</option>
+                        </select>
+                    </div>
+
+                    <!-- From Page and To Page in same row -->
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="form-label">From Page</label>
+                            <input type="number" class="form-control" id="fromPage" name="from_page" min="1" placeholder="1">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">To Page</label>
+                            <input type="number" class="form-control" id="toPage" name="to_page" min="1" placeholder="1">
+                        </div>
+                    </div>
+
+                    <!-- Tags -->
+                    <div class="mb-3">
+                        <label class="form-label">Tags (comma separated)</label>
+                        <input type="text" class="form-control" id="tags" name="tags" placeholder="e.g. land, sale, 2024">
+                    </div>
+
+                    <!-- Hidden field for uploaded document ID -->
+                    <input type="hidden" id="uploadedDocId" value="">
+
+                    <!-- Save Tags Button -->
+                    <div class="d-grid">
+                        <button type="button" class="btn btn-success" id="saveTagBtn" onclick="saveDocumentTags()" disabled>
+                            Save Tags
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Existing Documents -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <span>Existing Documents</span>
+            </div>
+            <div class="card-body p-2" style="max-height: 300px; overflow-y: auto;">
+                {% for d in documents %}
+                {% if d.scanned_copy %}
+                <div class="border rounded p-2 mb-2 document-item" id="doc-item-{{ d.pk }}"
+                     data-pdf-url="{% if d.merged_pdf %}{{ d.merged_pdf.url }}{% else %}{{ d.scanned_copy.url }}{% endif %}">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="fw-bold">{{ d.document_type }}</div>
+                        <span class="badge bg-success">PDF</span>
+                    </div>
+                    <div class="small text-muted">
+                        Doc No: {{ d.document_number }}
+                        {% if d.from_page and d.to_page %}
+                            | Pages: {{ d.from_page }}-{{ d.to_page }}
+                        {% endif %}
+                    </div>
+                    <button class="btn btn-outline-primary btn-sm w-100 mt-2" onclick="previewDocumentPdf('{{ d.pk }}')">
+                        Preview PDF
+                    </button>
+                </div>
+                {% else %}
+                <div class="border rounded p-2 mb-2 document-item" title="No PDF file">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="fw-bold">{{ d.document_type }}</div>
+                        <span class="badge bg-secondary">No PDF</span>
+                    </div>
+                    <div class="small text-muted">
+                        Doc No: {{ d.document_number }}
+                        {% if d.from_page and d.to_page %}
+                            | Pages: {{ d.from_page }}-{{ d.to_page }}
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                {% empty %}
+                <p class="text-muted small">No documents uploaded yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Index Entry Modal -->
+<div class="modal fade" id="indexModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Index Entry</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-2">
+                    <label class="form-label">Title</label>
+                    <input type="text" class="form-control" id="indexTitle" placeholder="Enter title">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Page Number</label>
+                    <input type="number" class="form-control" id="indexPage" min="1" placeholder="1">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveIndexEntry()">Add</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentPdf = null;
+    let currentPage = 1;
+    let totalPages = 0;
+    let pendingUploadFile = null;
+
+    // Upload PDF file
+    function uploadPdfFile() {
+        const fileInput = document.getElementById('pdfFile');
+        const file = fileInput.files[0];
+        const statusDiv = document.getElementById('uploadStatus');
+        const documentType = document.getElementById('documentType').value;
+
+        if (!documentType) {
+            alert('Please select Document Type before uploading.');
+            return;
+        }
+        if (!file) {
+            alert('Please select a PDF file first.');
+            return;
+        }
+
+        if (file.type !== 'application/pdf') {
+            alert('Please select a valid PDF file.');
+            return;
+        }
+
+        statusDiv.innerHTML = '<span class="text-info">Uploading...</span>';
+        pendingUploadFile = file;
+
+        const formData = new FormData();
+        formData.append('pdf_file', file);
+        formData.append('document_type', document.getElementById('documentType').value || '');
+        formData.append('survey_type', document.getElementById('surveyType').value || '');
+        formData.append('from_page', document.getElementById('fromPage').value || '');
+        formData.append('to_page', document.getElementById('toPage').value || '');
+        formData.append('tags', document.getElementById('tags').value || '');
+
+        function getCSRFToken() {
+            return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+
+        fetch('{% url "documents:upload_document" land.id %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': getCSRFToken()
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                statusDiv.innerHTML = '<span class="text-success">Uploaded! Doc No: ' + data.document_number + '</span>';
+                document.getElementById('uploadedDocId').value = data.document_id;
+
+                // Enable save tags button
+                document.getElementById('saveTagBtn').disabled = false;
+
+                // Fetch the uploaded PDF URL and preview it
+                fetch('{% url "documents:get_document_pdf" 0 %}'.replace('0/', data.document_id + '/'), {
+                    headers: { 'X-CSRFToken': getCSRFToken() }
+                })
+                .then(res => {
+                    if (!res.ok) throw new Error('HTTP error ' + res.status);
+                    return res.json();
+                })
+                .then(pdfData => {
+                    if (pdfData.success && pdfData.pdf_url) {
+                        // First load the preview
+                        loadPdfFromUrl(pdfData.pdf_url);
+                        // Then add to existing documents list dynamically
+                        addDocumentToList(data.document_id, data.document_number, pdfData.pdf_url);
+                        statusDiv.innerHTML = '<span class="text-success">Uploaded & Preview ready!</span>';
+                    } else {
+                        statusDiv.innerHTML = '<span class="text-warning">Uploaded but preview failed.</span>';
+                    }
+                })
+                .catch(err => {
+                    console.error('PDF fetch error:', err);
+                    statusDiv.innerHTML = '<span class="text-danger">Preview error: ' + err.message + '</span>';
+                });
+
+                // Reset upload form but keep preview visible
+                fileInput.value = '';
+                // Don't reload - let user see the preview
+            } else {
+                statusDiv.innerHTML = '<span class="text-danger">Error: ' + (data.error || 'Unknown error') + '</span>';
+                alert('Error: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            statusDiv.innerHTML = '<span class="text-danger">Upload failed</span>';
+            alert('Error uploading document: ' + error.message);
+        });
+    }
+
+    // Preview selected PDF (local preview before upload)
+    function previewSelectedPdf() {
+        const fileInput = document.getElementById('pdfFile');
+        const file = fileInput.files[0];
+
+        if (!file) {
+            alert('Please select a PDF file first.');
+            return;
+        }
+
+        if (file.type !== 'application/pdf') {
+            alert('Please select a valid PDF file.');
+            return;
+        }
+
+        loadPdfPreview(file);
+    }
+
+    // Load PDF preview
+    function loadPdfPreview(file) {
+        const container = document.getElementById('pdfViewer');
+        const pdfFrame = document.getElementById('pdfFrame');
+
+        // Show iframe, hide canvas div
+        pdfFrame.style.display = 'block';
+        container.innerHTML = '';
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const blob = new Blob([e.target.result], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            pdfFrame.src = url;
+            currentPdf = url;
+        };
+        reader.onerror = function() {
+            container.innerHTML = '<p class="text-danger">Error reading file.</p>';
+            pdfFrame.style.display = 'none';
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    // Load PDF from URL
+    function loadPdfFromUrl(url) {
+        const container = document.getElementById('pdfViewer');
+        const pdfFrame = document.getElementById('pdfFrame');
+
+        // Update the status to show what's happening
+        console.log('Loading PDF from URL:', url);
+
+        // Hide the placeholder text, show iframe
+        pdfFrame.style.display = 'block';
+        container.innerHTML = '';
+        pdfFrame.src = url;
+        currentPdf = url;
+
+        // Also update the placeholder text
+        container.setAttribute('data-loaded', 'true');
+    }
+
+    // Preview document PDF from existing documents list
+    function previewDocumentPdf(docId) {
+        const docItem = document.getElementById('doc-item-' + docId);
+        if (!docItem) {
+            alert('Document not found.');
+            return;
+        }
+
+        const url = docItem.getAttribute('data-pdf-url');
+        if (!url || url === 'None' || url === '') {
+            alert('No PDF file available for this document.');
+            return;
+        }
+        loadPdfFromUrl(url);
+    }
+
+    // Add newly uploaded document to the Existing Documents list dynamically
+    function addDocumentToList(docId, docNumber, pdfUrl) {
+        const container = document.querySelector('.card-body.p-2');
+        if (!container) return;
+
+        // Create new document item
+        const docItem = document.createElement('div');
+        docItem.className = 'border rounded p-2 mb-2 document-item';
+        docItem.id = 'doc-item-' + docId;
+        docItem.setAttribute('data-pdf-url', pdfUrl);
+
+        docItem.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="fw-bold">Uncategorized</div>
+                <span class="badge bg-success">PDF</span>
+            </div>
+            <div class="small text-muted">
+                Doc No: ${docNumber}
+            </div>
+            <button class="btn btn-outline-primary btn-sm w-100 mt-2" onclick="previewDocumentPdf(${docId})">
+                Preview PDF
+            </button>
+        `;
+
+        // Insert at the top of the list
+        container.insertBefore(docItem, container.firstChild);
+    }
+
+    // Render specific PDF page
+    function renderPdfPage(pageNum) {
+        document.getElementById('pageInput').value = pageNum;
+    }
+
+    // Scroll to specific page
+    function scrollToPage(direction) {
+        alert('Use the scroll bar to navigate pages, or use the PDF viewer controls.');
+    }
+
+    // Zoom functions
+    function zoomIn() {
+        alert('Use Ctrl+scroll to zoom, or use the PDF viewer controls.');
+    }
+
+    function zoomOut() {
+        alert('Use Ctrl+scroll to zoom, or use the PDF viewer controls.');
+    }
+
+    // Handle document type change - show/hide survey type
+    document.getElementById('documentType').addEventListener('change', function() {
+        const surveyContainer = document.getElementById('surveyTypeContainer');
+        if (this.value === 'Land Survey Report') {
+            surveyContainer.style.display = 'block';
+            document.getElementById('surveyType').required = true;
+        } else {
+            surveyContainer.style.display = 'none';
+            document.getElementById('surveyType').required = false;
+            document.getElementById('surveyType').value = '';
+        }
+    });
+
+    // Handle page input change
+    document.getElementById('pageInput').addEventListener('change', function() {
+        const pageNum = parseInt(this.value);
+        if (pageNum >= 1 && pageNum <= totalPages) {
+            currentPage = pageNum;
+            renderPdfPage(currentPage);
+        }
+    });
+
+    // Index entries storage
+    let indexEntries = [];
+
+    // Add index entry modal
+    function addIndexEntry() {
+        if (!currentPdf) {
+            alert('Please upload a PDF first.');
+            return;
+        }
+        const modal = new bootstrap.Modal(document.getElementById('indexModal'));
+        document.getElementById('indexPage').value = currentPage;
+        modal.show();
+    }
+
+    // Save index entry
+    function saveIndexEntry() {
+        const title = document.getElementById('indexTitle').value.trim();
+        const pageNum = parseInt(document.getElementById('indexPage').value);
+
+        if (!title) {
+            alert('Please enter a title.');
+            return;
+        }
+        if (!pageNum || pageNum < 1) {
+            alert('Please enter a valid page number.');
+            return;
+        }
+
+        indexEntries.push({ title: title, page: pageNum });
+        updateIndexTable();
+
+        document.getElementById('indexTitle').value = '';
+        document.getElementById('indexPage').value = '';
+
+        bootstrap.Modal.getInstance(document.getElementById('indexModal')).hide();
+    }
+
+    // Update index table
+    function updateIndexTable() {
+        const tbody = document.getElementById('indexTableBody');
+        if (indexEntries.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No index entries yet.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = indexEntries.map((entry, i) =>
+            '<tr>' +
+                '<td>' + entry.title + '</td>' +
+                '<td>' + entry.page + '</td>' +
+                '<td><button class="btn btn-danger btn-sm" onclick="removeIndexEntry(' + i + ')">Remove</button></td>' +
+            '</tr>'
+        ).join('');
+    }
+
+    // Remove index entry
+    function removeIndexEntry(index) {
+        indexEntries.splice(index, 1);
+        updateIndexTable();
+    }
+
+    // Save document tags (update existing document with metadata)
+    function saveDocumentTags() {
+        const docId = document.getElementById('uploadedDocId').value;
+        if (!docId) {
+            alert('Please upload a PDF first.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('document_type', document.getElementById('documentType').value);
+        formData.append('survey_type', document.getElementById('surveyType').value || '');
+        formData.append('from_page', document.getElementById('fromPage').value || '');
+        formData.append('to_page', document.getElementById('toPage').value || '');
+        formData.append('tags', document.getElementById('tags').value || '');
+
+        fetch('{% url "documents:update_document" 0 %}'.replace('0', docId), {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Tags saved successfully!');
+                // Reset tag form
+                document.getElementById('documentTagForm').reset();
+                document.getElementById('surveyTypeContainer').style.display = 'none';
+                document.getElementById('uploadedDocId').value = '';
+                document.getElementById('saveTagBtn').disabled = true;
+                // Reload to show updated tags
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            alert('Error saving tags: ' + error.message);
+        });
+    }
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .cursor-pointer {
+        cursor: pointer;
+    }
+    .cursor-pointer:hover {
+        background-color: #f0f0f0;
+    }
+    #pdfViewer canvas {
+        max-width: 100%;
+        height: auto;
+    }
+</style>
 {% endblock %}

@@ -4,6 +4,9 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.http import JsonResponse
 from lands.models import Land
+from django.conf import settings
+from django.conf.urls.static import static
+
 
 
 def dashboard(request):

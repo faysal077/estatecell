@@ -3,3 +3,4 @@ mysqlclient
 Pillow
 django-crispy-forms
 crispy-bootstrap5
+PyMuPDF

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3 class="mb-4">Search Pages by Tag</h3>
+
+    <form method="GET" action="{% url 'documents:search_by_tag' %}" class="mb-4">
+        <div class="input-group" style="max-width: 500px;">
+            <input type="text" name="q" class="form-control"
+                placeholder="Search by tag keyword..."
+                value="{{ query }}"
+                autofocus>
+            <button class="btn btn-primary" type="submit">Search</button>
+            {% if query %}
+            <a href="{% url 'documents:search_by_tag' %}" class="btn btn-secondary">Clear</a>
+            {% endif %}
+        </div>
+    </form>
+
+    {% if query %}
+    <p><strong>{{ results|length }}</strong> page(s) found for tag "<em>{{ query }}</em>"</p>
+
+    {% if results %}
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Land Owner</th>
+                <th>Document</th>
+                <th>Page #</th>
+                <th>File</th>
+                <th>Matching Tag</th>
+                <th>All Tags</th>
+                <th>View Page</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for result in results %}
+            <tr>
+                <td>{{ result.land.owner_name }}</td>
+                <td>{{ result.document.document_type }} (#{{ result.document.document_number }})</td>
+                <td>{{ result.page.page_number }}</td>
+                <td>{{ result.page.file_name|default:"N/A" }}</td>
+                <td>
+                    <span class="badge bg-success">{{ result.tag.name }}</span>
+                </td>
+                <td>
+                    {% for pt in result.page.page_tags.all %}
+                        <span class="badge bg-primary">{{ pt.tag.name }}</span>
+                    {% endfor %}
+                </td>
+                <td>
+                    <a href="{{ result.page.file.url }}" class="btn btn-info btn-sm" target="_blank">View</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="alert alert-info">No pages found for that tag. Try a different keyword.</div>
+    {% endif %}
+    {% endif %}
+</div>
+{% endblock %}
