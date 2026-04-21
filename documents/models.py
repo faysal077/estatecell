@@ -4,9 +4,8 @@ from django.contrib.auth.models import User
 
 
 def document_path(instance, filename):
-    # Sanitize owner_name to prevent path traversal issues
-    owner_name = instance.land.owner_name.replace('/', '_').replace('\\', '_').replace('..', '_')
-    return f"documents/{owner_name}/{filename}"
+    # Use land_{id} for consistent path structure
+    return f"land_{instance.land.id}/documents/{filename}"
 
 
 class Document(models.Model):
@@ -101,6 +100,20 @@ class Tag(models.Model):
         return self.name
 
 
+class DocumentTag(models.Model):
+    """Association between a Document and a Tag."""
+    document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name='document_tags')
+    tag = models.ForeignKey(Tag, on_delete=models.CASCADE, related_name='document_tags')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('document', 'tag')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.document} - {self.tag.name}"
+
+
 class PageTag(models.Model):
     """Association between a DocumentPage and a Tag."""
     document_page = models.ForeignKey(DocumentPage, on_delete=models.CASCADE, related_name='page_tags')
@@ -109,6 +122,9 @@ class PageTag(models.Model):
 
     class Meta:
         unique_together = ('document_page', 'tag')
+
+    def __str__(self):
+        return f"{self.document_page} - {self.tag.name}"
 
 
 class DocumentIndex(models.Model):

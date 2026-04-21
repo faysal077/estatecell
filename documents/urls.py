@@ -28,4 +28,8 @@ urlpatterns = [
     path('<int:land_id>/upload/', views.upload_document, name='upload_document'),
     path('<int:pk>/update/', views.update_document, name='update_document'),
     path('pdf/<int:pk>/', views.get_document_pdf, name='get_document_pdf'),
+    path('pdf/<int:pk>/serve/', views.serve_document_pdf, name='serve_document_pdf'),
+    path('pdf/<int:pk>/index/', views.get_document_index, name='get_document_index'),
+    path('index/save/', views.save_document_index, name='save_document_index'),
+    path('index/<int:pk>/delete/', views.delete_document_index, name='delete_document_index'),
 ]

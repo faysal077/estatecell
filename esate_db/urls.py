@@ -4,8 +4,6 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.http import JsonResponse
 from lands.models import Land
-from django.conf import settings
-from django.conf.urls.static import static
 
 
 
@@ -72,9 +70,8 @@ urlpatterns = [
     # API
     path('api/lands/by-district/<str:district_name>/', lands_by_district, name='lands_by_district'),
     path('api/districts/', district_metadata, name='district_metadata'),
+]
 
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
-# Media file settings for uploaded scanned copies
+# Serve media files in development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

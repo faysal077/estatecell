@@ -193,7 +193,8 @@
                                         <div><i class="bi bi-rulers"></i> ${l.area} acres | Dag: ${l.dag_no || 'N/A'} | Khatian: ${l.khatian_no || 'N/A'}</div>
                                         <div><i class="bi bi-building"></i> ${l.rd_office || 'N/A'}</div>
                                     </div>
-                                    <a href="/lands/edit/${l.id}/" class="badge bg-success text-decoration-none mt-1">View / Edit</a>
+                                    <a href="/lands/edit/${l.id}/" class="badge bg-success text-decoration-none mt-1 me-1">View / Edit</a>
+                                    <a href="/documents/${l.id}/list/" class="badge bg-primary text-decoration-none mt-1">Lands</a>
                                 </div>
                             `).join('')}
                         </div>

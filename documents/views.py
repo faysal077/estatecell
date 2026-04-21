@@ -8,7 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.conf import settings
 from django.db.models import Count
 
-from .models import Document, DocumentPage, Tag, PageTag, DocumentIndex
+from .models import Document, DocumentPage, Tag, PageTag, DocumentIndex, DocumentTag
 from .forms import DocumentForm, TagForm, DocumentIndexForm
 from lands.models import Land
 
@@ -257,7 +257,8 @@ def upload_document(request, land_id):
         return JsonResponse({
             'success': True,
             'document_id': doc.id,
-            'document_number': doc.document_number
+            'document_number': doc.document_number,
+            'file_name': doc.file_name
         })
 
     return JsonResponse({'success': False})
@@ -293,13 +294,15 @@ def update_document(request, pk):
 
         document.save()
 
-        # 🔹 TAGS (clean + assign)
+        # 🔹 TAGS — create Tag + link to Document via DocumentTag
         tag_names = [t.strip() for t in tags_raw.split(',') if t.strip()]
 
-        # Optional: clear previous tags logic (if you add relation later)
+        # Remove existing tag associations for this document
+        DocumentTag.objects.filter(document=document).delete()
 
         for name in tag_names:
-            Tag.objects.get_or_create(name=name)
+            tag, _ = Tag.objects.get_or_create(name=name)
+            DocumentTag.objects.get_or_create(document=document, tag=tag)
 
         # 🔹 AUTO INDEX CREATION
         DocumentIndex.objects.filter(document=document).delete()
@@ -312,7 +315,12 @@ def update_document(request, pk):
                     page_number=page
                 )
 
-        return JsonResponse({'success': True})
+        return JsonResponse({
+            'success': True,
+            'tags': tag_names,
+            'from_page': document.from_page,
+            'to_page': document.to_page,
+        })
 
     return JsonResponse({'success': False, 'error': 'Invalid request method.'})
 
@@ -518,29 +526,102 @@ def get_document_pdf(request, pk):
     return JsonResponse({'success': False, 'error': 'No PDF found.'})
 
 
+def get_document_index(request, pk):
+    """Return document metadata (type, pages, file_name, tags) for the index panel."""
+    document = get_object_or_404(Document, pk=pk)
+    # Gather tags from DocumentTag, ordered by newest first
+    tags = list(document.document_tags.select_related('tag').order_by('-created_at').values_list('tag__name', flat=True))
+    return JsonResponse({
+        'success': True,
+        'document_id': document.id,
+        'document_type': document.document_type or '',
+        'file_name': document.file_name or '',
+        'from_page': document.from_page,
+        'to_page': document.to_page,
+        'tags': tags,
+    })
+
+
+@login_required
+def save_document_index(request):
+    """Save a new index entry for a document via AJAX."""
+    if request.method == 'POST':
+        doc_id = request.POST.get('document_id')
+        title = request.POST.get('title', '').strip()
+        page_number = request.POST.get('page_number')
+
+        if not doc_id or not title or not page_number:
+            return JsonResponse({'success': False, 'error': 'All fields are required.'})
+
+        try:
+            page_number = int(page_number)
+        except ValueError:
+            return JsonResponse({'success': False, 'error': 'Invalid page number.'})
+
+        document = get_object_or_404(Document, pk=doc_id)
+        entry = DocumentIndex.objects.create(
+            document=document,
+            title=title,
+            page_number=page_number
+        )
+        return JsonResponse({'success': True, 'entry': {
+            'id': entry.id,
+            'title': entry.title,
+            'page_number': entry.page_number
+        }})
+
+    return JsonResponse({'success': False, 'error': 'Invalid method.'})
+
+
+@login_required
+def delete_document_index(request, pk):
+    """Delete an index entry."""
+    entry = get_object_or_404(DocumentIndex, pk=pk)
+    entry.delete()
+    return JsonResponse({'success': True})
+
+
+@login_required
+# def serve_document_pdf(request, pk):
+#     """Serve the PDF file directly to avoid URL encoding issues."""
+#     from django.http import FileResponse, Http404
+#     document = get_object_or_404(Document, pk=pk)
+#     if document.scanned_copy:
+#         try:
+#             return FileResponse(
+#                 document.scanned_copy.open('rb'),
+#                 content_type='application/pdf',
+#                 as_attachment=False,
+#                 filename=document.scanned_copy.name
+#             )
+#         except Exception:
+#             raise Http404("File not found")
+#     elif document.merged_pdf:
+#         try:
+#             return FileResponse(
+#                 document.merged_pdf.open('rb'),
+#                 content_type='application/pdf',
+#                 as_attachment=False,
+#                 filename=document.merged_pdf.name
+#             )
+#         except Exception:
+#             raise Http404("File not found")
+#     raise Http404("No PDF found.")
+
 @login_required
 def serve_document_pdf(request, pk):
-    """Serve the PDF file directly to avoid URL encoding issues."""
     from django.http import FileResponse, Http404
+    from django.shortcuts import get_object_or_404
+
     document = get_object_or_404(Document, pk=pk)
-    if document.scanned_copy:
-        try:
-            return FileResponse(
-                document.scanned_copy.open('rb'),
-                content_type='application/pdf',
-                as_attachment=False,
-                filename=document.scanned_copy.name
-            )
-        except Exception:
-            raise Http404("File not found")
-    elif document.merged_pdf:
-        try:
-            return FileResponse(
-                document.merged_pdf.open('rb'),
-                content_type='application/pdf',
-                as_attachment=False,
-                filename=document.merged_pdf.name
-            )
-        except Exception:
-            raise Http404("File not found")
-    raise Http404("No PDF found.")
+
+    file_field = document.scanned_copy or document.merged_pdf
+    if not file_field:
+        raise Http404("No PDF found.")
+
+    try:
+        response = FileResponse(file_field.open('rb'), content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="{file_field.name}"'
+        return response
+    except Exception:
+        raise Http404("File not found")
