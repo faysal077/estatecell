@@ -1,0 +1,119 @@
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# =========================
+# Virtual Environment
+# =========================
+venv/
+env/
+ENV/
+.venv/
+
+# =========================
+# Django
+# =========================
+*.log
+*.pot
+*.pyc
+db.sqlite3
+db.sqlite3-journal
+media/
+
+# Static files (if collected)
+staticfiles/
+
+# =========================
+# Environment Variables
+# =========================
+.env
+.env.*
+*.env
+
+# =========================
+# IDE / Editor
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =========================
+# OS Files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Testing / Coverage
+# =========================
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.tox/
+
+# =========================
+# Logs
+# =========================
+logs/
+*.log
+
+# =========================
+# Celery
+# =========================
+celerybeat-schedule
+celerybeat.pid
+
+# =========================
+# Docker
+# =========================
+*.pid
+*.seed
+*.pid.lock
+
+# =========================
+# Node (if using frontend)
+# =========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# =========================
+# Migrations (optional)
+# =========================
+# Uncomment if you DO NOT want migrations tracked
+# */migrations/*
+# !*/migrations/__init__.py
+
+# =========================
+# Secrets
+# =========================
+secrets.json
+*.pem
+*.key

@@ -297,7 +297,7 @@
 
     function updateIndexTable(fileName, documentType, fromPage, toPage, tags) {
         const tbody = document.getElementById('indexTableBody');
-        const title = fileName || 'Unnamed';
+        const title = documentType || 'Unnamed';
         const pageStr = (fromPage && toPage) ? (fromPage + ' - ' + toPage) : (fromPage || toPage || '—');
         const tagsStr = (tags && tags.length > 0)
             ? tags.map(t => '<span class="badge bg-info me-1">' + t + '</span>').join('')
