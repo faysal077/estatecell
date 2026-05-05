@@ -31,6 +31,9 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
     '377d-103-85-159-178.ngrok-free.app',
 ]
+# ALLOWED_HOSTS = ['estate.bscic.gov.bd',]
+
+
 # ALLOWED_HOSTS = ['*']
 CSRF_TRUSTED_ORIGINS = [
         'https://377d-103-85-159-178.ngrok-free.app',
@@ -127,11 +130,13 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
+STATIC_ROOT = '/var/www/estatecell/staticfiles/'
 STATIC_URL = '/static/'
 # MEDIA_URL = '/media/'
 # MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = '/var/www/estatecell/media/'
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+#MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
