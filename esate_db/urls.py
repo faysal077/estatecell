@@ -4,9 +4,10 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.http import JsonResponse
 from lands.models import Land
+from django.shortcuts import redirect
+from django.contrib.auth.decorators import login_required
 
-
-
+@login_required(login_url='accounts:login')
 def dashboard(request):
     """Render dashboard with context data."""
     from django.shortcuts import render
@@ -59,8 +60,11 @@ def lands_by_district(request, district_name):
 urlpatterns = [
     path('admin/', admin.site.urls),
 
-    # Dashboard / Home Page
-    path('', dashboard, name='dashboard'),
+    # Default route → redirect to login
+    path('', lambda request: redirect('accounts:login')),
+
+    # Dashboard (protected)
+    path('dashboard/', dashboard, name='dashboard'),
 
     # App URLs
     path('accounts/', include('accounts.urls')),

@@ -29,10 +29,11 @@ DEBUG = True
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    '98b8-103-85-159-178.ngrok-free.app',
+    '377d-103-85-159-178.ngrok-free.app',
 ]
+# ALLOWED_HOSTS = ['*']
 CSRF_TRUSTED_ORIGINS = [
-        'https://98b8-103-85-159-178.ngrok-free.app',
+        'https://377d-103-85-159-178.ngrok-free.app',
 ]
 
 # Application definition
@@ -133,5 +134,7 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+LOGIN_URL = 'accounts:login'
+LOGIN_REDIRECT_URL = 'dashboard'
+LOGOUT_REDIRECT_URL = 'accounts:login'
