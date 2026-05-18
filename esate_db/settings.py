@@ -29,14 +29,14 @@ DEBUG = True
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    '377d-103-85-159-178.ngrok-free.app',
+    '0310-103-85-159-178.ngrok-free.app',
 ]
 # ALLOWED_HOSTS = ['estate.bscic.gov.bd',]
 
 
 # ALLOWED_HOSTS = ['*']
 CSRF_TRUSTED_ORIGINS = [
-        'https://377d-103-85-159-178.ngrok-free.app',
+        'https://0310-103-85-159-178.ngrok-free.app',
 ]
 
 # Application definition

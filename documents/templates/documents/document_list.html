@@ -206,8 +206,9 @@
                 }
                 document.getElementById('fromPage').value = data.from_page || '';
                 document.getElementById('toPage').value = data.to_page || '';
-
-                updateIndexTable(currentFileName, data.document_type, data.from_page, data.to_page, data.tags);
+                document.getElementById('indexTableBody').innerHTML = '';
+            //   updateIndexTable(currentFileName, data.document_type, data.from_page, data.to_page, data.tags);
+                updateIndexTable(data.entries);
             }
         });
 
@@ -263,13 +264,13 @@
         return document.querySelector('[name=csrfmiddlewaretoken]').value;
     }
 
-    function loadPdfFromUrl(url) {
-        const container = document.getElementById('pdfViewer');
-        const pdfFrame = document.getElementById('pdfFrame');
-        pdfFrame.style.display = 'block';
-        container.innerHTML = '';
-        pdfFrame.src = url;
-    }
+    // function loadPdfFromUrl(url) {
+    //     const container = document.getElementById('pdfViewer');
+    //     const pdfFrame = document.getElementById('pdfFrame');
+    //     pdfFrame.style.display = 'block';
+    //     container.innerHTML = '';
+    //     pdfFrame.src = url;
+    // }
 
     function addDocumentToList(docId, docNumber, fileName) {
         const container = document.getElementById('documentsList');
@@ -295,23 +296,76 @@
         document.getElementById('docCount').textContent = count;
     }
 
-    function updateIndexTable(fileName, documentType, fromPage, toPage, tags) {
+    // function updateIndexTable(fileName, documentType, fromPage, toPage, tags) {
+    //     const tbody = document.getElementById('indexTableBody');
+    //     const title = documentType || 'Unnamed';
+    //     const pageStr = (fromPage && toPage) ? (fromPage + ' - ' + toPage) : (fromPage || toPage || '—');
+    //     const tagsStr = (tags && tags.length > 0)
+    //         ? tags.map(t => '<span class="badge bg-info me-1">' + t + '</span>').join('')
+    //         : '<span class="text-muted">—</span>';
+    //     tbody.innerHTML = '<tr>' +
+    //         '<td class="small">' + title + '</td>' +
+    //         '<td class="small">' + pageStr + '</td>' +
+    //         '<td>' + tagsStr + '</td>' +
+    //     '</tr>';
+    // }
+    // function updateIndexTable(entries) {
+    //     const tbody = document.getElementById('indexTableBody');
+    //     tbody.innerHTML = '';
+
+    //     entries.forEach(e => {
+    //         const tagsStr = e.tags.length
+    //             ? e.tags.map(t => `<span class="badge bg-info me-1">${t}</span>`).join('')
+    //             : '<span class="text-muted">—</span>';
+
+    //         const row = `
+    //             <tr>
+    //                 <td class="small">${e.document_type || 'Unnamed'}</td>
+    //                 <td class="small">${e.from_page || ''} - ${e.to_page || ''}</td>
+    //                 <td>${tagsStr}</td>
+    //             </tr>
+    //         `;
+    //         tbody.insertAdjacentHTML('beforeend', row);
+    //     });
+    // }
+    function updateIndexTable(entries) {
         const tbody = document.getElementById('indexTableBody');
-        const title = documentType || 'Unnamed';
-        const pageStr = (fromPage && toPage) ? (fromPage + ' - ' + toPage) : (fromPage || toPage || '—');
-        const tagsStr = (tags && tags.length > 0)
-            ? tags.map(t => '<span class="badge bg-info me-1">' + t + '</span>').join('')
-            : '<span class="text-muted">—</span>';
-        tbody.innerHTML = '<tr>' +
-            '<td class="small">' + title + '</td>' +
-            '<td class="small">' + pageStr + '</td>' +
-            '<td>' + tagsStr + '</td>' +
-        '</tr>';
+        tbody.innerHTML = '';
+
+        if (!entries || entries.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" class="text-muted text-center">No entries found</td></tr>';
+            return;
+        }
+
+        entries.forEach(e => {
+            const tagsStr = (e.tags && e.tags.length)
+                ? e.tags.map(t => `<span class="badge bg-info me-1">${t}</span>`).join('')
+                : '<span class="text-muted">—</span>';
+
+            const row = `
+                <tr>
+                    <td class="small">${e.document_type || 'Unnamed'}</td>
+                    <td class="small">${e.from_page || ''} - ${e.to_page || ''}</td>
+                    <td>${tagsStr}</td>
+                </tr>
+            `;
+            tbody.insertAdjacentHTML('beforeend', row);
+        });
     }
+    function loadPdfFromUrl(url) {
+        const container = document.getElementById('pdfViewer');
+        const pdfFrame = document.getElementById('pdfFrame');
+        pdfFrame.style.display = 'block';
+        container.innerHTML = '';
+        pdfFrame.src = url;
+}
 
     function saveDocumentTags() {
         const docId = currentDocId;
-        if (!docId) { alert('Please select a document first.'); return; }
+        if (!docId) { 
+            alert('Please select a document first.'); 
+            return; 
+        }
 
         const formData = new FormData();
         formData.append('document_type', document.getElementById('documentType').value);
@@ -330,18 +384,18 @@
             if (data.success) {
                 alert('Tags saved successfully!');
                 document.getElementById('tags').value = '';
-                updateIndexTable(
-                    currentFileName,
-                    document.getElementById('documentType').value,
-                    data.from_page,
-                    data.to_page,
-                    data.tags
-                );
+
+                if (data.entries) {
+                    updateIndexTable(data.entries);
+                }
+
             } else {
                 alert('Error: ' + (data.error || 'Unknown error'));
             }
         })
-        .catch(error => alert('Error saving tags: ' + error.message));
+        .catch(error => {
+            alert('Error saving tags: ' + error.message);
+        });
     }
 
     document.getElementById('documentType').addEventListener('change', function() {

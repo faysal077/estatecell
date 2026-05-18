@@ -139,3 +139,46 @@ class DocumentIndex(models.Model):
 
     def __str__(self):
         return f"{self.title} - Page {self.page_number}"
+    
+class DocumentTagEntry(models.Model):
+    """
+    Stores each tagging action as a separate row (history-based tagging).
+    Each save from UI = one entry here.
+    """
+
+    document = models.ForeignKey(
+        Document,
+        on_delete=models.CASCADE,
+        related_name='tag_entries'
+    )
+
+    # Snapshot of metadata at the time of tagging
+    document_type = models.CharField(max_length=50)
+    survey_type = models.CharField(max_length=10, blank=True, null=True)
+
+    from_page = models.PositiveIntegerField(blank=True, null=True)
+    to_page = models.PositiveIntegerField(blank=True, null=True)
+
+    # Many tags per entry
+    tags = models.ManyToManyField(
+        Tag,
+        related_name='tag_entries',
+        blank=True
+    )
+
+    # Optional: track who added it (recommended)
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']  # latest first
+
+    def __str__(self):
+        page_range = f"{self.from_page}-{self.to_page}" if self.from_page and self.to_page else "N/A"
+        return f"{self.document} | {self.document_type} | Pages: {page_range}"
