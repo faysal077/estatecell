@@ -114,3 +114,12 @@ secrets.json
 # =====================================
 database.txt
 filestructure.txt
+
+
+db.sqlite3
+media/
+__pycache__/
+*.pyc
+venv/
+.venv/
+.idea/
