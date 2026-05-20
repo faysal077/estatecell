@@ -1,14 +1,79 @@
-# =========================
-# Python
-# =========================
+# =====================================
+# Git
+# =====================================
+.git/
+
+# =====================================
+# Python Cache
+# =====================================
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyc
 
-# Distribution / packaging
-.Python
+# =====================================
+# Virtual Environments
+# =====================================
+venv/
+.venv/
+env/
+ENV/
+
+# =====================================
+# IDE / Editor
+# =====================================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =====================================
+# Claude / AI Tooling
+# =====================================
+.claude/
+
+# =====================================
+# Django
+# =====================================
+db.sqlite3
+db.sqlite3-journal
+
+media/
+staticfiles/
+
+*.log
+
+# =====================================
+# Environment Variables
+# =====================================
+.env
+.env.*
+*.env
+
+# =====================================
+# OS Files
+# =====================================
+.DS_Store
+Thumbs.db
+
+# =====================================
+# Testing / Coverage
+# =====================================
+.coverage
+.coverage.*
+.cache/
+.pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.tox/
+
+# =====================================
+# Build / Distribution
+# =====================================
 build/
-develop-eggs/
 dist/
 downloads/
 eggs/
@@ -22,98 +87,30 @@ var/
 .installed.cfg
 *.egg
 
-# =========================
-# Virtual Environment
-# =========================
-venv/
-env/
-ENV/
-.venv/
-
-# =========================
-# Django
-# =========================
-*.log
-*.pot
-*.pyc
-db.sqlite3
-db.sqlite3-journal
-media/
-
-# Static files (if collected)
-staticfiles/
-
-# =========================
-# Environment Variables
-# =========================
-.env
-.env.*
-*.env
-
-# =========================
-# IDE / Editor
-# =========================
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# =========================
-# OS Files
-# =========================
-.DS_Store
-Thumbs.db
-
-# =========================
-# Testing / Coverage
-# =========================
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.tox/
-
-# =========================
-# Logs
-# =========================
-logs/
-*.log
-
-# =========================
-# Celery
-# =========================
-celerybeat-schedule
-celerybeat.pid
-
-# =========================
+# =====================================
 # Docker
-# =========================
+# =====================================
 *.pid
 *.seed
 *.pid.lock
 
-# =========================
-# Node (if using frontend)
-# =========================
+# =====================================
+# Node
+# =====================================
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# =========================
-# Migrations (optional)
-# =========================
-# Uncomment if you DO NOT want migrations tracked
-# */migrations/*
-# !*/migrations/__init__.py
-
-# =========================
-# Secrets
-# =========================
+# =====================================
+# Secrets / Certificates
+# =====================================
 secrets.json
 *.pem
 *.key
+
+# =====================================
+# Optional Local Files
+# =====================================
+database.txt
+filestructure.txt
