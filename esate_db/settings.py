@@ -29,10 +29,14 @@ DEBUG = True
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    '98b8-103-85-159-178.ngrok-free.app',
+    '0310-103-85-159-178.ngrok-free.app',
 ]
+# ALLOWED_HOSTS = ['estate.bscic.gov.bd',]
+
+
+# ALLOWED_HOSTS = ['*']
 CSRF_TRUSTED_ORIGINS = [
-        'https://98b8-103-85-159-178.ngrok-free.app',
+        'https://0310-103-85-159-178.ngrok-free.app',
 ]
 
 # Application definition
@@ -115,23 +119,29 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Dhaka'
 
 USE_I18N = True
 
 USE_TZ = True
 
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-
+X_FRAME_OPTIONS = 'SAMEORIGIN'
+STATIC_ROOT = '/var/www/estatecell/staticfiles/'
 STATIC_URL = '/static/'
 # MEDIA_URL = '/media/'
 # MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = '/var/www/estatecell/media/'
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+#MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+LOGIN_URL = 'accounts:login'
+LOGIN_REDIRECT_URL = 'dashboard'
+LOGOUT_REDIRECT_URL = 'accounts:login'

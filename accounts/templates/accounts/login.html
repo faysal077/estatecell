@@ -1,56 +1,80 @@
-{% extends "base.html" %}
-{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
 
-{% block content %}
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            background: linear-gradient(135deg, #4caf50, #2e7d32);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+        }
 
-<div class="row justify-content-center mt-5">
-    <div class="col-md-4">
+        .glass-card {
+            width: 350px;
+            padding: 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(15px);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            color: white;
+        }
 
-        <div class="card shadow-sm border-0">
-            <div class="card-header text-center" style="background-color:#2f5d3b;">
-                <h5 class="text-white mb-0">🔐 Login to EstateDB</h5>
-            </div>
+        .glass-card h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
 
-            <div class="card-body">
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: none;
+            border-radius: 10px;
+            outline: none;
+        }
 
-                {% if messages %}
-                    {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }} py-2">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                {% endif %}
+        button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 10px;
+            background: #4caf50;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
 
-                <form method="POST">
-                    {% csrf_token %}
+        button:hover {
+            background: #388e3c;
+        }
+    </style>
+</head>
 
-                    <div class="mb-3">
-                        <label class="form-label">Username</label>
-                        <input type="text" name="username" class="form-control" required>
-                    </div>
+<body>
 
-                    <div class="mb-3">
-                        <label class="form-label">Password</label>
-                        <input type="password" name="password" class="form-control" required>
-                    </div>
+<div class="glass-card">
+    <h2>🔐 Login</h2>
 
-                    <button type="submit" class="btn w-100 text-white" 
-                            style="background-color:#2f5d3b;">
-                        Login
-                    </button>
-                </form>
+    <form method="POST">
+        {% csrf_token %}
 
-                <div class="text-center mt-3">
-                    <small>
-                        Don’t have an account?  
-                        <a href="/accounts/register/" class="text-success fw-bold">Register</a>
-                    </small>
-                </div>
+        <input type="text" name="username" placeholder="Username" required>
+        <input type="password" name="password" placeholder="Password" required>
 
-            </div>
-        </div>
+        <button type="submit">Login</button>
+    </form>
 
-    </div>
+    {% for message in messages %}
+        <p style="color: #ffcccb; text-align:center;">{{ message }}</p>
+    {% endfor %}
 </div>
 
-{% endblock %}
+</body>
+</html>

@@ -46,12 +46,12 @@
             <li class="nav-item">
                 <a class="nav-link" href="/lands/">Lands</a>
             </li>
-            <li class="nav-item">
+            <!-- <li class="nav-item">
                 <a class="nav-link" href="{% url 'documents:search_by_tag' %}">Search by Tag</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link" href="{% url 'documents:tag_cloud' %}">Tag Cloud</a>
-            </li>
+            </li> -->
             {% if user.is_authenticated %}
                 <li class="nav-item">
                     <a class="nav-link" href="#">Hi, {{ user.username }}</a>
@@ -79,6 +79,6 @@
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
+{% block extra_js %}{% endblock %}
 </body>
 </html>
