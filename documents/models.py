@@ -1,6 +1,10 @@
+
 from django.db import models
 from lands.models import Land
 from django.contrib.auth.models import User
+
+def separated_pdf_path(instance, filename):
+        return f"land_{instance.document.land.id}/separated/{filename}"
 
 
 def document_path(instance, filename):
@@ -75,6 +79,8 @@ class Document(models.Model):
     def get_tags(self):
         """Return all unique tags for this document's pages."""
         return Tag.objects.filter(document_page__document=self).distinct()
+    
+    
 
 
 class DocumentPage(models.Model):
@@ -142,8 +148,8 @@ class DocumentIndex(models.Model):
     
 class DocumentTagEntry(models.Model):
     """
-    Stores each tagging action as a separate row (history-based tagging).
-    Each save from UI = one entry here.
+    Stores each tagging action as a separate row.
+    Each tag entry can generate its own separated PDF.
     """
 
     document = models.ForeignKey(
@@ -154,10 +160,29 @@ class DocumentTagEntry(models.Model):
 
     # Snapshot of metadata at the time of tagging
     document_type = models.CharField(max_length=50)
-    survey_type = models.CharField(max_length=10, blank=True, null=True)
 
-    from_page = models.PositiveIntegerField(blank=True, null=True)
-    to_page = models.PositiveIntegerField(blank=True, null=True)
+    survey_type = models.CharField(
+        max_length=10,
+        blank=True,
+        null=True
+    )
+
+    from_page = models.PositiveIntegerField(
+        blank=True,
+        null=True
+    )
+
+    to_page = models.PositiveIntegerField(
+        blank=True,
+        null=True
+    )
+
+    # Generated PDF for this tag entry
+    separated_pdf = models.FileField(
+        upload_to=separated_pdf_path,
+        blank=True,
+        null=True
+    )
 
     # Many tags per entry
     tags = models.ManyToManyField(
@@ -166,7 +191,6 @@ class DocumentTagEntry(models.Model):
         blank=True
     )
 
-    # Optional: track who added it (recommended)
     created_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -174,11 +198,28 @@ class DocumentTagEntry(models.Model):
         blank=True
     )
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
 
     class Meta:
-        ordering = ['-created_at']  # latest first
+        ordering = ['-created_at']
 
     def __str__(self):
-        page_range = f"{self.from_page}-{self.to_page}" if self.from_page and self.to_page else "N/A"
-        return f"{self.document} | {self.document_type} | Pages: {page_range}"
+        page_range = (
+            f"{self.from_page}-{self.to_page}"
+            if self.from_page and self.to_page
+            else "N/A"
+        )
+
+        return (
+            f"{self.document} | "
+            f"{self.document_type} | "
+            f"Pages: {page_range}"
+        )
+
+    @property
+    def page_range(self):
+        if self.from_page and self.to_page:
+            return f"{self.from_page}-{self.to_page}"
+        return "N/A"

@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 /documents/*
 /media/*
 /venv/*
@@ -13,6 +12,33 @@ db.sqlite3
 # Git
 # =====================================
 .git/
+# =====================================
+# PDF
+# =====================================
+*.pdf
+# =====================================
+# __pycache__/
+# =====================================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# Python
+__pycache__/
+*.pyc
+venv/
+
+# Python
+__pycache__/
+*.pyc
+venv/
 
 # =====================================
 # Python Cache
@@ -134,4 +160,3 @@ __pycache__/
 venv/
 .venv/
 .idea/
->>>>>>> 18/05/2026_Final_V.1

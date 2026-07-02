@@ -32,4 +32,7 @@ urlpatterns = [
     path('pdf/<int:pk>/index/', views.get_document_index, name='get_document_index'),
     path('index/save/', views.save_document_index, name='save_document_index'),
     path('index/<int:pk>/delete/', views.delete_document_index, name='delete_document_index'),
+
+    # 
+    path('tag-entry/<int:entry_id>/delete/', views.delete_tag_entry, name='delete_tag_entry'),
 ]
