@@ -39,7 +39,7 @@ DEBUG = True
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    '0310-103-85-159-178.ngrok-free.app',
+    'estate.bscic.gov.bd',
 ]
 # ALLOWED_HOSTS = ['estate.bscic.gov.bd',]
 
