@@ -13,8 +13,18 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+# from pathlib import Path
+
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+
 
 
 # Quick-start development settings - unsuitable for production
@@ -35,12 +45,11 @@ ALLOWED_HOSTS = [
 
 
 # ALLOWED_HOSTS = ['*']
-CSRF_TRUSTED_ORIGINS = [
-        'https://0310-103-85-159-178.ngrok-free.app',
-]
+# CSRF_TRUSTED_ORIGINS = [
+#         'https://0310-103-85-159-178.ngrok-free.app',
+# ]
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -48,6 +57,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
     'accounts',
     'lands',
     'documents',
@@ -136,8 +146,10 @@ STATIC_ROOT = '/var/www/estatecell/staticfiles/'
 STATIC_URL = '/static/'
 # MEDIA_URL = '/media/'
 # MEDIA_ROOT = BASE_DIR / 'media'
-MEDIA_ROOT = '/var/www/estatecell/media/'
-MEDIA_URL = '/media/'
+
+# MEDIA_ROOT = '/var/www/estatecell/media/'
+# MEDIA_URL = '/media/'
+
 #MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

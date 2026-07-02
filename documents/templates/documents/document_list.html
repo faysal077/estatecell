@@ -15,9 +15,9 @@
     </div>
 </div>
 
-<div class="row">
+<div class="row gx-2">
     <!-- Left: Existing Documents + Document Index -->
-    <div class="col-lg-3">
+    <div class="col-lg-2">
         <!-- Existing Documents -->
         <div class="card mb-3">
             <div class="card-header d-flex justify-content-between align-items-center">
@@ -63,6 +63,7 @@
                             <th>Title</th>
                             <th>Page</th>
                             <th>Tags</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody id="indexTableBody">
@@ -74,7 +75,7 @@
     </div>
 
     <!-- Middle: PDF Viewer -->
-    <div class="col-lg-6">
+    <div class="col-lg-8">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <span>PDF Preview</span>
@@ -86,7 +87,8 @@
                     <button class="btn btn-outline-secondary" onclick="zoomOut()">- Zoom</button>
                 </div>
             </div>
-            <div class="card-body p-2" style="height: 600px; overflow: auto;" id="pdfContainer">
+            <!-- <div class="card-body p-2" style="height: 600px; overflow: auto;" id="pdfContainer"> -->
+            <div class="card-body p-1" style="height:85vh; overflow:auto;" id="pdfContainer">
                 <div id="pdfViewer" class="text-center text-muted p-0">
                     <i class="bi bi-file-earmark-pdf fs-1"></i>
                     <p class="mt-2">Select a document from the list to preview PDF.</p>
@@ -100,7 +102,7 @@
     </div>
 
     <!-- Right: Upload Document + Document Tag -->
-    <div class="col-lg-3">
+    <div class="col-lg-2">
         <!-- Upload Document Section -->
         <div class="card mb-3">
             <div class="card-header">
@@ -329,26 +331,55 @@
     //     });
     // }
     function updateIndexTable(entries) {
+
         const tbody = document.getElementById('indexTableBody');
         tbody.innerHTML = '';
 
         if (!entries || entries.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="3" class="text-muted text-center">No entries found</td></tr>';
+
+            tbody.innerHTML =
+            '<tr><td colspan="4" class="text-muted text-center">No entries found</td></tr>';
+
             return;
         }
 
         entries.forEach(e => {
-            const tagsStr = (e.tags && e.tags.length)
-                ? e.tags.map(t => `<span class="badge bg-info me-1">${t}</span>`).join('')
+
+            const tagsStr =
+                (e.tags && e.tags.length)
+                ? e.tags.map(t =>
+                    `<span class="badge bg-info me-1">${t}</span>`
+                ).join('')
                 : '<span class="text-muted">—</span>';
 
             const row = `
                 <tr>
-                    <td class="small">${e.document_type || 'Unnamed'}</td>
-                    <td class="small">${e.from_page || ''} - ${e.to_page || ''}</td>
-                    <td>${tagsStr}</td>
+
+                    <td class="small">
+                        ${e.document_type || 'Unnamed'}
+                    </td>
+
+                    <td class="small">
+                        ${e.from_page || ''} - ${e.to_page || ''}
+                    </td>
+
+                    <td>
+                        ${tagsStr}
+                    </td>
+
+                    <td>
+                        <button
+                            class="btn btn-danger btn-sm"
+                            onclick="deleteTagEntry(${e.id})">
+
+                            Delete
+
+                        </button>
+                    </td>
+
                 </tr>
             `;
+
             tbody.insertAdjacentHTML('beforeend', row);
         });
     }
@@ -407,6 +438,49 @@
             document.getElementById('surveyType').value = '';
         }
     });
+
+    function deleteTagEntry(entryId) {
+
+        if (!confirm("Delete this tag and generated PDF?")) {
+            return;
+        }
+
+        fetch(`/documents/tag-entry/${entryId}/delete/`, {
+
+            method: 'POST',
+
+            headers: {
+                'X-CSRFToken': getCSRFToken()
+            }
+
+        })
+
+        .then(response => response.json())
+
+        .then(data => {
+
+            if (data.success) {
+
+                alert('Tag deleted successfully.');
+
+                if (currentDocId) {
+                    selectDocument(currentDocId);
+                }
+
+            } else {
+
+                alert(data.error || 'Delete failed.');
+
+            }
+
+        })
+
+        .catch(err => {
+
+            alert('Error: ' + err);
+
+        });
+    }
 </script>
 {% endblock extra_js %}
 

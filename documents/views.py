@@ -7,12 +7,12 @@ from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
 from django.db.models import Count
-
 from .models import Document, DocumentPage, Tag, PageTag, DocumentIndex, DocumentTag
 from .forms import DocumentForm, TagForm, DocumentIndexForm
 from lands.models import Land
-
-
+from django.core.files.base import ContentFile
+from .utils import extract_pages
+import re
 # ------------------------------------------------------------------
 # Document CRUD
 # ------------------------------------------------------------------
@@ -87,152 +87,6 @@ def document_list(request, land_id):
     })
 
 
-# @login_required
-# def upload_document(request, land_id):
-#     """Handle document upload with PDF, metadata, tags, and index entries."""
-#     land = get_object_or_404(Land, pk=land_id)
-
-#     if request.method == 'POST':
-#         uploaded_file = request.FILES.get('pdf_file')
-#         if not uploaded_file:
-#             return JsonResponse({'success': False, 'error': 'No PDF file uploaded.'})
-
-#         document_type = request.POST.get('document_type', '')
-#         survey_type = request.POST.get('survey_type') or None
-#         from_page = request.POST.get('from_page') or None
-#         to_page = request.POST.get('to_page') or None
-#         tags_raw = request.POST.get('tags', '')
-#         index_entries_raw = request.POST.get('index_entries', '')
-
-#         # Parse page numbers
-#         try:
-#             from_page = int(from_page) if from_page else None
-#             to_page = int(to_page) if to_page else None
-#         except ValueError:
-#             return JsonResponse({'success': False, 'error': 'Invalid page numbers.'})
-
-#         # Get survey types validation
-#         if document_type == 'Land Survey Report' and not survey_type:
-#             return JsonResponse({'success': False, 'error': 'Survey type is required for Land Survey Report.'})
-# #document_type='Uncategorized',
-#         # Create document
-#         doc = Document(
-#             land=land,
-#             document_type='Uncategorized',
-#             survey_type=survey_type,
-#             from_page=from_page,
-#             to_page=to_page,
-#             issued_by=request.user,
-#         )
-
-#         filename = uploaded_file.name
-#         name_part, ext = os.path.splitext(filename)
-#         doc.file_name = name_part
-#         doc.file_type = ext.replace('.', '').lower()
-#         doc.scanned_copy = uploaded_file
-#         doc.save()
-
-#         # Parse and create tags
-#         tag_names = [t.strip() for t in tags_raw.split(',') if t.strip()]
-#         created_tags = []
-#         for name in tag_names:
-#             tag, _ = Tag.objects.get_or_create(name=name)
-#             created_tags.append(tag)
-
-#         # Parse index entries (format: "title|page, title|page, ...")
-#         if index_entries_raw:
-#             for entry in index_entries_raw.split(','):
-#                 entry = entry.strip()
-#                 if '|' in entry:
-#                     title, page_str = entry.rsplit('|', 1)
-#                     try:
-#                         page_num = int(page_str.strip())
-#                         DocumentIndex.objects.create(
-#                             document=doc,
-#                             title=title.strip(),
-#                             page_number=page_num
-#                         )
-#                     except ValueError:
-#                         pass
-
-#         return JsonResponse({
-#             'success': True,
-#             'document_id': doc.id,
-#             'document_number': doc.document_number
-#         })
-
-#     return JsonResponse({'success': False, 'error': 'Invalid request method.'})
-
-
-# @login_required
-# def update_document(request, pk):
-#     """Update document metadata (tags, pages, etc.) after upload."""
-#     document = get_object_or_404(Document, pk=pk)
-
-#     if request.method == 'POST':
-#         document_type = request.POST.get('document_type')
-#         survey_type = request.POST.get('survey_type') or None
-#         from_page = request.POST.get('from_page') or None
-#         to_page = request.POST.get('to_page') or None
-#         tags_raw = request.POST.get('tags', '')
-
-#         if document_type:
-#             document.document_type = document_type
-
-#         document.survey_type = survey_type
-
-#         try:
-#             document.from_page = int(from_page) if from_page else None
-#             document.to_page = int(to_page) if to_page else None
-#         except ValueError:
-#             pass
-
-#         document.save()
-
-#         # Update tags
-#         if tags_raw:
-#             tag_names = [t.strip() for t in tags_raw.split(',') if t.strip()]
-#             for name in tag_names:
-#                 tag, _ = Tag.objects.get_or_create(name=name)
-
-#         return JsonResponse({'success': True})
-
-#     return JsonResponse({'success': False, 'error': 'Invalid request method.'})
-
-# @login_required
-# def upload_document(request, land_id):
-#     """Upload only PDF and create a minimal document."""
-#     land = get_object_or_404(Land, pk=land_id)
-
-#     if request.method == 'POST':
-#         uploaded_file = request.FILES.get('pdf_file')
-
-#         if not uploaded_file:
-#             return JsonResponse({'success': False, 'error': 'No PDF file uploaded.'})
-
-#         try:
-#             filename = uploaded_file.name
-#             name_part, ext = os.path.splitext(filename)
-
-#             doc = Document.objects.create(
-#                 land=land,
-#                 document_type='Uncategorized',  # temporary
-#                 issued_by=request.user,
-#                 file_name=name_part,
-#                 file_type=ext.replace('.', '').lower(),
-#                 scanned_copy=uploaded_file
-#             )
-
-#             return JsonResponse({
-#                 'success': True,
-#                 'document_id': doc.id,
-#                 'document_number': doc.document_number
-#             })
-
-#         except Exception as e:
-#             return JsonResponse({'success': False, 'error': str(e)})
-
-#     return JsonResponse({'success': False, 'error': 'Invalid request method.'})
 
 @login_required
 def upload_document(request, land_id):
@@ -263,82 +117,7 @@ def upload_document(request, land_id):
 
     return JsonResponse({'success': False})
 
-# @login_required
-# def update_document(request, pk):
-#     """Update document metadata, tags, and auto-create index."""
-#     document = get_object_or_404(Document, pk=pk)
 
-#     if request.method == 'POST':
-#         document_type = request.POST.get('document_type')
-#         survey_type = request.POST.get('survey_type') or None
-#         from_page = request.POST.get('from_page')
-#         to_page = request.POST.get('to_page')
-#         tags_raw = request.POST.get('tags', '')
-
-#         # 🔹 VALIDATION
-#         if not document_type:
-#             return JsonResponse({'success': False, 'error': 'Document type is required.'})
-
-#         if document_type == 'Land Survey Report' and not survey_type:
-#             return JsonResponse({'success': False, 'error': 'Survey type is required.'})
-
-#         # 🔹 UPDATE DOCUMENT
-#         document.document_type = document_type
-#         document.survey_type = survey_type
-
-#         try:
-#             document.from_page = int(from_page) if from_page else None
-#             document.to_page = int(to_page) if to_page else None
-#         except ValueError:
-#             return JsonResponse({'success': False, 'error': 'Invalid page numbers.'})
-
-#         document.save()
-
-#         # 🔹 TAGS — create Tag + link to Document via DocumentTag
-#         tag_names = [t.strip() for t in tags_raw.split(',') if t.strip()]
-
-#         # Remove existing tag associations for this document
-#         # DocumentTag.objects.filter(document=document).delete()
-
-#         # for name in tag_names:
-#         #     tag, _ = Tag.objects.get_or_create(name=name)
-#         #     DocumentTag.objects.get_or_create(document=document, tag=tag)
-#         # ✅ Create a new tag entry (history row)
-#         entry = DocumentTagEntry.objects.create(
-#             document=document,
-#             document_type=document_type,
-#             survey_type=survey_type,
-#             from_page=document.from_page,
-#             to_page=document.to_page,
-#             created_by=request.user
-#         )
-
-#         tag_names = [t.strip() for t in tags_raw.split(',') if t.strip()]
-#         tag_list = []
-
-#         for name in tag_names:
-#             tag, _ = Tag.objects.get_or_create(name=name)
-#             entry.tags.add(tag)
-#             tag_list.append(tag.name)
-#         # 🔹 AUTO INDEX CREATION
-#         DocumentIndex.objects.filter(document=document).delete()
-
-#         if document.from_page and document.to_page:
-#             for page in range(document.from_page, document.to_page + 1):
-#                 DocumentIndex.objects.create(
-#                     document=document,
-#                     title=f"{document.document_type} Page {page}",
-#                     page_number=page
-#                 )
-
-#         return JsonResponse({
-#             'success': True,
-#             'tags': tag_names,
-#             'from_page': document.from_page,
-#             'to_page': document.to_page,
-#         })
-
-#     return JsonResponse({'success': False, 'error': 'Invalid request method.'})
 @login_required
 def update_document(request, pk):
     """Update document metadata, tags, and create tag entry history."""
@@ -380,6 +159,31 @@ def update_document(request, pk):
             to_page=document.to_page,
             created_by=request.user
         )
+        if (
+            document.scanned_copy
+            and document.from_page
+            and document.to_page
+        ):
+
+            pdf_bytes = extract_pages(
+                document.scanned_copy.path,
+                document.from_page,
+                document.to_page
+            )
+
+            safe_name = re.sub(
+                r'[^A-Za-z0-9_-]',
+                '_',
+                document_type
+            )
+
+            filename = f"{safe_name}.pdf"
+
+            entry.separated_pdf.save(
+                filename,
+                ContentFile(pdf_bytes),
+                save=True
+            )
 
         # ---------------- TAG PROCESSING ----------------
         tag_names = [t.strip() for t in tags_raw.split(',') if t.strip()]
@@ -405,6 +209,7 @@ def update_document(request, pk):
 
         for e in entries:
             entries_data.append({
+                "id": e.id,
                 "document_type": e.document_type,
                 "from_page": e.from_page,
                 "to_page": e.to_page,
@@ -630,11 +435,13 @@ def get_document_index(request, pk):
     data = []
     for e in entries:
         data.append({
+            "id": e.id,
             "document_type": e.document_type,
             "from_page": e.from_page,
             "to_page": e.to_page,
             "tags": [t.name for t in e.tags.all()]
         })
+        
     # return JsonResponse({
     #     'success': True,
     #     'document_id': document.id,
@@ -692,33 +499,6 @@ def delete_document_index(request, pk):
 
 
 @login_required
-# def serve_document_pdf(request, pk):
-#     """Serve the PDF file directly to avoid URL encoding issues."""
-#     from django.http import FileResponse, Http404
-#     document = get_object_or_404(Document, pk=pk)
-#     if document.scanned_copy:
-#         try:
-#             return FileResponse(
-#                 document.scanned_copy.open('rb'),
-#                 content_type='application/pdf',
-#                 as_attachment=False,
-#                 filename=document.scanned_copy.name
-#             )
-#         except Exception:
-#             raise Http404("File not found")
-#     elif document.merged_pdf:
-#         try:
-#             return FileResponse(
-#                 document.merged_pdf.open('rb'),
-#                 content_type='application/pdf',
-#                 as_attachment=False,
-#                 filename=document.merged_pdf.name
-#             )
-#         except Exception:
-#             raise Http404("File not found")
-#     raise Http404("No PDF found.")
-
-@login_required
 def serve_document_pdf(request, pk):
     from django.http import FileResponse, Http404
     from django.shortcuts import get_object_or_404
@@ -735,3 +515,53 @@ def serve_document_pdf(request, pk):
         return response
     except Exception:
         raise Http404("File not found")
+    
+##################################
+# Tagwise Document Deletion
+##################################
+@login_required
+def delete_tag_entry(request, entry_id):
+
+    entry = get_object_or_404(
+        DocumentTagEntry,
+        pk=entry_id
+    )
+
+    if entry.separated_pdf:
+
+        pdf_path = entry.separated_pdf.path
+
+        if os.path.exists(pdf_path):
+            os.remove(pdf_path)
+
+    entry.delete()
+
+    return JsonResponse({
+        "success": True
+    })
+
+@login_required
+def delete_tag_entry(request, entry_id):
+
+    if request.method != 'POST':
+        return JsonResponse({
+            'success': False,
+            'error': 'POST required'
+        })
+
+    entry = get_object_or_404(
+        DocumentTagEntry,
+        pk=entry_id
+    )
+
+    # Delete generated PDF if exists
+    if entry.separated_pdf:
+
+        if os.path.exists(entry.separated_pdf.path):
+            os.remove(entry.separated_pdf.path)
+
+    entry.delete()
+
+    return JsonResponse({
+        'success': True
+    })
