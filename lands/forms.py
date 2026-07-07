@@ -18,16 +18,44 @@ class LandForm(forms.ModelForm):
 
     class Meta:
         model = Land
+        
         fields = [
-            'rd_office', 'division', 'district', 'upazila', 'mouza',
-            'dag_no', 'khatian_no', 'area', 'owner_name'
+            "rd_office",
+            "division",
+            "district",
+            "upazila",
+            "owner_name",
+            "total_area",
+            "total_plots",
+            "allocated_plots",
         ]
         widgets = {
-            'rd_office': forms.TextInput(attrs={'class': 'form-control'}),
-            'upazila': forms.TextInput(attrs={'class': 'form-control'}),
-            'mouza': forms.TextInput(attrs={'class': 'form-control'}),
-            'dag_no': forms.TextInput(attrs={'class': 'form-control'}),
-            'khatian_no': forms.TextInput(attrs={'class': 'form-control'}),
-            'area': forms.NumberInput(attrs={'class': 'form-control'}),
-            'owner_name': forms.TextInput(attrs={'class': 'form-control'}),
+
+            "rd_office": forms.TextInput(attrs={
+                "class":"form-control"
+            }),
+            "upazila": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Enter Upazila"
+            }),
+            "owner_name": forms.TextInput(attrs={
+                "class":"form-control"
+            }),
+
+            "total_area": forms.NumberInput(attrs={
+                "class":"form-control"
+            }),
+
+            "total_plots": forms.NumberInput(attrs={
+                "class":"form-control",
+                "id":"id_total_plots"
+            }),
+
+            "allocated_plots": forms.NumberInput(attrs={
+                "class":"form-control",
+                "id":"id_allocated_plots"
+            }),
+
+           
+
         }

@@ -1,5 +1,7 @@
 import os
 import io
+import profile
+from urllib import request
 from .models import DocumentTagEntry
 import fitz  # PyMuPDF
 from django.shortcuts import render, get_object_or_404, redirect
@@ -13,6 +15,7 @@ from lands.models import Land
 from django.core.files.base import ContentFile
 from .utils import extract_pages
 import re
+from accounts.models import UserProfile, UserRole
 # ------------------------------------------------------------------
 # Document CRUD
 # ------------------------------------------------------------------
@@ -47,7 +50,20 @@ def document_create(request, land_id):
 
 @login_required
 def document_edit(request, pk):
-    document = get_object_or_404(Document, pk=pk)
+    # document = get_object_or_404(Document, pk=pk)
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+
+    if profile.role == UserRole.SUPER_ADMIN:
+        document = get_object_or_404(
+            Document,
+            pk=pk
+        )
+    else:
+        document = get_object_or_404(
+            Document,
+            pk=pk,
+            issued_by=request.user
+        )
 
     if request.method == 'POST':
         form = DocumentForm(request.POST, request.FILES, instance=document)
@@ -77,7 +93,7 @@ def document_delete(request, pk):
     document.delete()
     return JsonResponse({'success': True})
 
-
+@login_required
 def document_list(request, land_id):
     land = get_object_or_404(Land, pk=land_id)
     documents = land.documents.prefetch_related('pages', 'index_entries').all()
@@ -122,8 +138,20 @@ def upload_document(request, land_id):
 def update_document(request, pk):
     """Update document metadata, tags, and create tag entry history."""
     
-    document = get_object_or_404(Document, pk=pk)
+    #document = get_object_or_404(Document, pk=pk)
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
 
+    if profile.role == UserRole.SUPER_ADMIN:
+        document = get_object_or_404(
+            Document,
+            pk=pk
+        )
+    else:
+        document = get_object_or_404(
+            Document,
+            pk=pk,
+            issued_by=request.user
+        )
     if request.method == 'POST':
         document_type = request.POST.get('document_type')
         survey_type = request.POST.get('survey_type') or None
@@ -223,7 +251,7 @@ def update_document(request, pk):
 
     return JsonResponse({'success': False, 'error': 'Invalid request method.'})
 
-
+@login_required
 def document_detail(request, pk):
     document = get_object_or_404(Document, pk=pk)
     pages = document.pages.prefetch_related('page_tags__tag').all().order_by('page_number')
@@ -375,43 +403,43 @@ def untag_page(request, page_id):
 
     return JsonResponse({'success': False, 'error': 'Invalid method.'})
 
+# @login_required
+# def search_by_tag(request):
+#     """Search pages by tag name (keyword search)."""
+#     query = request.GET.get('q', '').strip()
 
-def search_by_tag(request):
-    """Search pages by tag name (keyword search)."""
-    query = request.GET.get('q', '').strip()
+#     if not query:
+#         return render(request, "documents/tag_search.html", {
+#             'query': '',
+#             'results': [],
+#         })
 
-    if not query:
-        return render(request, "documents/tag_search.html", {
-            'query': '',
-            'results': [],
-        })
+#     # Find pages matching the tag
+#     page_tags = PageTag.objects.filter(
+#         tag__name__icontains=query
+#     ).select_related('document_page', 'document_page__document', 'document_page__document__land')
 
-    # Find pages matching the tag
-    page_tags = PageTag.objects.filter(
-        tag__name__icontains=query
-    ).select_related('document_page', 'document_page__document', 'document_page__document__land')
+#     results = []
+#     for pt in page_tags:
+#         page = pt.document_page
+#         doc = page.document
+#         results.append({
+#             'page': page,
+#             'document': doc,
+#             'land': doc.land,
+#             'tag': pt.tag,
+#         })
 
-    results = []
-    for pt in page_tags:
-        page = pt.document_page
-        doc = page.document
-        results.append({
-            'page': page,
-            'document': doc,
-            'land': doc.land,
-            'tag': pt.tag,
-        })
-
-    return render(request, "documents/tag_search.html", {
-        'query': query,
-        'results': results,
-    })
+#     return render(request, "documents/tag_search.html", {
+#         'query': query,
+#         'results': results,
+#     })
 
 
-def tag_cloud(request):
-    """Display all tags with page counts."""
-    tags = Tag.objects.all()
-    return render(request, "documents/tag_cloud.html", {'tags': tags})
+# def tag_cloud(request):
+#     """Display all tags with page counts."""
+#     tags = Tag.objects.all()
+#     return render(request, "documents/tag_cloud.html", {'tags': tags})
 
 
 @login_required
@@ -424,7 +452,7 @@ def get_document_pdf(request, pk):
         return JsonResponse({'success': True, 'pdf_url': document.scanned_copy.url})
     return JsonResponse({'success': False, 'error': 'No PDF found.'})
 
-
+@login_required
 def get_document_index(request, pk):
     """Return document metadata (type, pages, file_name, tags) for the index panel."""
     document = get_object_or_404(Document, pk=pk)
@@ -522,10 +550,23 @@ def serve_document_pdf(request, pk):
 @login_required
 def delete_tag_entry(request, entry_id):
 
-    entry = get_object_or_404(
-        DocumentTagEntry,
-        pk=entry_id
-    )
+    # entry = get_object_or_404(
+    #     DocumentTagEntry,
+    #     pk=entry_id
+    # )
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+
+    if profile.role == UserRole.SUPER_ADMIN:
+        entry = get_object_or_404(
+            DocumentTagEntry,
+            pk=entry_id
+        )
+    else:
+        entry = get_object_or_404(
+            DocumentTagEntry,
+            pk=entry_id,
+            created_by=request.user
+        )
 
     if entry.separated_pdf:
 

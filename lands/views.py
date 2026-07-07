@@ -1,15 +1,31 @@
 # lands/views.py
+import profile
+from time import timezone
+from urllib import request
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.db.models import Sum
+from accounts.models import UserProfile, UserRole
 from .models import Land
 from .forms import LandForm
 from esate_db.districts import DISTRICTS, DIVISION_NAMES
 
-
+@login_required
 def land_list(request):
-    lands = Land.objects.all()
+    # lands = Land.objects.all()
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+
+    if profile.role == UserRole.SUPER_ADMIN:
+        lands = Land.objects.all()
+    else:
+        lands = Land.objects.filter(
+            created_by=request.user
+        )
+
     return render(request, 'lands/land_list.html', {'lands': lands})
 
+@login_required
 def land_create(request):
     initial = {}
     # Pre-fill district if passed via query param from map
@@ -19,7 +35,9 @@ def land_create(request):
     if request.method == "POST":
         form = LandForm(request.POST)
         if form.is_valid():
-            form.save()
+            land = form.save(commit=False)
+            land.created_by = request.user
+            land.save()
             messages.success(request, "Land record created successfully!")
             return redirect('lands:land_list')
     else:
@@ -31,8 +49,22 @@ def land_create(request):
         'divisions': DIVISION_NAMES,
     })
 
+@login_required
 def land_update(request, pk):
-    land = get_object_or_404(Land, pk=pk)
+    # land = get_object_or_404(Land, pk=pk)
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+
+    if profile.role == UserRole.SUPER_ADMIN:
+        land = get_object_or_404(
+            Land,
+            pk=pk
+        )
+    else:
+        land = get_object_or_404(
+            Land,
+            pk=pk,
+            created_by=request.user
+        )
     if request.method == "POST":
         form = LandForm(request.POST, instance=land)
         if form.is_valid():
@@ -48,10 +80,86 @@ def land_update(request, pk):
         'divisions': DIVISION_NAMES,
     })
 
+@login_required
 def land_delete(request, pk):
-    land = get_object_or_404(Land, pk=pk)
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+
+    if profile.role == UserRole.SUPER_ADMIN:
+        land = get_object_or_404(
+            Land,
+            pk=pk
+        )
+    else:
+        land = get_object_or_404(
+            Land,
+            pk=pk,
+            created_by=request.user
+        )
     if request.method == "POST":
         land.delete()
         messages.success(request, "Land record deleted successfully!")
         return redirect('lands:land_list')
     return render(request, 'lands/land_confirm_delete.html', {'land': land})
+
+#########
+from django.core.paginator import Paginator
+
+@login_required
+def land_list(request):
+
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+
+    if profile.role == UserRole.SUPER_ADMIN:
+        lands = Land.objects.all().order_by("-created_at")
+    else:
+        lands = Land.objects.filter(
+            created_by=request.user
+        ).order_by("-created_at")
+
+    paginator = Paginator(lands, 10)   # 10 records per page
+
+    page_number = request.GET.get("page")
+
+    page_obj = paginator.get_page(page_number)
+
+    return render(
+        request,
+        "lands/land_list.html",
+        {
+            "lands": page_obj,
+            "page_obj": page_obj,
+        },
+    )
+
+@login_required
+def verify_land_admin(request, pk):
+
+    land = get_object_or_404(Land, pk=pk)
+
+    verification = land.verification
+
+    verification.admin_verified = True
+
+    verification.admin_verified_by = request.user
+
+    verification.admin_verified_date = timezone.now()
+
+    verification.save()
+
+    return redirect("lands:land_list")
+@login_required
+def verify_land_super_admin(request, pk):
+
+    land = get_object_or_404(Land, pk=pk)
+
+    verification = land.verification
+
+    verification.super_admin_verified = True
+
+    verification.super_admin_verified_by = request.user
+
+    verification.super_admin_verified_date = timezone.now()
+
+    verification.save()
+
+    return redirect("lands:land_list")

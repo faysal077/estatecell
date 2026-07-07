@@ -1,52 +1,215 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h3>{{ title }}</h3>
+
+<h3 class="mb-4">{{ title }}</h3>
 
 <form method="post">
     {% csrf_token %}
-    {% for field in form %}
-        <div class="mb-3">
-            {{ field.label_tag }}
-            {{ field }}
-            {% if field.errors %}
-                <div class="text-danger">{{ field.errors }}</div>
-            {% endif %}
+    <div class="container mt-4">
+    <div class="card shadow-lg border-0 rounded-4 p-4">
+    <!-- RD Office & Division -->
+    <div class="row">
+
+        <div class="col-md-6 mb-4">
+            <label class="fw-semibold text-success mb-2">
+                <i class="bi bi-building"></i> RD Office
+            </label>
+            {{ form.rd_office }}
+            {{ form.rd_office.errors }}
         </div>
-    {% endfor %}
-    <button type="submit" class="btn btn-success">Save</button>
-    <a href="{% url 'lands:land_list' %}" class="btn btn-secondary">Cancel</a>
+
+        <div class="col-md-6 mb-4">
+            <label class="fw-semibold text-success mb-2">
+                <i class="bi bi-map"></i> Division
+            </label>
+            {{ form.division }}
+            {{ form.division.errors }}
+        </div>
+
+    </div>
+
+    <!-- District & Upazila -->
+    <div class="row">
+
+        <div class="col-md-6 mb-4">
+            <label class="fw-semibold text-success mb-2">
+                <i class="bi bi-geo-alt"></i> District
+            </label>
+            {{ form.district }}
+            {{ form.district.errors }}
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <label class="fw-semibold text-success mb-2">
+                <i class="bi bi-pin-map"></i> Upazila
+            </label>
+            {{ form.upazila }}
+            {{ form.upazila.errors }}
+        </div>
+
+    </div>
+
+    <!-- Owner & Area -->
+    <div class="row">
+
+        <div class="col-md-6 mb-4">
+            <label class="fw-semibold text-success mb-2">
+                <i class="bi bi-person"></i> Owner Name
+            </label>
+            {{ form.owner_name }}
+            {{ form.owner_name.errors }}
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <label class="fw-semibold text-success mb-2">
+                <i class="bi bi-rulers"></i> Total Area
+            </label>
+            {{ form.total_area }}
+            {{ form.total_area.errors }}
+        </div>
+
+    </div>
+
+    <!-- Plot Information -->
+    <div class="card border-success shadow-sm mb-4">
+
+        <div class="card-header bg-success text-white fw-bold">
+            <i class="bi bi-grid-3x3-gap-fill"></i>
+            Plot Information
+        </div>
+
+        <div class="card-body">
+
+            <div class="row">
+
+                <div class="col-md-4">
+
+                    <label class="fw-semibold text-success mb-2">
+                        <i class="bi bi-diagram-3"></i>
+                        Total Plots
+                    </label>
+
+                    {{ form.total_plots }}
+
+                    {{ form.total_plots.errors }}
+
+                </div>
+
+                <div class="col-md-4">
+
+                    <label class="fw-semibold text-success mb-2">
+                        <i class="bi bi-diagram-3"></i>
+                        Allocated Plots
+                    </label>
+
+                    {{ form.allocated_plots }}
+
+                    {{ form.allocated_plots.errors }}
+
+                </div>
+
+                <div class="col-md-4">
+
+                    <label class="fw-semibold text-secondary mb-2">
+                        <i class="bi bi-pie-chart"></i>
+                        Remaining Plots
+                    </label>
+
+                        <input
+                            type="number"
+                            id="id_remaining_plots"
+                            class="form-control"
+                            readonly
+                            value="{% if form.instance.pk %}{{ form.instance.remaining_plots }}{% else %}0{% endif %}">
+
+                    <small class="text-muted">
+                        Auto Calculated
+                    </small>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <button type="submit" class="btn btn-success">
+        Save
+    </button>
+
+    <a href="{% url 'lands:land_list' %}" class="btn btn-secondary">
+        Cancel
+    </a>
+    </div>
+</div>
 </form>
 
 <script>
-    // District -> Division mapping from bd-districts.json
+
+    // District -> Division Mapping
+
     const districtDivisionMap = {
         {% for d in districts_json %}
         "{{ d.name }}": "{{ d.division_id }}",
         {% endfor %}
     };
+
     const divisionNames = {
-        {% for k, v in divisions.items %}
-        "{{ k }}": "{{ v }}",
+        {% for k,v in divisions.items %}
+        "{{ k }}":"{{ v }}",
         {% endfor %}
     };
 
-    const districtSelect = document.querySelector("select[name='district']");
-    const divisionSelect = document.querySelector("select[name='division']");
+    const districtSelect=document.querySelector("select[name='district']");
+    const divisionSelect=document.querySelector("select[name='division']");
 
-    if (districtSelect && divisionSelect) {
-        districtSelect.addEventListener("change", function () {
-            const divId = districtDivisionMap[this.value];
-            if (divId && divisionNames[divId]) {
-                // Find and set the option with that value
-                for (let opt of divisionSelect.options) {
-                    if (opt.value === divId) {
-                        opt.selected = true;
+    if(districtSelect && divisionSelect){
+
+        districtSelect.addEventListener("change",function(){
+
+            const divId=districtDivisionMap[this.value];
+
+            if(divId && divisionNames[divId]){
+
+                for(let opt of divisionSelect.options){
+
+                    if(opt.value===divId){
+
+                        opt.selected=true;
+
                         break;
+
                     }
+
                 }
+
             }
+
         });
+
     }
+
+    // ==========================================
+    // Remaining Plot Auto Calculation
+    // ==========================================
+
+    const total = document.getElementById("id_total_plots");
+    const allocated = document.getElementById("id_allocated_plots");
+    const remaining = document.getElementById("id_remaining_plots");
+
+    function calculate() {
+        let t = parseInt(total.value) || 0;
+        let a = parseInt(allocated.value) || 0;
+        remaining.value = Math.max(t - a, 0);
+    }
+
+    total.addEventListener("input", calculate);
+    allocated.addEventListener("input", calculate);
+
+    calculate();
+
 </script>
+
 {% endblock %}

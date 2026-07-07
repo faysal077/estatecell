@@ -21,8 +21,8 @@ urlpatterns = [
     path('page/<int:page_id>/delete/', views.delete_page, name='delete_page'),
 
     # Tag search
-    path('search/', views.search_by_tag, name='search_by_tag'),
-    path('tags/', views.tag_cloud, name='tag_cloud'),
+    # path('search/', views.search_by_tag, name='search_by_tag'),
+    # path('tags/', views.tag_cloud, name='tag_cloud'),
 
     # Document upload with PDF and index
     path('<int:land_id>/upload/', views.upload_document, name='upload_document'),

@@ -1,44 +1,3476 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block content %}
-<h3>Land Records</h3>
-<a href="{% url 'lands:land_create' %}" class="btn btn-success mb-3">Add Land</a>
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Owner</th>
-            <th>Division</th>
-            <th>District</th>
-            <th>Upazila</th>
-            <th>Mouza</th>
-            <th>Area (acres)</th>
-            <th>Actions</th>
-            <th>Add Documents</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for land in lands %}
-        <tr>
-            <td>{{ land.owner_name }}</td>
-            <td>{{ land.division }}</td>
-            <td>{{ land.district }}</td>
-            <td>{{ land.upazila }}</td>
-            <td>{{ land.mouza }}</td>
-            <td>{{ land.area }}</td>
-            <td>
-                <a href="{% url 'lands:land_update' land.pk %}" class="btn btn-primary btn-sm">Edit</a>
-                <a href="{% url 'lands:land_delete' land.pk %}" class="btn btn-danger btn-sm">Delete</a>
-            </td>
-            <td>
-                <a href="{% url 'documents:document_list' land.pk %}" class="btn btn-warning btn-sm">
-                    Add Documents
-                </a>
-            </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="7" class="text-center">No land records found.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% endblock %}
+<!-- =======================================================
+    LAND DASHBOARD
+    EstateDB Professional Dashboard
+======================================================== -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet"
+href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<style>
+   /* ===========================================
+   Responsive Typography — FLUID ROOT SCALE
+   This single line drives every size below (all converted to rem).
+   Widen/narrow this range to control how big things get on large screens
+   and how small they shrink on narrow ones — no zoom, no breakpoints needed.
+   =========================================== */
+   html{
+    font-size:16px;
+    }
+    @media (max-width:1800px){
+    html{
+    font-size:15px;
+    }
+    }
+    @media (max-width:1600px){
+    html{
+    font-size:14px;
+    }
+    }
+    @media (max-width:1400px){
+    html{
+    font-size:13px;
+    }
+    }
+    @media (max-width:1200px){
+    html{
+    font-size:12px;
+    }
+    }
+   body{
+   font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+   }
+   /* dashboard-wrapper zoom hack removed — no longer needed */
+   /* .dashboard-wrapper{
+   width:100%;
+   } */
+   /*=========================================================
+   ROOT VARIABLES
+   =========================================================*/
+   :root{
+   --primary:#0f8b43;
+   --primary-dark:#0a6c33;
+   --primary-light:#edf8f1;
+   --secondary:#17b26a;
+   --orange:#ff9800;
+   --orange-light:#fff4e5;
+   --red:#ef4444;
+   --red-light:#feecec;
+   --blue:#2563eb;
+   --blue-light:#eff6ff;
+   --gray:#f4f6f9;
+   --gray2:#d9d9d9;
+   --gray3:#707070;
+   --white:#ffffff;
+   --shadow:
+   0 10px 30px rgba(0,0,0,.08);
+   --radius:1.1rem;
+   --transition:.35s ease;
+   }
+   /*=========================================================
+   BODY
+   =========================================================*/
+   body{
+   font-family:'Poppins',sans-serif;
+   background:#f6f8fb;
+   }
+   /*=========================================================
+   PAGE WRAPPER
+   =========================================================*/
+   .land-dashboard{
+
+        width:100%;
+
+        max-width:100%;
+
+        padding:10px 14px;
+
+        margin:0 auto;
+
+    }
+   /*=========================================================
+   PAGE HEADER
+   =========================================================*/
+   .dashboard-header{
+   display:flex;
+   justify-content:space-between;
+   align-items:center;
+   flex-wrap:wrap;
+   margin-bottom:1.5rem;
+   }
+   .dashboard-title{
+   font-size:2.6rem;
+   font-weight:700;
+   color:#0d223f;
+   }
+   .dashboard-subtitle{
+   color:#8a8a8a;
+   margin-top:.5rem;
+   }
+   /*=========================================================
+   ADD LAND BUTTON
+   =========================================================*/
+   .add-land-btn{
+   background:linear-gradient(
+   135deg,
+   var(--primary),
+   var(--primary-dark)
+   );
+   color:white;
+   border:none;
+   border-radius:.75rem;
+   padding:.9rem 1.6rem;
+   font-weight:600;
+   font-size:.95rem;
+   transition:.35s;
+   box-shadow:0 8px 25px rgba(16,122,52,.30);
+   }
+   .add-land-btn:hover{
+   transform:translateY(-3px);
+   color:white;
+   box-shadow:0 14px 35px rgba(16,122,52,.40);
+   }
+   .add-land-btn i{
+   margin-right:.5rem;
+   }
+   /*=========================================================
+   MAIN CARD
+   =========================================================*/
+   .dashboard-card{
+   background:white;
+   border-radius:1.4rem;
+   overflow:hidden;
+   box-shadow:var(--shadow);
+   }
+   /*=========================================================
+   TABLE
+   =========================================================*/
+   .land-table{
+   margin:0;
+   width:100%;
+   }
+   .land-table thead th{
+   text-align:center;
+   padding:1.4rem 1.1rem;
+   background:white;
+   font-size:.95rem;
+   font-weight:700;
+   border-bottom:2px solid #ececec;
+   white-space:nowrap;
+   }
+   .land-table tbody td{
+   vertical-align:middle;
+   padding:1.1rem;
+   border-bottom:1px solid #ededed;
+   }
+   .land-table tbody tr{
+   transition:.25s;
+   }
+   .land-table tbody tr:hover{
+   background:#fafafa;
+   }
+   /*=========================================================
+   RESPONSIVE
+   =========================================================*/
+   .table-responsive{
+   overflow-x:auto;
+   }
+   /*=========================================================
+   SCROLLBAR
+   =========================================================*/
+   .table-responsive::-webkit-scrollbar{
+   height:.6rem;
+   }
+   .table-responsive::-webkit-scrollbar-thumb{
+   background:#d5d5d5;
+   border-radius:50px;
+   }
+   .table-responsive::-webkit-scrollbar-track{
+   background:#f3f3f3;
+   }
+   /*=========================================================
+   OWNER CARD
+   =========================================================*/
+   .owner-card{
+   display:flex;
+   align-items:flex-start;
+   gap:1.1rem;
+   }
+   /*=========================================================
+   AVATAR
+   =========================================================*/
+   .owner-avatar{
+   width:4.4rem;
+   height:4.4rem;
+   border-radius:50%;
+   background:linear-gradient(
+   135deg,
+   #dff6e8,
+   #b9ebcb
+   );
+   color:#0c7a3d;
+   display:flex;
+   justify-content:center;
+   align-items:center;
+   font-size:1.75rem;
+   font-weight:700;
+   flex-shrink:0;
+   box-shadow:0 8px 20px rgba(0,0,0,.08);
+   }
+   /*=========================================================
+   OWNER INFO
+   =========================================================*/
+   .owner-info{
+   flex:1;
+   }
+   .owner-info h5{
+   margin:0;
+   font-size:1.125rem;
+   font-weight:700;
+   color:#0d223f;
+   }
+   .owner-office{
+   margin-top:.25rem;
+   color:#666;
+   font-size:.875rem;
+   font-weight:500;
+   }
+   /*=========================================================
+   LOCATION
+   =========================================================*/
+   .location-item{
+   display:flex;
+   align-items:center;
+   gap:.5rem;
+   margin-top:.6rem;
+   font-size:.875rem;
+   color:#444;
+   }
+   .location-item i{
+   color:var(--primary);
+   font-size:1.06rem;
+   }
+   /*=========================================================
+   LAND ID
+   =========================================================*/
+   .land-id{
+   display:inline-block;
+   margin-top:.9rem;
+   padding:.375rem .875rem;
+   background:#edf3ff;
+   color:#2957b4;
+   border-radius:50px;
+   font-size:.8125rem;
+   font-weight:600;
+   }
+   /*=========================================================
+   ROW ANIMATION
+   =========================================================*/
+   .land-row{
+   transition:.35s ease;
+   }
+   .land-row:hover{
+   background:#fbfcfd;
+   transform:scale(1.002);
+   }
+   /*=========================================================
+   OWNER CARD ANIMATION
+   =========================================================*/
+   .owner-card{
+   animation:fadeOwner .6s ease;
+   }
+   @keyframes fadeOwner{
+   from{
+   opacity:0;
+   transform:translateX(-20px);
+   }
+   to{
+   opacity:1;
+   transform:none;
+   }
+   }
+   /*=========================================================
+   ESTATE CARD
+   =========================================================*/
+   .estate-card{
+   display:flex;
+   align-items:center;
+   gap:1.25rem;
+   min-width:0px;
+   width:100%;
+   }
+   /*=========================================================
+   SVG CIRCLE
+   =========================================================*/
+   .estate-circle{
+   position:relative;
+   width:5.6rem;
+   height:5.6rem;
+   flex-shrink:0;
+   }
+   .estate-circle svg{
+   transform:rotate(-90deg);
+   }
+   .circle-bg{
+   fill:none;
+   stroke:#ececec;
+   stroke-width:8;
+   }
+   .circle-progress{
+   fill:none;
+   stroke:#17b26a;
+   stroke-width:8;
+   stroke-linecap:round;
+   transition:stroke-dashoffset 1.2s ease;
+   }
+   .circle-text{
+   position:absolute;
+   inset:0;
+   display:flex;
+   align-items:center;
+   justify-content:center;
+   font-size:1rem;
+   font-weight:700;
+   color:#0f8b43;
+   }
+   /*=========================================================
+   ESTATE INFO
+   =========================================================*/
+   .estate-info{
+   flex:1;
+   }
+   .estate-item{
+   display:flex;
+   align-items:center;
+   gap:.625rem;
+   margin-bottom:.625rem;
+   font-size:.875rem;
+   }
+   .estate-item i{
+   font-size:1.125rem;
+   width:1.375rem;
+   }
+   .estate-item span{
+   flex:1;
+   color:#666;
+   }
+   .estate-item strong{
+   font-weight:700;
+   color:#222;
+   }
+   /*=========================================================
+   PROGRESS BAR
+   =========================================================*/
+   .estate-progress{
+   height:.5rem;
+   border-radius:20px;
+   overflow:hidden;
+   background:#ececec;
+   }
+   .estate-progress .progress-bar{
+   transition:width 1.5s ease;
+   }
+   /*=========================================================
+   ANIMATION
+   =========================================================*/
+   .estate-card{
+   animation:estateFade .8s ease;
+   }
+   @keyframes estateFade{
+   from{
+   opacity:0;
+   transform:translateY(20px);
+   }
+   to{
+   opacity:1;
+   transform:none;
+   }
+   }
+   /*=========================================================
+   TAGGING CARD
+   =========================================================*/
+   .tagging-card{
+   display:flex;
+   align-items:center;
+   gap:1.1rem;
+   min-width:0;
+   }
+   /*=========================================================
+   TAGGING SVG
+   =========================================================*/
+   .tagging-circle{
+   position:relative;
+   width:5.1rem;
+   height:5.1rem;
+   flex-shrink:0;
+   }
+   .tagging-circle svg{
+   transform:rotate(-90deg);
+   }
+   .tag-bg{
+   fill:none;
+   stroke:#ffe8c2;
+   stroke-width:8;
+   }
+   .tag-progress{
+   fill:none;
+   stroke:#ff9800;
+   stroke-width:8;
+   stroke-linecap:round;
+   transition:stroke-dashoffset 1s ease;
+   }
+   .tag-count{
+   position:absolute;
+   inset:0;
+   display:flex;
+   align-items:center;
+   justify-content:center;
+   font-size:1.25rem;
+   font-weight:700;
+   color:#ff9800;
+   }
+   /*=========================================================
+   TAGGING INFO
+   =========================================================*/
+   .tagging-info{
+   flex:1;
+   }
+   .tagging-info h6{
+   margin:0;
+   font-size:1rem;
+   font-weight:700;
+   color:#333;
+   }
+   .tagging-info p{
+   margin:.25rem 0 .625rem;
+   color:#777;
+   font-size:.8125rem;
+   }
+   .tag-stat{
+   display:flex;
+   align-items:center;
+   gap:.5rem;
+   margin-bottom:.5rem;
+   font-size:.875rem;
+   }
+   .tag-stat i{
+   color:#ff9800;
+   font-size:1.06rem;
+   }
+   /*=========================================================
+   ADMIN VERIFICATION
+   =========================================================*/
+   /*=========================================================
+ADMIN VERIFICATION
+=========================================================*/
+
+.verification-card{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-start;
+    text-align:center;
+    gap:12px;
+    min-width:170px;
+}
+
+.verification-icon{
+    width:65px;
+    height:65px;
+    border-radius:50%;
+    background:#f7f7f7;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    box-shadow:0 6px 18px rgba(0,0,0,.08);
+
+    margin-top:-10px;
+}
+
+.verification-info{
+    width:100%;
+    text-align:center;
+}
+   /*=========================================================
+   ICON
+   =========================================================*/
+   .verification-icon{
+   width:3.75rem;
+   height:3.75rem;
+   border-radius:50%;
+   background:#f7f7f7;
+   display:flex;
+   justify-content:center;
+   align-items:center;
+   box-shadow:0 5px 18px rgba(0,0,0,.08);
+   }
+   .verification-icon i{
+   font-size:1.75rem;
+   }
+   /*=========================================================
+   COLORS
+   =========================================================*/
+   .verified-icon{
+   color:#16a34a;
+   animation:verifiedPulse 2s infinite;
+   }
+   .pending-icon{
+   color:#f59e0b;
+   }
+   .no-doc-icon{
+   color:#9ca3af;
+   }
+   /*=========================================================
+   TEXT
+   =========================================================*/
+   .verification-info{
+   display:flex;
+   flex-direction:column;
+   gap:.5rem;
+   }
+   .verification-info small{
+   color:#666;
+   font-size:.8125rem;
+   }
+   /*=========================================================
+   BADGES
+   =========================================================*/
+   .verification-info .badge{
+   width:max-content;
+   padding:.5rem .875rem;
+   font-size:.8125rem;
+   border-radius:50px;
+   font-weight:600;
+   }
+   /*=========================================================
+   ANIMATION
+   =========================================================*/
+   @keyframes verifiedPulse{
+   0%{
+   transform:scale(1);
+   }
+   50%{
+   transform:scale(1.12);
+   }
+   100%{
+   transform:scale(1);
+   }
+   }
+   /*=========================================================
+   SUPER ADMIN CARD
+   =========================================================*/
+   /*=========================================================
+SUPER ADMIN
+=========================================================*/
+
+.superadmin-card{
+
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-start;
+    text-align:center;
+    gap:12px;
+
+    min-width:0;
+
+}
+
+.superadmin-icon{
+
+    width:65px;
+    height:65px;
+
+    border-radius:50%;
+
+    background:#eef6ff;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    margin-top:-10px;
+
+    box-shadow:0 6px 18px rgba(0,0,0,.08);
+
+}
+
+.superadmin-info{
+
+    width:100%;
+    text-align:center;
+
+}
+   /*=========================================================
+   ICON
+   =========================================================*/
+   .superadmin-icon{
+   width:3.75rem;
+   height:3.75rem;
+   border-radius:50%;
+   background:#eef6ff;
+   display:flex;
+   justify-content:center;
+   align-items:center;
+   box-shadow:0 6px 18px rgba(0,0,0,.08);
+   }
+   .superadmin-icon i{
+   font-size:1.875rem;
+   }
+   /*=========================================================
+   COLORS
+   =========================================================*/
+   .shield-pending{
+   color:#0d6efd;
+   animation:shieldPulse 2.2s infinite;
+   }
+   .shield-wait{
+   color:#ff9800;
+   }
+   /*=========================================================
+   INFO
+   =========================================================*/
+   .superadmin-info{
+   display:flex;
+   flex-direction:column;
+   gap:.5rem;
+   }
+   .superadmin-info small{
+   color:#666;
+   font-size:.8125rem;
+   }
+   .superadmin-info .badge{
+   width:max-content;
+   border-radius:40px;
+   padding:.5rem 1rem;
+   font-size:.8125rem;
+   font-weight:600;
+   }
+   /*=========================================================
+   Animation
+   =========================================================*/
+   @keyframes shieldPulse{
+   0%{
+   transform:scale(1);
+   }
+   50%{
+   transform:scale(1.12);
+   }
+   100%{
+   transform:scale(1);
+   }
+   }
+   /*=========================================================
+   DOCUMENT CARD
+   =========================================================*/
+   .document-card{
+   display:flex;
+   align-items:flex-start;
+   gap:1rem;
+   min-width:0;
+   }
+   .document-icon{
+   width:4.06rem;
+   height:4.06rem;
+   border-radius:50%;
+   background:#f3fff5;
+   display:flex;
+   justify-content:center;
+   align-items:center;
+   box-shadow:0 8px 20px rgba(0,0,0,.08);
+   }
+   .document-icon i{
+   font-size:1.875rem;
+   }
+   /*=========================================================
+   Folder Animation
+   =========================================================*/
+   .folder-animation{
+   animation:folderBounce 2s infinite;
+   }
+   @keyframes folderBounce{
+   0%{
+   transform:translateY(0);
+   }
+   50%{
+   transform:translateY(-6px);
+   }
+   100%{
+   transform:translateY(0);
+   }
+   }
+   .document-details{
+   width:100%;
+   }
+   .document-details .badge{
+   font-size:.75rem;
+   padding:.44rem .75rem;
+   border-radius:30px;
+   }
+   .document-details .btn{
+   border-radius:.625rem;
+   font-size:.8125rem;
+   font-weight:600;
+   }
+   /*=========================================================
+   ACTION PANEL
+   =========================================================*/
+   /*=========================================================
+ACTION PANEL
+=========================================================*/
+
+.action-panel{
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+    gap:10px;
+
+}
+
+.action-row{
+
+    display:flex;
+
+    gap:10px;
+
+}
+
+.action-btn{
+
+    width:42px;
+
+    height:42px;
+
+    border-radius:50%;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    color:#fff;
+
+    text-decoration:none;
+
+    transition:.30s;
+
+    box-shadow:0 8px 18px rgba(0,0,0,.12);
+
+}
+
+.action-btn:hover{
+
+    transform:translateY(-4px) scale(1.08);
+
+}
+   .action-btn{
+   width:2.6rem;
+   height:2.6rem;
+   border-radius:50%;
+   display:flex;
+   align-items:center;
+   justify-content:center;
+   color:white;
+   text-decoration:none;
+   font-size:1.125rem;
+   transition:.35s;
+   box-shadow:0 8px 18px rgba(0,0,0,.12);
+   }
+   .action-btn:hover{
+   transform:translateY(-6px) scale(1.08);
+   color:white;
+   }
+   .action-view{
+   background:#0d6efd;
+   }
+   .action-view:hover{
+   background:#0b5ed7;
+   }
+   .action-edit{
+   background:#198754;
+   }
+   .action-edit:hover{
+   background:#157347;
+   }
+   .action-document{
+   background:#fd7e14;
+   }
+   .action-document:hover{
+   background:#e86d09;
+   }
+   .action-delete{
+   background:#dc3545;
+   }
+   .action-delete:hover{
+   background:#bb2d3b;
+   }
+   /*=========================================================
+   Ripple Animation
+   =========================================================*/
+   .action-btn{
+   position:relative;
+   overflow:hidden;
+   }
+   .action-btn::after{
+   content:"";
+   position:absolute;
+   width:0;
+   height:0;
+   border-radius:50%;
+   background:rgba(255,255,255,.35);
+   transform:translate(-50%,-50%);
+   left:50%;
+   top:50%;
+   transition:.45s;
+   }
+   .action-btn:hover::after{
+   width:7.5rem;
+   height:7.5rem;
+   }
+   /*=========================================================
+   PAGINATION FOOTER
+   =========================================================*/
+   .dashboard-footer{
+   background:#ffffff;
+   border-radius:.9rem;
+   padding:1.25rem 1.5rem;
+   box-shadow:0 8px 24px rgba(0,0,0,.08);
+   }
+   .record-info{
+   font-weight:600;
+   color:#495057;
+   }
+   .record-info i{
+   color:#198754;
+   margin-right:.375rem;
+   }
+   .page-status{
+   font-weight:600;
+   color:#495057;
+   }
+   .page-status i{
+   color:#0d6efd;
+   margin-right:.375rem;
+   }
+   /*=========================================================
+   PAGINATION
+   =========================================================*/
+   .pagination-modern{
+   gap:.5rem;
+   }
+   .pagination-modern .page-link{
+   border:none;
+   width:2.6rem;
+   height:2.6rem;
+   border-radius:.75rem;
+   display:flex;
+   align-items:center;
+   justify-content:center;
+   background:#f8f9fa;
+   color:#495057;
+   font-weight:600;
+   transition:.3s;
+   box-shadow:0 5px 15px rgba(0,0,0,.05);
+   }
+   .pagination-modern .page-link:hover{
+   background:#198754;
+   color:white;
+   transform:translateY(-3px);
+   }
+   .pagination-modern .page-item.active .page-link{
+   background:#198754;
+   color:white;
+   }
+   .pagination-modern .page-item.disabled .page-link{
+   opacity:.4;
+   }
+   /*=========================================================
+   DASHBOARD SUMMARY CARDS
+   =========================================================*/
+   .summary-card{
+   background:#fff;
+   border-radius:1.125rem;
+   padding:1.5625rem;
+   display:flex;
+   align-items:center;
+   justify-content:space-between;
+   box-shadow:0 10px 25px rgba(0,0,0,.08);
+   transition:.35s;
+   overflow:hidden;
+   position:relative;
+   }
+   .summary-card:hover{
+   transform:translateY(-8px);
+   box-shadow:0 20px 40px rgba(0,0,0,.15);
+   }
+   .summary-card::before{
+   content:"";
+   position:absolute;
+   width:9.375rem;
+   height:9.375rem;
+   right:-2.5rem;
+   top:-2.5rem;
+   border-radius:50%;
+   opacity:.08;
+   }
+   .total-card::before{
+   background:#198754;
+   }
+   .area-card::before{
+   background:#0d6efd;
+   }
+   .allocated-card::before{
+   background:#fd7e14;
+   }
+   .remaining-card::before{
+   background:#6f42c1;
+   }
+   .summary-icon{
+   width:4.5rem;
+   height:4.5rem;
+   border-radius:50%;
+   display:flex;
+   align-items:center;
+   justify-content:center;
+   color:#fff;
+   font-size:1.875rem;
+   }
+   .total-card .summary-icon{
+   background:#198754;
+   }
+   .area-card .summary-icon{
+   background:#0d6efd;
+   }
+   .allocated-card .summary-icon{
+   background:#fd7e14;
+   }
+   .remaining-card .summary-icon{
+   background:#6f42c1;
+   }
+   .summary-content{
+   text-align:right;
+   }
+   .summary-content small{
+   display:block;
+   color:#6c757d;
+   font-weight:600;
+   }
+   .summary-content h2{
+   margin:.5rem 0;
+   font-weight:700;
+   }
+   .summary-content span{
+   font-size:.8125rem;
+   color:#6c757d;
+   }
+   .growth{
+   color:#198754 !important;
+   font-weight:600;
+   }
+</style>
+
+<div class="land-dashboard">
+
+    <!-- ================= HEADER ================= -->
+
+    <div class="dashboard-header">
+
+        <div>
+
+            <h2 class="dashboard-title">
+                Land Records
+            </h2>
+
+            <div class="dashboard-subtitle">
+
+                Estate Management Dashboard
+
+            </div>
+
+        </div>
+
+        <a href="{% url 'lands:land_create' %}"
+           class="btn add-land-btn">
+
+            <i class="bi bi-plus-lg"></i>
+
+            Add Land
+
+        </a>
+
+    </div>
+
+    <!-- ================= MAIN CARD ================= -->
+
+    <div class="dashboard-card">
+
+        <div class="table-responsive">
+
+            <table class="table land-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th style="min-width:0">
+                            Owner & Location
+                        </th>
+
+                        <th style="min-width:0">
+                            Estate Details
+                        </th>
+
+                        <th style="min-width:0">
+                            Pending Tagging
+                        </th>
+
+                        <th style="min-width:0">
+                            Admin Verification
+                        </th>
+
+                        <th style="max-width:10">
+                            Super Admin Verification
+                        </th>
+
+                        <th style="min-width:0">
+                            Add Documents
+                        </th>
+
+                        <th style="min-width:0">
+                            Comment & Actions
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for land in lands %}
+
+                    <!-- Row starts in Part-02 ------------------------------------------------------------------------------->
+					<!-- =========================================================
+							ROW START
+					========================================================== -->
+
+					<tr class="land-row">
+
+						<!-- =====================================================
+								OWNER & LOCATION
+						====================================================== -->
+
+						<td>
+
+							<div class="owner-card">
+
+								<!-- Avatar -->
+
+								<div class="owner-avatar">
+
+									{{ land.owner_name|slice:":1"|upper }}
+
+								</div>
+
+								<!-- Owner Information -->
+
+								<div class="owner-info">
+
+									<h5>
+
+										{{ land.owner_name }}
+
+									</h5>
+
+									<div class="owner-office">
+
+										{{ land.rd_office }}
+
+									</div>
+
+									<div class="location-item">
+
+										<i class="bi bi-geo-alt-fill"></i>
+
+										{{ land.division }},
+
+										{{ land.district }}
+
+									</div>
+
+									<div class="location-item">
+
+										<i class="bi bi-pin-map-fill"></i>
+
+										{{ land.upazila }}
+
+									</div>
+
+									<span class="land-id">
+
+										ID : {{ land.id }}
+
+									</span>
+
+								</div>
+
+							</div>
+
+						</td>
+
+						<!-- =====================================================
+								ESTATE DETAILS
+								(Starts Part-03)
+						====================================================== -->	
+						<td>
+
+							<div class="estate-card">
+
+								<!-- ========================= -->
+								<!-- Circular Progress -->
+								<!-- ========================= -->
+
+								<div class="estate-circle">
+
+									<svg width="90" height="90">
+
+										<!-- Background -->
+
+										<circle
+											cx="45"
+											cy="45"
+											r="36"
+											class="circle-bg"/>
+
+										<!-- Progress -->
+
+										<circle
+											cx="45"
+											cy="45"
+											r="36"
+											class="circle-progress"
+
+											style="
+												stroke-dasharray:226;
+												stroke-dashoffset:calc(
+													226 - (226 * {{ land.utilization_percentage }}) / 100			);
+											">
+
+										</circle>
+
+									</svg>
+
+									<div class="circle-text">
+
+										{{ land.utilization_percentage }}%
+
+									</div>
+
+								</div>
+
+								<!-- ========================= -->
+								<!-- Plot Information -->
+								<!-- ========================= -->
+
+								<div class="estate-info">
+
+									<div class="estate-item">
+
+										<i class="bi bi-grid-3x3-gap-fill text-primary"></i>
+
+										<span>Total Plot</span>
+
+										<strong>
+
+											{{ land.total_plots }}
+
+										</strong>
+
+									</div>
+
+									<div class="estate-item">
+
+										<i class="bi bi-check-circle-fill text-success"></i>
+
+										<span>Allocated</span>
+
+										<strong>
+
+											{{ land.allocated_plots }}
+
+										</strong>
+
+									</div>
+
+									<div class="estate-item">
+
+										<i class="bi bi-hourglass-split text-warning"></i>
+
+										<span>Remaining</span>
+
+										<strong>
+
+											{{ land.remaining_plots }}
+
+										</strong>
+
+									</div>
+
+									<div class="estate-item">
+
+										<i class="bi bi-rulers text-info"></i>
+
+										<span>Area</span>
+
+										<strong>
+
+											{{ land.total_area }} Acres
+
+										</strong>
+
+									</div>
+
+								</div>
+
+								<!-- ========================= -->
+								<!-- Progress -->
+								<!-- ========================= -->
+
+								<div class="progress mt-3 estate-progress">
+
+									<div
+										class="progress-bar bg-success"
+
+										role="progressbar"
+
+										style="width: {{ land.utilization_percentage }}%;"
+
+										aria-valuenow="{{ land.utilization_percentage }}"
+
+										aria-valuemin="0"
+
+										aria-valuemax="100">
+
+									</div>
+
+								</div>
+
+							</div>
+
+						</td>
+
+						<!-- =====================================================
+								PENDING TAGGING
+								Starts Part-04
+						====================================================== -->
+						<td>
+
+							<div class="tagging-card">
+
+								<!-- ========================= -->
+								<!-- Orange Progress Circle -->
+								<!-- ========================= -->
+
+								<div class="tagging-circle">
+
+									<svg width="82" height="82">
+
+										<circle
+											cx="41"
+											cy="41"
+											r="32"
+											class="tag-bg"/>
+
+										<circle
+											cx="41"
+											cy="41"
+											r="32"
+											class="tag-progress"
+
+											style="
+											stroke-dasharray:201;
+											stroke-dashoffset:
+											{% if land.documents.count %}
+												calc(201 - (201 * 100) / 100)
+											{% else %}
+												201
+											{% endif %}
+											;">
+
+										</circle>
+
+									</svg>
+
+									<div class="tag-count">
+
+										{{ land.documents.count }}
+
+									</div>
+
+								</div>
+
+								<!-- ========================= -->
+								<!-- Information -->
+								<!-- ========================= -->
+
+								<div class="tagging-info">
+
+									<h6>
+
+										Pending Tagging
+
+									</h6>
+
+									<p>
+
+										Uploaded Documents
+
+									</p>
+
+									<div class="tag-stat">
+
+										<i class="bi bi-files"></i>
+
+										<strong>
+
+											{{ land.documents.count }}
+
+										</strong>
+
+										Documents
+
+									</div>
+
+									<div class="tag-stat">
+
+										<i class="bi bi-tags-fill"></i>
+
+										Tagging Required
+
+									</div>
+
+								</div>
+
+							</div>
+
+						</td>
+
+						<!-- =====================================================
+								ADMIN VERIFICATION
+								Starts Part-05
+						====================================================== -->
+						<td>
+
+							<div class="verification-card">
+
+								<!-- ========================= -->
+								<!-- Verification Icon -->
+								<!-- ========================= -->
+
+								<div class="verification-icon">
+
+									{% if land.documents.exists %}
+
+										{% with verified_docs=land.documents.all %}
+
+											{% if verified_docs|length %}
+
+												<i class="bi bi-patch-check-fill verified-icon"></i>
+
+											{% else %}
+
+												<i class="bi bi-clock-history pending-icon"></i>
+
+											{% endif %}
+
+										{% endwith %}
+
+									{% else %}
+
+										<i class="bi bi-exclamation-circle-fill no-doc-icon"></i>
+
+									{% endif %}
+
+								</div>
+                                
+								<!-- ========================= -->
+								<!-- Verification Details -->
+								<!-- ========================= -->
+
+								<div class="verification-info">
+
+									{% if land.documents.count == 0 %}
+
+										<span class="badge bg-secondary">
+
+											No Documents
+
+										</span>
+
+										<small>
+
+											Upload documents first
+
+										</small>
+
+									{% else %}
+
+										{% if land.documents.first.verified %}
+
+											<span class="badge bg-success">
+
+												Admin Verified
+
+											</span>
+
+											<small>
+
+												All required documents verified
+
+											</small>
+
+										{% else %}
+
+											<span class="badge bg-warning text-dark">
+
+												Pending Review
+
+											</span>
+
+											<small>
+
+												Waiting for Admin verification
+
+											</small>
+
+										{% endif %}
+
+									{% endif %}
+
+								</div>
+
+							</div>
+
+						</td>
+
+						<!-- =====================================================
+								SUPER ADMIN VERIFICATION
+								Starts Part-06
+						====================================================== -->
+						<td>
+
+							<div class="superadmin-card">
+
+								<!-- ============================== -->
+								<!-- Shield Icon -->
+								<!-- ============================== -->
+
+								<div class="superadmin-icon">
+
+									{% if land.documents.count == 0 %}
+
+										<i class="bi bi-shield-x text-secondary"></i>
+
+									{% elif land.documents.first.verified %}
+
+										<i class="bi bi-shield-lock-fill shield-pending"></i>
+
+									{% else %}
+
+										<i class="bi bi-shield-fill-exclamation shield-wait"></i>
+
+									{% endif %}
+
+								</div>
+
+								<!-- ============================== -->
+								<!-- Status -->
+								<!-- ============================== -->
+
+								<div class="superadmin-info">
+
+									{% if land.documents.count == 0 %}
+
+										<span class="badge bg-secondary">
+
+											No Submission
+
+										</span>
+
+										<small>
+
+											Documents have not been uploaded.
+
+										</small>
+
+									{% elif land.documents.first.verified %}
+
+										<span class="badge bg-info text-dark">
+
+											Awaiting Super Admin
+
+										</span>
+
+										<small>
+
+											Waiting for final approval.
+
+										</small>
+
+									{% else %}
+
+										<span class="badge bg-light text-dark border">
+
+											Waiting for Admin
+
+										</span>
+
+										<small>
+
+											Admin verification required first.
+
+										</small>
+
+									{% endif %}
+
+								</div>
+
+							</div>
+
+						</td>
+
+						<!-- =====================================================
+								DOCUMENTS
+								Starts Part-07
+						====================================================== -->
+						<!-- =====================================================
+								DOCUMENT COLUMN
+								Starts Part-07
+						====================================================== -->
+
+						<td>
+
+							<div class="document-card">
+
+								<!-- Animated Icon -->
+
+								<div class="document-icon">
+
+									{% if land.documents.count == 0 %}
+
+										<i class="bi bi-folder-x text-secondary"></i>
+
+									{% else %}
+
+										<i class="bi bi-folder2-open text-success folder-animation"></i>
+
+									{% endif %}
+
+								</div>
+
+								<div class="document-details">
+
+									<!-- Total Documents -->
+
+									<div class="mb-2">
+
+										<span class="badge bg-primary">
+
+											{{ land.documents.count }} Document{{ land.documents.count|pluralize }}
+
+										</span>
+
+									</div>
+
+									<!-- Total Pages -->
+
+									<div class="mb-2">
+
+										<span class="badge bg-info text-dark">
+
+											{% with total_pages=0 %}
+												{{ land.documents.all|length }} Record(s)
+											{% endwith %}
+										</span>
+
+									</div>
+
+									<!-- Verification -->
+
+									<div class="mb-3">
+
+										{% if land.documents.count == 0 %}
+
+											<span class="badge bg-secondary">
+
+												Empty
+
+											</span>
+
+										{% elif land.documents.first.verified %}
+
+											<span class="badge bg-success">
+
+												Verified
+
+											</span>
+
+										{% else %}
+
+											<span class="badge bg-warning text-dark">
+
+												Pending
+
+											</span>
+
+										{% endif %}
+
+									</div>
+
+									<!-- Buttons -->
+
+									<div class="d-grid gap-2">
+
+										<a href="{% url 'documents:document_list' land.pk %}"
+
+										   class="btn btn-success btn-sm">
+
+											<i class="bi bi-folder2-open"></i>
+
+											View Documents
+
+										</a>
+
+										<a href="{% url 'documents:document_create' land.pk %}"
+
+										   class="btn btn-outline-primary btn-sm">
+
+											<i class="bi bi-cloud-upload"></i>
+
+											Upload
+
+										</a>
+
+									</div>
+
+								</div>
+
+							</div>
+
+						</td>
+
+						<!-- =====================================================
+								ACTION BUTTONS
+								Starts Part-08
+						====================================================== -->
+						<!-- =====================================================
+								ACTION CENTER
+								Starts Part-08
+						====================================================== -->
+
+						<td class="text-center">
+
+							<div class="action-panel">
+
+                                <div class="action-row">
+
+                                    <!-- View -->
+
+                                    <a href="{% url 'lands:land_update' land.pk %}"
+                                    class="action-btn action-view"
+                                    title="View">
+
+                                        <i class="bi bi-eye-fill"></i>
+
+                                    </a>
+
+                                    <!-- Edit -->
+
+                                    <a href="{% url 'lands:land_update' land.pk %}"
+                                    class="action-btn action-edit"
+                                    title="Edit">
+
+                                        <i class="bi bi-pencil-square"></i>
+
+                                    </a>
+
+                                </div>
+
+                                <div class="action-row">
+
+                                    <!-- Documents -->
+
+                                    <a href="{% url 'documents:document_list' land.pk %}"
+                                    class="action-btn action-document"
+                                    title="Documents">
+
+                                        <i class="bi bi-folder2-open"></i>
+
+                                    </a>
+
+                                    <!-- Delete -->
+
+                                    <a href="{% url 'lands:land_delete' land.pk %}"
+                                    class="action-btn action-delete"
+                                    title="Delete">
+
+                                        <i class="bi bi-trash-fill"></i>
+
+                                    </a>
+
+                                </div>
+
+                            </div>
+
+						</td>
+
+						<!-- =====================================================
+								Pagination
+								Starts Part-09
+						====================================================== -->
+						<!-- =====================================================
+						PROFESSIONAL PAGINATION FOOTER
+						Starts Part-09
+				====================================================== -->
+                {% empty %}
+
+                <tr>
+                    <td colspan="20" class="text-center">
+                        No land records found.
+                    </td>
+                </tr>
+
+                {% endfor %}
+				</tbody>
+
+				</table>
+
+				</div>
+
+				<!-- Dashboard Footer -->
+
+				<div class="dashboard-footer mt-4">
+
+					<div class="row align-items-center">
+
+						<!-- Left Side -->
+
+						<div class="col-md-4 mb-3 mb-md-0">
+
+							<div class="record-info">
+
+								<i class="bi bi-database-fill"></i>
+
+								Showing
+
+								<strong>
+
+									{{ page_obj.start_index }}
+
+								</strong>
+
+								-
+
+								<strong>
+
+									{{ page_obj.end_index }}
+
+								</strong>
+
+								of
+
+								<strong>
+
+									{{ page_obj.paginator.count }}
+
+								</strong>
+
+								Land Records
+
+							</div>
+
+						</div>
+
+						<!-- Center -->
+
+						<div class="col-md-4 text-center mb-3 mb-md-0">
+
+							{% if page_obj.has_other_pages %}
+
+							<nav>
+
+								<ul class="pagination pagination-modern justify-content-center">
+
+									<!-- Previous -->
+
+									{% if page_obj.has_previous %}
+
+									<li class="page-item">
+
+										<a class="page-link"
+
+										   href="?page={{ page_obj.previous_page_number }}">
+
+											<i class="bi bi-chevron-left"></i>
+
+										</a>
+
+									</li>
+
+									{% else %}
+
+									<li class="page-item disabled">
+
+										<span class="page-link">
+
+											<i class="bi bi-chevron-left"></i>
+
+										</span>
+
+									</li>
+
+									{% endif %}
+
+									<!-- Pages -->
+
+									{% for num in page_obj.paginator.page_range %}
+
+										{% if page_obj.number == num %}
+
+											<li class="page-item active">
+
+												<span class="page-link">
+
+													{{ num }}
+
+												</span>
+
+											</li>
+
+										{% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+
+											<li class="page-item">
+
+												<a class="page-link"
+
+												   href="?page={{ num }}">
+
+													{{ num }}
+
+												</a>
+
+											</li>
+
+										{% endif %}
+
+									{% endfor %}
+
+									<!-- Next -->
+
+									{% if page_obj.has_next %}
+
+									<li class="page-item">
+
+										<a class="page-link"
+
+										   href="?page={{ page_obj.next_page_number }}">
+
+											<i class="bi bi-chevron-right"></i>
+
+										</a>
+
+									</li>
+
+									{% else %}
+
+									<li class="page-item disabled">
+
+										<span class="page-link">
+
+											<i class="bi bi-chevron-right"></i>
+
+										</span>
+
+									</li>
+
+									{% endif %}
+
+								</ul>
+
+							</nav>
+
+							{% endif %}
+
+						</div>
+
+						<!-- Right Side -->
+
+						<div class="col-md-4 text-md-end text-center">
+
+							<div class="page-status">
+
+								<i class="bi bi-file-earmark-text-fill"></i>
+
+								Page
+
+								<strong>
+
+									{{ page_obj.number }}
+
+								</strong>
+
+								of
+
+								<strong>
+
+									{{ page_obj.paginator.num_pages }}
+
+								</strong>
+
+							</div>
+
+						</div>
+
+					</div>
+
+				</div>
+
+				<!-- =====================================================
+						CSS
+						Add to Part-01 CSS Section
+				====================================================== -->
+<!-- ==========================================================
+                    LAND DASHBOARD SUMMARY
+                    Starts Part-10
+=========================================================== -->
+
+<div class="row mb-4">
+
+    <!-- Total Estates -->
+
+    <div class="col-xl-3 col-md-6 mb-4">
+
+        <div class="summary-card total-card">
+
+            <div class="summary-icon">
+
+                <i class="bi bi-buildings-fill"></i>
+
+            </div>
+
+            <div class="summary-content">
+
+                <small>Total Estates</small>
+
+                <h2>{{ lands.paginator.count }}</h2>
+
+                <span class="growth">
+
+                    <i class="bi bi-arrow-up-circle-fill"></i>
+
+                    Active Records
+
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Total Area -->
+
+    <div class="col-xl-3 col-md-6 mb-4">
+
+        <div class="summary-card area-card">
+
+            <div class="summary-icon">
+
+                <i class="bi bi-globe-central-south-asia"></i>
+
+            </div>
+
+            <div class="summary-content">
+
+                <small>Total Area</small>
+
+                <h2>
+
+                    {{ total_area|default:"0" }}
+
+                </h2>
+
+                <span>
+
+                    Acres
+
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Allocated -->
+
+    <div class="col-xl-3 col-md-6 mb-4">
+
+        <div class="summary-card allocated-card">
+
+            <div class="summary-icon">
+
+                <i class="bi bi-check-circle-fill"></i>
+
+            </div>
+
+            <div class="summary-content">
+
+                <small>Allocated Plots</small>
+
+                <h2>
+
+                    {{ allocated_plots|default:"0" }}
+
+                </h2>
+
+                <span>
+
+                    Allocated
+
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Remaining -->
+
+    <div class="col-xl-3 col-md-6 mb-4">
+
+        <div class="summary-card remaining-card">
+
+            <div class="summary-icon">
+
+                <i class="bi bi-pie-chart-fill"></i>
+
+            </div>
+
+            <div class="summary-content">
+
+                <small>Remaining Plots</small>
+
+                <h2>
+
+                    {{ remaining_plots|default:"0" }}
+
+                </h2>
+
+                <span>
+
+                    Available
+
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ==========================================================
+                    END PART-10
+=========================================================== -->
+<!-- ==========================================================
+                    PART 12
+        PAGINATION + TABLE FOOTER + TOOLS
+=========================================================== -->
+
+<div class="card border-0 shadow-sm mt-4">
+
+    <div class="card-body">
+
+        <div class="row align-items-center">
+
+            <!-- Left -->
+
+            <div class="col-lg-4 mb-3 mb-lg-0">
+
+                <div class="d-flex align-items-center">
+
+                    <i class="bi bi-info-circle-fill text-primary me-2 fs-5"></i>
+
+                    <span class="fw-semibold">
+
+                        Showing
+
+                        <strong>
+
+                            {{ page_obj.start_index }}
+
+                        </strong>
+
+                        -
+
+                        <strong>
+
+                            {{ page_obj.end_index }}
+
+                        </strong>
+
+                        of
+
+                        <strong>
+
+                            {{ page_obj.paginator.count }}
+
+                        </strong>
+
+                        Land Records
+
+                    </span>
+
+                </div>
+
+            </div>
+
+            <!-- Center -->
+
+            <div class="col-lg-4 text-center mb-3 mb-lg-0">
+
+                {% if page_obj.has_other_pages %}
+
+                <nav>
+
+                    <ul class="pagination pagination-sm justify-content-center mb-0">
+
+                        {% if page_obj.has_previous %}
+
+                        <li class="page-item">
+
+                            <a class="page-link"
+
+                               href="?page=1">
+
+                                <i class="bi bi-chevron-double-left"></i>
+
+                            </a>
+
+                        </li>
+
+                        <li class="page-item">
+
+                            <a class="page-link"
+
+                               href="?page={{ page_obj.previous_page_number }}">
+
+                                <i class="bi bi-chevron-left"></i>
+
+                            </a>
+
+                        </li>
+
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+
+                            {% if num == page_obj.number %}
+
+                                <li class="page-item active">
+
+                                    <span class="page-link">
+
+                                        {{ num }}
+
+                                    </span>
+
+                                </li>
+
+                            {% elif num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+
+                                <li class="page-item">
+
+                                    <a class="page-link"
+
+                                       href="?page={{ num }}">
+
+                                        {{ num }}
+
+                                    </a>
+
+                                </li>
+
+                            {% endif %}
+
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+
+                        <li class="page-item">
+
+                            <a class="page-link"
+
+                               href="?page={{ page_obj.next_page_number }}">
+
+                                <i class="bi bi-chevron-right"></i>
+
+                            </a>
+
+                        </li>
+
+                        <li class="page-item">
+
+                            <a class="page-link"
+
+                               href="?page={{ page_obj.paginator.num_pages }}">
+
+                                <i class="bi bi-chevron-double-right"></i>
+
+                            </a>
+
+                        </li>
+
+                        {% endif %}
+
+                    </ul>
+
+                </nav>
+
+                {% endif %}
+
+            </div>
+
+            <!-- Right -->
+
+            <div class="col-lg-4 text-lg-end">
+
+                <div class="btn-group">
+
+                    <button
+                        class="btn btn-outline-primary"
+                        onclick="window.print()">
+
+                        <i class="bi bi-printer"></i>
+
+                        Print
+
+                    </button>
+
+                    <button
+                        class="btn btn-outline-success"
+                        onclick="location.reload();">
+
+                        <i class="bi bi-arrow-clockwise"></i>
+
+                        Refresh
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ==========================================================
+                    PAGE SIZE
+=========================================================== -->
+
+<div class="d-flex justify-content-end align-items-center mt-3">
+
+    <label class="me-2 fw-semibold">
+
+        <i class="bi bi-list-ol"></i>
+
+        Rows Per Page
+
+    </label>
+
+    <select
+        class="form-select"
+        id="pageSize"
+        style="width:120px">
+
+        <option>10</option>
+
+        <option>25</option>
+
+        <option>50</option>
+
+        <option>100</option>
+
+    </select>
+
+</div>
+
+<!-- ==========================================================
+                    EXPORT BUTTONS
+=========================================================== -->
+
+<div class="mt-4 d-flex justify-content-end gap-2 flex-wrap">
+
+    <button
+        class="btn btn-success"
+        id="exportCSV">
+
+        <i class="bi bi-filetype-csv"></i>
+
+        Export CSV
+
+    </button>
+
+    <button
+        class="btn btn-danger"
+        id="exportPDF">
+
+        <i class="bi bi-file-earmark-pdf-fill"></i>
+
+        Export PDF
+
+    </button>
+
+    <button
+        class="btn btn-primary"
+        id="exportExcel">
+
+        <i class="bi bi-file-earmark-excel-fill"></i>
+
+        Export Excel
+
+    </button>
+
+</div>
+<!-- ==========================================================
+                    PART 14
+        PROFESSIONAL UTILITIES & DASHBOARD TOOLS
+=========================================================== -->
+
+<!-- ==========================================
+        Floating Action Button
+========================================== -->
+
+<div class="fab-container">
+
+    <button
+        class="btn btn-success fab-main"
+        id="fabButton"
+        title="Quick Actions">
+
+        <i class="bi bi-plus-lg"></i>
+
+    </button>
+
+    <div class="fab-menu" id="fabMenu">
+
+        <a href="{% url 'lands:land_create' %}"
+           class="btn btn-primary"
+           data-bs-toggle="tooltip"
+           title="Add Estate">
+
+            <i class="bi bi-building-add"></i>
+
+        </a>
+
+        <button
+            class="btn btn-danger"
+            onclick="window.print()"
+            data-bs-toggle="tooltip"
+            title="Print">
+
+            <i class="bi bi-printer-fill"></i>
+
+        </button>
+
+        <button
+            class="btn btn-warning"
+            onclick="toggleFullscreen()"
+            data-bs-toggle="tooltip"
+            title="Fullscreen">
+
+            <i class="bi bi-arrows-fullscreen"></i>
+
+        </button>
+
+        <button
+            class="btn btn-info"
+            onclick="location.reload()"
+            data-bs-toggle="tooltip"
+            title="Refresh">
+
+            <i class="bi bi-arrow-clockwise"></i>
+
+        </button>
+
+    </div>
+
+</div>
+
+<!-- ==========================================
+            Scroll To Top
+========================================== -->
+
+<button
+    id="scrollTopButton"
+    class="btn btn-success scroll-top">
+
+    <i class="bi bi-arrow-up"></i>
+
+</button>
+
+<!-- ==========================================
+            Loading Overlay
+========================================== -->
+
+<div id="loadingOverlay">
+
+    <div class="spinner-border text-success"
+         role="status">
+
+        <span class="visually-hidden">
+
+            Loading...
+
+        </span>
+
+    </div>
+
+</div>
+
+<!-- ==========================================
+            Empty State
+========================================== -->
+
+{% if not lands %}
+
+<div class="text-center py-5">
+
+    <img
+        src="https://cdn.jsdelivr.net/gh/twbs/icons/icons/folder2-open.svg"
+        width="90">
+
+    <h3 class="mt-3">
+
+        No Estate Records Found
+
+    </h3>
+
+    <p class="text-muted">
+
+        Start by adding your first land record.
+
+    </p>
+
+    <a href="{% url 'lands:land_create' %}"
+       class="btn btn-success">
+
+        <i class="bi bi-plus-circle"></i>
+
+        Add New Estate
+
+    </a>
+
+</div>
+
+{% endif %}
+
+<!-- ==========================================
+            Toast Notification
+========================================== -->
+
+<div
+    class="toast-container position-fixed bottom-0 end-0 p-3">
+
+    <div
+        id="dashboardToast"
+        class="toast align-items-center border-0 text-bg-success"
+        role="alert">
+
+        <div class="d-flex">
+
+            <div class="toast-body">
+
+                <i class="bi bi-check-circle-fill"></i>
+
+                Action Completed Successfully.
+
+            </div>
+
+            <button
+                class="btn-close btn-close-white me-2 m-auto"
+                data-bs-dismiss="toast">
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ==========================================================
+                    JAVASCRIPT
+=========================================================== -->
+
+<script>
+
+document.addEventListener("DOMContentLoaded",function(){
+
+    //----------------------------------------------------------
+    // Floating Menu
+    //----------------------------------------------------------
+
+    const fab=document.getElementById("fabButton");
+
+    const menu=document.getElementById("fabMenu");
+
+    fab.addEventListener("click",function(){
+
+        menu.classList.toggle("show");
+
+    });
+
+    //----------------------------------------------------------
+    // Scroll Button
+    //----------------------------------------------------------
+
+    const scrollBtn=document.getElementById("scrollTopButton");
+
+    window.addEventListener("scroll",function(){
+
+        if(window.scrollY>250){
+
+            scrollBtn.style.display="block";
+
+        }
+
+        else{
+
+            scrollBtn.style.display="none";
+
+        }
+
+    });
+
+    scrollBtn.onclick=function(){
+
+        window.scrollTo({
+
+            top:0,
+
+            behavior:"smooth"
+
+        });
+
+    }
+
+    //----------------------------------------------------------
+    // Loading Overlay
+    //----------------------------------------------------------
+
+    window.addEventListener("load",function(){
+
+        document.getElementById("loadingOverlay").style.display="none";
+
+    });
+
+    //----------------------------------------------------------
+    // Bootstrap Toast
+    //----------------------------------------------------------
+
+    if(typeof bootstrap!=="undefined"){
+
+        const toast=document.getElementById("dashboardToast");
+
+        if(toast){
+
+            new bootstrap.Toast(toast);
+
+        }
+
+    }
+
+});
+
+
+//--------------------------------------------------------------
+// Fullscreen
+//--------------------------------------------------------------
+
+function toggleFullscreen(){
+
+    if(!document.fullscreenElement){
+
+        document.documentElement.requestFullscreen();
+
+    }
+
+    else{
+
+        document.exitFullscreen();
+
+    }
+
+}
+
+</script>
+
+<!-- ==========================================================
+                    CSS
+=========================================================== -->
+
+<style>
+
+/* Floating Button */
+
+.fab-container{
+
+    position:fixed;
+
+    bottom:30px;
+
+    right:30px;
+
+    z-index:1000;
+
+}
+
+.fab-main{
+
+    width:60px;
+
+    height:60px;
+
+    border-radius:50%;
+
+    font-size:24px;
+
+}
+
+.fab-menu{
+
+    display:none;
+
+    margin-bottom:15px;
+
+}
+
+.fab-menu.show{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:10px;
+
+}
+
+.fab-menu .btn{
+
+    border-radius:50%;
+
+    width:50px;
+
+    height:50px;
+
+}
+
+/* Scroll Button */
+
+.scroll-top{
+
+    display:none;
+
+    position:fixed;
+
+    bottom:30px;
+
+    left:30px;
+
+    border-radius:50%;
+
+    width:55px;
+
+    height:55px;
+
+    z-index:999;
+
+}
+
+/* Loading */
+
+#loadingOverlay{
+
+    position:fixed;
+
+    top:0;
+
+    left:0;
+
+    width:100%;
+
+    height:100%;
+
+    background:white;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    z-index:9999;
+
+}
+
+/* Hover */
+
+.fab-main:hover{
+
+    transform:scale(1.08);
+
+    transition:.3s;
+
+}
+
+.fab-menu .btn:hover{
+
+    transform:translateY(-4px);
+
+}
+
+</style>
+
+<!-- ==========================================================
+                    END PART 14
+=========================================================== -->
+<script>
+
+document.addEventListener("DOMContentLoaded",function(){
+
+    //----------------------------------------------------------
+    // Rows Per Page
+    //----------------------------------------------------------
+
+    document.getElementById("pageSize").addEventListener("change",function(){
+
+        let url=new URL(window.location);
+
+        url.searchParams.set("page_size",this.value);
+
+        window.location=url;
+
+    });
+
+    //----------------------------------------------------------
+    // CSV
+    //----------------------------------------------------------
+
+    document.getElementById("exportCSV").addEventListener("click",function(){
+
+        alert("CSV Export endpoint will be connected here.");
+
+    });
+
+    //----------------------------------------------------------
+    // PDF
+    //----------------------------------------------------------
+
+    document.getElementById("exportPDF").addEventListener("click",function(){
+
+        alert("PDF Export endpoint will be connected here.");
+
+    });
+
+    //----------------------------------------------------------
+    // Excel
+    //----------------------------------------------------------
+
+    document.getElementById("exportExcel").addEventListener("click",function(){
+
+        alert("Excel Export endpoint will be connected here.");
+
+    });
+
+});
+
+</script>
+
+<style>
+
+/*=========================================================
+                PAGINATION
+=========================================================*/
+
+.pagination .page-link{
+
+    border-radius:10px;
+
+    margin:0 3px;
+
+    border:none;
+
+    color:#198754;
+
+    font-weight:600;
+
+}
+
+.pagination .page-item.active .page-link{
+
+    background:#198754;
+
+    color:#fff;
+
+}
+
+.pagination .page-link:hover{
+
+    background:#198754;
+
+    color:#fff;
+
+}
+
+/*=========================================================
+                PAGE SIZE
+=========================================================*/
+
+#pageSize{
+
+    border-radius:10px;
+
+}
+
+/*=========================================================
+                EXPORT BUTTONS
+=========================================================*/
+
+#exportCSV,
+#exportPDF,
+#exportExcel{
+
+    transition:.3s;
+
+}
+
+#exportCSV:hover{
+
+    transform:translateY(-3px);
+
+}
+
+#exportPDF:hover{
+
+    transform:translateY(-3px);
+
+}
+
+#exportExcel:hover{
+
+    transform:translateY(-3px);
+
+}
+
+/*=========================================================
+                PRINT
+=========================================================*/
+
+@media print{
+
+    .btn,
+    .pagination,
+    #pageSize{
+
+        display:none !important;
+
+    }
+
+}
+
+</style>
+
+<!-- ==========================================================
+                    END PART 12
+=========================================================== -->
+<!-- ==========================================================
+                    PART 11
+             ANIMATIONS + JAVASCRIPT
+=========================================================== -->
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function(){
+
+    //----------------------------------------------------------
+    // Fade In Table Rows
+    //----------------------------------------------------------
+
+    const rows = document.querySelectorAll(".land-row");
+
+    rows.forEach((row,index)=>{
+
+        row.style.opacity=0;
+        row.style.transform="translateY(20px)";
+
+        setTimeout(()=>{
+
+            row.style.transition=".5s ease";
+            row.style.opacity=1;
+            row.style.transform="translateY(0px)";
+
+        },index*70);
+
+    });
+
+    //----------------------------------------------------------
+    // Animate Progress Bars
+    //----------------------------------------------------------
+
+    const bars=document.querySelectorAll(".progress-bar");
+
+    bars.forEach(function(bar){
+
+        let value=bar.getAttribute("data-value");
+
+        bar.style.width="0%";
+
+        setTimeout(function(){
+
+            bar.style.transition="width 1.2s ease";
+            bar.style.width=value+"%";
+
+        },300);
+
+    });
+
+    //----------------------------------------------------------
+    // Counter Animation
+    //----------------------------------------------------------
+
+    function animateCounter(counter){
+
+        let target=parseInt(counter.innerText);
+
+        let current=0;
+
+        let increment=Math.ceil(target/60);
+
+        counter.innerText="0";
+
+        let timer=setInterval(function(){
+
+            current+=increment;
+
+            if(current>=target){
+
+                counter.innerText=target;
+
+                clearInterval(timer);
+
+            }
+
+            else{
+
+                counter.innerText=current;
+
+            }
+
+        },20);
+
+    }
+
+    document.querySelectorAll(".summary-content h2").forEach(function(counter){
+
+        animateCounter(counter);
+
+    });
+
+    //----------------------------------------------------------
+    // Card Hover Glow
+    //----------------------------------------------------------
+
+    document.querySelectorAll(".summary-card").forEach(function(card){
+
+        card.addEventListener("mouseenter",function(){
+
+            card.style.transform="translateY(-8px) scale(1.02)";
+
+        });
+
+        card.addEventListener("mouseleave",function(){
+
+            card.style.transform="translateY(0px)";
+
+        });
+
+    });
+
+    //----------------------------------------------------------
+    // Ripple Effect Buttons
+    //----------------------------------------------------------
+
+    document.querySelectorAll(".btn").forEach(btn=>{
+
+        btn.addEventListener("click",function(e){
+
+            let ripple=document.createElement("span");
+
+            ripple.className="ripple";
+
+            this.appendChild(ripple);
+
+            let x=e.clientX-this.getBoundingClientRect().left;
+
+            let y=e.clientY-this.getBoundingClientRect().top;
+
+            ripple.style.left=x+"px";
+
+            ripple.style.top=y+"px";
+
+            setTimeout(()=>{
+
+                ripple.remove();
+
+            },700);
+
+        });
+
+    });
+
+    //----------------------------------------------------------
+    // Scroll Reveal
+    //----------------------------------------------------------
+
+    const observer=new IntersectionObserver(entries=>{
+
+        entries.forEach(entry=>{
+
+            if(entry.isIntersecting){
+
+                entry.target.classList.add("show");
+
+            }
+
+        });
+
+    });
+
+    document.querySelectorAll(".reveal").forEach(el=>{
+
+        observer.observe(el);
+
+    });
+
+});
+
+</script>
+<!-- ========================================= -->
+<!-- Part 13 : Dashboard JavaScript           -->
+<!-- ========================================= -->
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    /*=========================================
+      Loading Spinner
+    =========================================*/
+
+    const loader = document.getElementById("dashboardLoader");
+
+    if(loader){
+        window.addEventListener("load",()=>{
+            loader.style.opacity="0";
+
+            setTimeout(()=>{
+                loader.style.display="none";
+            },400);
+        });
+    }
+
+    /*=========================================
+      Search Table
+    =========================================*/
+
+    const searchInput=document.getElementById("tableSearch");
+
+    if(searchInput){
+
+        searchInput.addEventListener("keyup",function(){
+
+            let value=this.value.toLowerCase();
+
+            let rows=document.querySelectorAll("#landTable tbody tr");
+
+            rows.forEach(function(row){
+
+                row.style.display=row.innerText.toLowerCase().includes(value)
+                ? ""
+                : "none";
+
+            });
+
+        });
+
+    }
+
+    /*=========================================
+      Progress Bar Animation
+    =========================================*/
+
+    document.querySelectorAll(".progress-bar").forEach(function(bar){
+
+        let width=bar.dataset.width;
+
+        bar.style.width="0%";
+
+        setTimeout(function(){
+
+            bar.style.width=width+"%";
+
+        },300);
+
+    });
+
+    /*=========================================
+      Counter Animation
+    =========================================*/
+
+    const counters=document.querySelectorAll(".counter");
+
+    counters.forEach(function(counter){
+
+        const target=parseInt(counter.dataset.target);
+
+        let count=0;
+
+        let speed=Math.max(1,Math.floor(target/80));
+
+        const update=()=>{
+
+            if(count<target){
+
+                count+=speed;
+
+                if(count>target){
+                    count=target;
+                }
+
+                counter.innerText=count;
+
+                requestAnimationFrame(update);
+
+            }else{
+
+                counter.innerText=target;
+
+            }
+
+        }
+
+        update();
+
+    });
+
+    /*=========================================
+      Delete Confirmation
+    =========================================*/
+
+    document.querySelectorAll(".btn-delete").forEach(function(button){
+
+        button.addEventListener("click",function(e){
+
+            if(!confirm("Delete this Estate Record?")){
+
+                e.preventDefault();
+
+            }
+
+        });
+
+    });
+
+    /*=========================================
+      Bootstrap Tooltips
+    =========================================*/
+
+    if(typeof bootstrap!=="undefined"){
+
+        const tooltipTriggerList=[].slice.call(
+            document.querySelectorAll('[data-bs-toggle="tooltip"]')
+        );
+
+        tooltipTriggerList.map(function(el){
+
+            return new bootstrap.Tooltip(el);
+
+        });
+
+    }
+
+    /*=========================================
+      Row Hover Animation
+    =========================================*/
+
+    document.querySelectorAll("#landTable tbody tr").forEach(function(row){
+
+        row.addEventListener("mouseenter",function(){
+
+            row.classList.add("shadow-sm");
+
+        });
+
+        row.addEventListener("mouseleave",function(){
+
+            row.classList.remove("shadow-sm");
+
+        });
+
+    });
+
+    /*=========================================
+      Scroll To Top Button
+    =========================================*/
+
+    const topBtn=document.getElementById("scrollTopBtn");
+
+    if(topBtn){
+
+        window.addEventListener("scroll",function(){
+
+            if(document.documentElement.scrollTop>300){
+
+                topBtn.style.display="block";
+
+            }else{
+
+                topBtn.style.display="none";
+
+            }
+
+        });
+
+        topBtn.addEventListener("click",function(){
+
+            window.scrollTo({
+
+                top:0,
+
+                behavior:"smooth"
+
+            });
+
+        });
+
+    }
+
+    /*=========================================
+      Sort Table Columns
+    =========================================*/
+
+    const headers=document.querySelectorAll(".sortable");
+
+    headers.forEach(function(header){
+
+        header.addEventListener("click",function(){
+
+            const table=header.closest("table");
+
+            const tbody=table.querySelector("tbody");
+
+            const rows=[...tbody.querySelectorAll("tr")];
+
+            const index=[...header.parentElement.children].indexOf(header);
+
+            const asc=!header.classList.contains("asc");
+
+            rows.sort((a,b)=>{
+
+                let A=a.children[index].innerText.trim().toLowerCase();
+                let B=b.children[index].innerText.trim().toLowerCase();
+
+                return asc
+                    ? A.localeCompare(B)
+                    : B.localeCompare(A);
+
+            });
+
+            tbody.innerHTML="";
+
+            rows.forEach(r=>tbody.appendChild(r));
+
+            headers.forEach(h=>{
+
+                h.classList.remove("asc");
+                h.classList.remove("desc");
+
+            });
+
+            header.classList.add(
+                asc ? "asc":"desc"
+            );
+
+        });
+
+    });
+
+});
+</script>
+
+<style>
+
+/*=============================================================
+                RIPPLE EFFECT
+=============================================================*/
+
+.btn{
+
+    position:relative;
+
+    overflow:hidden;
+
+}
+
+.ripple{
+
+    position:absolute;
+
+    width:10px;
+
+    height:10px;
+
+    background:rgba(255,255,255,.6);
+
+    border-radius:50%;
+
+    transform:scale(0);
+
+    animation:ripple .7s linear;
+
+}
+
+@keyframes ripple{
+
+    to{
+
+        transform:scale(30);
+
+        opacity:0;
+
+    }
+
+}
+
+/*=============================================================
+            SCROLL REVEAL
+=============================================================*/
+
+.reveal{
+
+    opacity:0;
+
+    transform:translateY(30px);
+
+    transition:.8s ease;
+
+}
+
+.reveal.show{
+
+    opacity:1;
+
+    transform:translateY(0);
+
+}
+
+/*=============================================================
+            TABLE HOVER
+=============================================================*/
+
+.table tbody tr{
+
+    transition:.25s;
+
+}
+
+.table tbody tr:hover{
+
+    transform:scale(1.01);
+
+    box-shadow:0 6px 20px rgba(0,0,0,.08);
+
+}
+
+/*=============================================================
+            PROGRESS BAR
+=============================================================*/
+
+.progress{
+
+    height:10px;
+
+    border-radius:10px;
+
+    background:#ececec;
+
+}
+
+.progress-bar{
+
+    transition:width 1s;
+
+}
+
+/*=============================================================
+            SUMMARY CARD
+=============================================================*/
+
+.summary-card{
+
+    transition:.35s;
+
+}
+
+/*=============================================================
+            ICON ROTATION
+=============================================================*/
+
+.summary-icon{
+
+    transition:.5s;
+
+}
+
+.summary-card:hover .summary-icon{
+
+    transform:rotate(10deg) scale(1.1);
+
+}
+
+</style>
+
+<!-- ==========================================================
+                    END PART 11
+=========================================================== -->
+{% endblock %} 

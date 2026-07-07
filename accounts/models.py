@@ -1,12 +1,22 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+class UserRole(models.TextChoices):
+    SUPER_ADMIN = "SUPER_ADMIN", "Super Admin"
+    ADMIN = "ADMIN", "Admin"
+    DATA_ENTRY = "DATA_ENTRY", "Data Entry"
+    VIEWER = "VIEWER", "Viewer"
 
 class UserProfile(models.Model):
     """
     Extends Django's default User model with extra fields.
     """
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+    role = models.CharField(
+        max_length=30,
+        choices=UserRole.choices,
+        default=UserRole.DATA_ENTRY
+    )
 
     # Optional fields — you can add more later
     full_name = models.CharField(max_length=200, blank=True, null=True)
