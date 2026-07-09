@@ -7,23 +7,80 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db.models import Sum
 from accounts.models import UserProfile, UserRole
+from documents.models import DocumentTagEntry
 from .models import Land
 from .forms import LandForm
 from esate_db.districts import DISTRICTS, DIVISION_NAMES
 
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+
+from accounts.models import UserProfile, UserRole
+from documents.models import DocumentTagEntry
+from .models import Land
+
+
 @login_required
 def land_list(request):
-    # lands = Land.objects.all()
+
+    REQUIRED_TAGS = [
+        "Gazette",
+        "Deed (Sale Deed / Registry Deed)",
+        "Khatiyan",
+        "Mutation (Namjari)",
+        "Lease Deed",
+        "Land Tax (Khajna / DCR)",
+        "Porcha",
+        "Mouza Map",
+        "Baina / Agreement for Sale",
+        "Land Survey Report",
+        "Building Plan Approval",
+    ]
+
     profile, _ = UserProfile.objects.get_or_create(user=request.user)
 
     if profile.role == UserRole.SUPER_ADMIN:
         lands = Land.objects.all()
     else:
-        lands = Land.objects.filter(
-            created_by=request.user
+        lands = Land.objects.filter(created_by=request.user)
+
+    for land in lands:
+
+        completed = list(
+            DocumentTagEntry.objects.filter(
+                document__land=land
+            ).values_list(
+                "document_type",
+                flat=True
+            ).distinct()
         )
 
-    return render(request, 'lands/land_list.html', {'lands': lands})
+        print(completed)
+
+        land.tag_status = [
+            {
+                "name": tag,
+                "completed": tag in completed,
+            }
+            for tag in REQUIRED_TAGS
+        ]
+
+        for tag in REQUIRED_TAGS:
+            land.tag_status.append({
+                "name": tag,
+                "completed": tag in completed,
+            })
+
+    context = {
+        "lands": lands,
+        "required_tags": REQUIRED_TAGS,
+    }
+
+    return render(
+        request,
+        "lands/land_list.html",
+        context,
+    )
 
 @login_required
 def land_create(request):

@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
-
+# from documents.models import DocumentTagEntry
 
 class Land(models.Model):
 
@@ -103,12 +103,55 @@ class Land(models.Model):
         )
     @property
     def is_admin_verified(self):
-
-        return self.verification.admin_verified
+        if hasattr(self, "verification"):
+            return self.verification.admin_verified
+        return False
     @property
     def is_super_admin_verified(self):
+        if hasattr(self, "verification"):
+            return self.verification.super_admin_verified
+        return False
+    @property
+    def total_required_tags(self):
+        """
+        Total required unique document types.
+        """
+        return 11
+    @property
+    def completed_tags(self):
 
-        return self.verification.super_admin_verified
+        from documents.models import DocumentTagEntry
+
+        tags = (
+            DocumentTagEntry.objects
+            .filter(document__land=self)
+            .values_list(
+                "document_type",
+                flat=True
+            )
+            .distinct()
+        )
+
+        return tags.count()
+    @property
+    def pending_tags(self):
+
+        return max(
+            self.total_required_tags -
+            self.completed_tags,
+            0
+        )
+    # @property
+    # def tagging_percentage(self):
+
+    #     if self.total_required_tags == 0:
+    #         return 0
+
+    #     return round(
+    #         self.completed_tags /
+    #         self.total_required_tags * 100,
+    #         2
+    #     )
     def __str__(self):
         return f"{self.owner_name} - {self.district}"
 

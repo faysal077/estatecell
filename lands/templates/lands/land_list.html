@@ -569,8 +569,8 @@ ADMIN VERIFICATION
    SUPER ADMIN CARD
    =========================================================*/
    /*=========================================================
-SUPER ADMIN
-=========================================================*/
+    SUPER ADMIN
+    =========================================================*/
 
 .superadmin-card{
 
@@ -725,8 +725,8 @@ SUPER ADMIN
    ACTION PANEL
    =========================================================*/
    /*=========================================================
-ACTION PANEL
-=========================================================*/
+    ACTION PANEL
+    =========================================================*/
 
 .action-panel{
 
@@ -981,6 +981,85 @@ ACTION PANEL
    color:#198754 !important;
    font-weight:600;
    }
+   .tagging-card-simple{
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+    justify-content:center;
+
+    padding:10px;
+
+    }
+
+    .tagging-circle{
+
+        position:relative;
+
+        width:82px;
+
+        height:82px;
+
+    }
+
+    .tag-count{
+
+        position:absolute;
+
+        inset:0;
+
+        display:flex;
+
+        flex-direction:column;
+
+        justify-content:center;
+
+        align-items:center;
+
+    }
+
+    .count-main{
+
+        font-size:15px;
+
+        font-weight:700;
+
+        line-height:1;
+
+    }
+
+    .count-total{
+
+        font-size:10px;
+
+        color:#444;
+
+        font-weight:600;
+
+    }
+
+    .pending-text{
+
+        color:#ff9800;
+
+        font-size:15px;
+
+        font-weight:700;
+
+    }
+
+    .completed-text{
+
+        color:#198754;
+
+        font-size:13px;
+
+        font-weight:700;
+
+    }
 </style>
 
 <div class="land-dashboard">
@@ -1019,6 +1098,15 @@ ACTION PANEL
     <div class="dashboard-card">
 
         <div class="table-responsive">
+            {{ land.tag_status }}
+            <p>Total Required Tags: {{ required_tags|length }}</p>
+            {{ lands.total_required_tags }}
+            <ul>
+                {% for tag in required_tags %}
+                    <li>{{ tag }}</li>
+                    
+                {% endfor %}
+            </ul>
 
             <table class="table land-table">
 
@@ -1276,97 +1364,83 @@ ACTION PANEL
 								PENDING TAGGING
 								Starts Part-04
 						====================================================== -->
-						<td>
+						<td class="text-center">
 
-							<div class="tagging-card">
+                            <div class="tagging-card-simple">
 
-								<!-- ========================= -->
-								<!-- Orange Progress Circle -->
-								<!-- ========================= -->
+                                <!-- Progress Circle -->
+                                <div class="tagging-circle mx-auto">
 
-								<div class="tagging-circle">
+                                    <svg width="82" height="82">
 
-									<svg width="82" height="82">
+                                        <circle
+                                            cx="41"
+                                            cy="41"
+                                            r="32"
+                                            class="tag-bg"/>
 
-										<circle
-											cx="41"
-											cy="41"
-											r="32"
-											class="tag-bg"/>
+                                        <circle
+                                            cx="41"
+                                            cy="41"
+                                            r="32"
+                                            class="tag-progress"
+                                            style="
+                                            stroke-dasharray:201;
+                                            stroke-dashoffset:
+                                            calc(201 - (201 * {{ land.tagging_percentage }}) / 100);
+                                            ">
+                                        </circle>
 
-										<circle
-											cx="41"
-											cy="41"
-											r="32"
-											class="tag-progress"
+                                    </svg>
 
-											style="
-											stroke-dasharray:201;
-											stroke-dashoffset:
-											{% if land.documents.count %}
-												calc(201 - (201 * 100) / 100)
-											{% else %}
-												201
-											{% endif %}
-											;">
+                                    <div class="tag-count">
 
-										</circle>
+                                        <div class="count-main">
+                                            {{ land.completed_tags }}
+                                        </div>
 
-									</svg>
+                                        <div class="count-total">
+                                            of {{ land.total_required_tags }}
+                                        </div>
 
-									<div class="tag-count">
+                                    </div>
 
-										{{ land.documents.count }}
+                                </div>
 
-									</div>
+                                <div class="mt-3">
 
-								</div>
+                                    <div class="pending-text">
 
-								<!-- ========================= -->
-								<!-- Information -->
-								<!-- ========================= -->
+                                        {{ land.pending_tags }} Pending
+                                        {{ land.tag_status }}
 
-								<div class="tagging-info">
+                                    </div>
 
-									<h6>
+                                    <div class="completed-text">
 
-										Pending Tagging
+                                        {{ land.completed_tags }} Completed
 
-									</h6>
+                                    </div>
 
-									<p>
+                                </div>
 
-										Uploaded Documents
+                                <button
+                                    type="button"
+                                    class="btn btn-outline-success btn-sm mt-3"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#pendingModal{{ land.id }}">
 
-									</p>
+                                    <i class="bi bi-list-task"></i>
+                                    View Pending
 
-									<div class="tag-stat">
+                                </button>
 
-										<i class="bi bi-files"></i>
 
-										<strong>
+                                <!-- Pending Modal -->
 
-											{{ land.documents.count }}
+                            </div>
 
-										</strong>
-
-										Documents
-
-									</div>
-
-									<div class="tag-stat">
-
-										<i class="bi bi-tags-fill"></i>
-
-										Tagging Required
-
-									</div>
-
-								</div>
-
-							</div>
-
-						</td>
+                        </td>
 
 						<!-- =====================================================
 								ADMIN VERIFICATION
@@ -1737,26 +1811,147 @@ ACTION PANEL
 
 						</td>
 
-						<!-- =====================================================
-								Pagination
-								Starts Part-09
-						====================================================== -->
-						<!-- =====================================================
-						PROFESSIONAL PAGINATION FOOTER
-						Starts Part-09
-				====================================================== -->
+                    </tr>
+
                 {% empty %}
 
-                <tr>
-                    <td colspan="20" class="text-center">
-                        No land records found.
-                    </td>
-                </tr>
-
+                    <tr>
+                        <td colspan="20" class="text-center">
+                            No land records found.
+                        </td>
+                    </tr>
+                                                            
                 {% endfor %}
+                
+
+                
 				</tbody>
 
 				</table>
+                {% for land in lands %}
+                     <div
+                                    class="modal fade"
+                                    id="pendingModal{{ land.id }}"
+                                    tabindex="-1"
+                                    aria-labelledby="pendingModalLabel{{ land.id }}"
+                                    aria-hidden="true">
+
+                                    <div class="modal-dialog modal-lg modal-dialog-centered">
+
+                                        <div class="modal-content">
+
+                                            <div class="modal-header bg-success text-white">
+
+                                                <h5
+                                                    class="modal-title"
+                                                    id="pendingModalLabel{{ land.id }}">
+
+                                                    Pending Tags
+
+                                                </h5>
+
+                                                <button
+                                                    type="button"
+                                                    class="btn-close btn-close-white"
+                                                    data-bs-dismiss="modal">
+                                                </button>
+
+                                            </div>
+
+                                            <div class="modal-body">
+
+                                                <table class="table table-bordered table-hover">
+
+                                                    <thead class="table-light">
+
+                                                        <tr>
+
+                                                            <th>Required Tag</th>
+
+                                                            <th>Status</th>
+
+                                                        </tr>
+
+                                                    </thead>
+
+                                                    <tbody>
+
+                                                        {% for item in land.tag_status %}
+
+                                                        <tr>
+
+                                                            <td>
+
+                                                                {{ item.name }}
+
+                                                            </td>
+
+                                                            <td class="text-center">
+
+                                                                {% if item.completed %}
+
+                                                                    <span class="badge bg-success">
+
+                                                                        <i class="bi bi-check-circle-fill"></i>
+
+                                                                        Completed
+
+                                                                    </span>
+
+                                                                {% else %}
+
+                                                                    <span class="badge bg-warning text-dark">
+
+                                                                        <i class="bi bi-clock-fill"></i>
+
+                                                                        Pending
+
+                                                                    </span>
+
+                                                                {% endif %}
+
+                                                            </td>
+
+                                                        </tr>
+
+                                                        {% empty %}
+
+                                                        <tr>
+
+                                                        <td colspan="2">
+
+                                                        No Required Tags Found
+
+                                                        </td>
+
+                                                        </tr>
+
+                                                        {% endfor %}
+
+                                                        </tbody>
+
+                                                </table>
+
+                                            </div>
+
+                                            <div class="modal-footer">
+
+                                                <button
+                                                    class="btn btn-secondary"
+                                                    data-bs-dismiss="modal">
+
+                                                    Close
+
+                                                </button>
+
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+                {% endfor %}
 
 				</div>
 
