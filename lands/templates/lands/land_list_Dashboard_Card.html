@@ -1366,96 +1366,81 @@ ADMIN VERIFICATION
 						====================================================== -->
 						<td class="text-center">
 
-    <div class="tagging-card-simple">
+                            <div class="tagging-card-simple">
 
-        <!-- Progress Circle -->
-        <div class="tagging-circle mx-auto">
+                                <!-- Progress Circle -->
+                                <div class="tagging-circle mx-auto">
 
-            <svg width="82" height="82">
+                                    <svg width="82" height="82">
 
-                <circle
-                    cx="41"
-                    cy="41"
-                    r="32"
-                    class="tag-bg">
-                </circle>
+                                        <circle
+                                            cx="41"
+                                            cy="41"
+                                            r="32"
+                                            class="tag-bg"/>
 
-                <circle
-                    cx="41"
-                    cy="41"
-                    r="32"
-                    class="tag-progress"
-                    style="
-                        stroke-dasharray:201;
-                        stroke-dashoffset:
-                        calc(201 - (201 * {{ land.tagging_percentage }}) / 100);
-                    ">
-                </circle>
+                                        <circle
+                                            cx="41"
+                                            cy="41"
+                                            r="32"
+                                            class="tag-progress"
+                                            style="
+                                            stroke-dasharray:201;
+                                            stroke-dashoffset:
+                                            calc(201 - (201 * {{ land.tagging_percentage }}) / 100);
+                                            ">
+                                        </circle>
 
-            </svg>
+                                    </svg>
 
-            <div class="tag-count">
+                                    <div class="tag-count">
 
-                <div class="count-main">
+                                        <div class="count-main">
+                                            {{ land.completed_tags }}
+                                        </div>
 
-                    {{ land.completed_tags }}
+                                        <div class="count-total">
+                                            of {{ land.total_required_tags }}
+                                        </div>
 
-                </div>
+                                    </div>
 
-                <div class="count-total">
+                                </div>
 
-                    of {{ land.total_required_tags }}
+                                <div class="mt-3">
 
-                </div>
+                                    <div class="pending-text">
 
-            </div>
+                                        {{ land.pending_tags }} Pending
+                                        {{ land.tag_status }}
 
-        </div>
+                                    </div>
 
-        <!-- Summary -->
+                                    <div class="completed-text">
 
-        <div class="mt-3">
+                                        {{ land.completed_tags }} Completed
 
-            <div class="pending-text text-warning fw-bold">
+                                    </div>
 
-                {{ land.pending_tags }} Pending
+                                </div>
 
-            </div>
+                                <button
+                                    type="button"
+                                    class="btn btn-outline-success btn-sm mt-3"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#pendingModal{{ land.id }}">
 
-            <div class="completed-text text-success fw-bold">
+                                    <i class="bi bi-list-task"></i>
+                                    View Pending
 
-                {{ land.completed_tags }} Completed
+                                </button>
 
-            </div>
 
-        </div>
+                                <!-- Pending Modal -->
 
-        <!-- Optional Debug -->
-        <!-- Remove this after testing -->
+                            </div>
 
-        <small class="text-muted d-block mt-2">
-
-            Total Tags : {{ land.tag_status|length }}
-
-        </small>
-
-        <!-- Button -->
-
-        <button
-            type="button"
-            class="btn btn-outline-success btn-sm mt-3"
-            data-bs-toggle="modal"
-            data-bs-target="#pendingModal{{ land.id }}">
-
-            <i class="bi bi-list-task"></i>
-
-            View Pending
-
-        </button>
-
-    </div>
-
-</td>
+                        </td>
 
 						<!-- =====================================================
 								ADMIN VERIFICATION
@@ -1838,7 +1823,6 @@ ADMIN VERIFICATION
                                                             
                 {% endfor %}
                 </tbody>
-            </table>
 <!-- ========================================================= --> 
 <!-- ALL MODALS GO HERE (AFTER THE TABLE) --> 
 <!-- ========================================================= -->
@@ -1852,9 +1836,7 @@ ADMIN VERIFICATION
                                     </div>
                                     <div class="modal-body">
                                         <!-- DEBUG --> 
-                                        Land ID : {{ land.id }}
-                                        <br>
-                                        Tag Count : {{ land.tag_status|length }}
+                                        <pre>{{ land.tag_status }}</pre>
                                         <table class="table table-bordered table-hover">
                                         <thead class="table-light">
                                             <tr>
@@ -2069,10 +2051,156 @@ ADMIN VERIFICATION
 
 				</div>
 
+				<!-- =====================================================
+						CSS
+						Add to Part-01 CSS Section
+				====================================================== -->
+<!-- ==========================================================
+                    LAND DASHBOARD SUMMARY
+                    Starts Part-10
+=========================================================== -->
+
+<div class="row mb-4">
+
+    <!-- Total Estates -->
+
+    <div class="col-xl-3 col-md-6 mb-4">
+
+        <div class="summary-card total-card">
+
+            <div class="summary-icon">
+
+                <i class="bi bi-buildings-fill"></i>
+
+            </div>
+
+            <div class="summary-content">
+
+                <small>Total Estates</small>
+
+                <h2>{{ lands.paginator.count }}</h2>
+
+                <span class="growth">
+
+                    <i class="bi bi-arrow-up-circle-fill"></i>
+
+                    Active Records
+
+                </span>
+
             </div>
 
         </div>
-    
+
+    </div>
+
+    <!-- Total Area -->
+
+    <div class="col-xl-3 col-md-6 mb-4">
+
+        <div class="summary-card area-card">
+
+            <div class="summary-icon">
+
+                <i class="bi bi-globe-central-south-asia"></i>
+
+            </div>
+
+            <div class="summary-content">
+
+                <small>Total Area</small>
+
+                <h2>
+
+                    {{ total_area|default:"0" }}
+
+                </h2>
+
+                <span>
+
+                    Acres
+
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Allocated -->
+
+    <div class="col-xl-3 col-md-6 mb-4">
+
+        <div class="summary-card allocated-card">
+
+            <div class="summary-icon">
+
+                <i class="bi bi-check-circle-fill"></i>
+
+            </div>
+
+            <div class="summary-content">
+
+                <small>Allocated Plots</small>
+
+                <h2>
+
+                    {{ allocated_plots|default:"0" }}
+
+                </h2>
+
+                <span>
+
+                    Allocated
+
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Remaining -->
+
+    <div class="col-xl-3 col-md-6 mb-4">
+
+        <div class="summary-card remaining-card">
+
+            <div class="summary-icon">
+
+                <i class="bi bi-pie-chart-fill"></i>
+
+            </div>
+
+            <div class="summary-content">
+
+                <small>Remaining Plots</small>
+
+                <h2>
+
+                    {{ remaining_plots|default:"0" }}
+
+                </h2>
+
+                <span>
+
+                    Available
+
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ==========================================================
+                    END PART-10
+=========================================================== -->
 <!-- ==========================================================
                     PART 12
         PAGINATION + TABLE FOOTER + TOOLS
@@ -2506,7 +2634,7 @@ ADMIN VERIFICATION
 <!-- ==========================================================
                     JAVASCRIPT
 =========================================================== -->
-</div>  
+
 <script>
 
 document.addEventListener("DOMContentLoaded",function(){

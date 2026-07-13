@@ -30,7 +30,9 @@ class DocumentAdmin(admin.ModelAdmin):
         ('Metadata', {
             'fields': ('issue_date', 'issued_by', 'created_at', 'updated_at')
         }),
+        
     )
+    ("Audit", { "fields": ( "issued_by", "issue_date", "created_at", "updated_at", ) }),
 
     def file_path_display(self, obj):
         if obj.scanned_copy:

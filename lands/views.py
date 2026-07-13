@@ -8,13 +8,12 @@ from django.contrib import messages
 from django.db.models import Sum
 from accounts.models import UserProfile, UserRole
 from documents.models import DocumentTagEntry
+from documents.models import Document
 from .models import Land
 from .forms import LandForm
 from esate_db.districts import DISTRICTS, DIVISION_NAMES
-
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
-
 from accounts.models import UserProfile, UserRole
 from documents.models import DocumentTagEntry
 from .models import Land
@@ -37,49 +36,70 @@ def land_list(request):
         "Building Plan Approval",
     ]
 
-    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    profile, _ = UserProfile.objects.get_or_create(
+        user=request.user
+    )
 
     if profile.role == UserRole.SUPER_ADMIN:
-        lands = Land.objects.all()
+        lands = (
+            Land.objects
+            .all()
+            .order_by("-created_at")
+        )
     else:
-        lands = Land.objects.filter(created_by=request.user)
+        lands = (
+            Land.objects
+            .filter(created_by=request.user)
+            .order_by("-created_at")
+        )
 
     for land in lands:
 
-        completed = list(
+        uploaded_types = set(
+
             DocumentTagEntry.objects.filter(
                 document__land=land
             ).values_list(
                 "document_type",
                 flat=True
             ).distinct()
+
         )
 
-        print(completed)
+        land.tag_status = []
 
-        land.tag_status = [
-            {
-                "name": tag,
-                "completed": tag in completed,
-            }
-            for tag in REQUIRED_TAGS
-        ]
+        completed_count = 0
 
         for tag in REQUIRED_TAGS:
+
+            is_completed = tag in uploaded_types
+
+            if is_completed:
+                completed_count += 1
+
             land.tag_status.append({
+
                 "name": tag,
-                "completed": tag in completed,
+
+                "completed": is_completed,
+
             })
 
-    context = {
-        "lands": lands,
-        "required_tags": REQUIRED_TAGS,
-    }
+        land.completed_count = completed_count
+
+        land.pending_count = len(REQUIRED_TAGS) - completed_count
+
+        land.progress = round(
+            completed_count * 100 / len(REQUIRED_TAGS),
+            1
+        )
 
     return render(
         request,
         "lands/land_list.html",
-        context,
+        {
+            "lands": lands,
+        },
     )
 
 @login_required
@@ -161,32 +181,32 @@ def land_delete(request, pk):
 #########
 from django.core.paginator import Paginator
 
-@login_required
-def land_list(request):
+# @login_required
+# def land_list(request):
 
-    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+#     profile, _ = UserProfile.objects.get_or_create(user=request.user)
 
-    if profile.role == UserRole.SUPER_ADMIN:
-        lands = Land.objects.all().order_by("-created_at")
-    else:
-        lands = Land.objects.filter(
-            created_by=request.user
-        ).order_by("-created_at")
+#     if profile.role == UserRole.SUPER_ADMIN:
+#         lands = list(Land.objects.all()).order_by("-created_at")
+#     else:
+#         lands = Land.objects.filter(
+#             created_by=request.user
+#         ).order_by("-created_at")
 
-    paginator = Paginator(lands, 10)   # 10 records per page
+#     paginator = Paginator(lands, 10)   # 10 records per page
 
-    page_number = request.GET.get("page")
+#     page_number = request.GET.get("page")
 
-    page_obj = paginator.get_page(page_number)
+#     page_obj = paginator.get_page(page_number)
 
-    return render(
-        request,
-        "lands/land_list.html",
-        {
-            "lands": page_obj,
-            "page_obj": page_obj,
-        },
-    )
+#     return render(
+#         request,
+#         "lands/land_list.html",
+#         {
+#             "lands": page_obj,
+#             "page_obj": page_obj,
+#         },
+#     )
 
 @login_required
 def verify_land_admin(request, pk):

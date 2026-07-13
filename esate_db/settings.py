@@ -40,14 +40,16 @@ ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
     'estate.bscic.gov.bd',
+    'prescientific-unexpandable-gracelynn.ngrok-free.dev'
 ]
 # ALLOWED_HOSTS = ['estate.bscic.gov.bd',]
 
 
 # ALLOWED_HOSTS = ['*']
-# CSRF_TRUSTED_ORIGINS = [
-#         'https://0310-103-85-159-178.ngrok-free.app',
-# ]
+CSRF_TRUSTED_ORIGINS = [
+        
+        'https://prescientific-unexpandable-gracelynn.ngrok-free.dev',
+]
 
 # Application definition
 INSTALLED_APPS = [

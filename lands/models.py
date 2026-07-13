@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
-# from documents.models import DocumentTagEntry
+
 
 class Land(models.Model):
 
@@ -21,17 +21,6 @@ class Land(models.Model):
         decimal_places=2,
         help_text="Area in Acres"
     )
-
-    # NEW FIELDS
-    # total_plots = models.PositiveIntegerField(default=0)
-
-    # allocated_plots = models.PositiveIntegerField(default=0)
-
-    # remaining_plots = models.PositiveIntegerField(
-    #     default=0,
-    #     editable=False
-    # )
-
     total_plots = models.PositiveIntegerField(default=0)
     allocated_plots = models.PositiveIntegerField(default=0)
 
@@ -86,9 +75,13 @@ class Land(models.Model):
 
         from documents.models import DocumentTagEntry
 
-        return DocumentTagEntry.objects.filter(
-            document__land=self
-        ).count()
+        return (
+            DocumentTagEntry.objects
+            .filter(document__land=self)
+            .values("document_type")
+            .distinct()
+            .count()
+        )
     @property
     def tagging_percentage(self):
 
@@ -141,17 +134,6 @@ class Land(models.Model):
             self.completed_tags,
             0
         )
-    # @property
-    # def tagging_percentage(self):
-
-    #     if self.total_required_tags == 0:
-    #         return 0
-
-    #     return round(
-    #         self.completed_tags /
-    #         self.total_required_tags * 100,
-    #         2
-    #     )
     def __str__(self):
         return f"{self.owner_name} - {self.district}"
 
