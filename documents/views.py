@@ -160,21 +160,109 @@ def update_document(request, pk):
         tags_raw = request.POST.get('tags', '')
 
         # ---------------- VALIDATION ----------------
+
         if not document_type:
-            return JsonResponse({'success': False, 'error': 'Document type is required.'})
+            return JsonResponse({
+                'success': False,
+                'error': 'Document type is required.'
+            })
 
         if document_type == 'Land Survey Report' and not survey_type:
-            return JsonResponse({'success': False, 'error': 'Survey type is required.'})
+            return JsonResponse({
+                'success': False,
+                'error': 'Survey type is required.'
+            })
 
-        # ---------------- UPDATE DOCUMENT ----------------
-        document.document_type = document_type
-        document.survey_type = survey_type
+        # From Page is mandatory
+        if not from_page:
+            return JsonResponse({
+                'success': False,
+                'error': 'From Page is required.'
+            })
+
+        # To Page is mandatory
+        if not to_page:
+            return JsonResponse({
+                'success': False,
+                'error': 'To Page is required.'
+            })
 
         try:
-            document.from_page = int(from_page) if from_page else None
-            document.to_page = int(to_page) if to_page else None
+            from_page = int(from_page)
+            to_page = int(to_page)
         except ValueError:
-            return JsonResponse({'success': False, 'error': 'Invalid page numbers.'})
+            return JsonResponse({
+                'success': False,
+                'error': 'Page numbers must be numeric.'
+            })
+
+        # From cannot be greater than To
+        if from_page > to_page:
+            return JsonResponse({
+                'success': False,
+                'error': 'From Page cannot be greater than To Page.'
+            })
+
+        # Validate PDF page count
+        if document.scanned_copy:
+
+            pdf = fitz.open(document.scanned_copy.path)
+            total_pages = pdf.page_count
+            pdf.close()
+
+            if from_page > total_pages:
+                return JsonResponse({
+                    'success': False,
+                    'error': f'This PDF has only {total_pages} pages.'
+                })
+
+            if to_page > total_pages:
+                return JsonResponse({
+                    'success': False,
+                    'error': f'To Page cannot exceed {total_pages}.'
+                })
+            # ----------------------------------------
+            # Prevent overlapping page ranges
+            # ----------------------------------------
+
+            existing_entries = (
+                DocumentTagEntry.objects
+                .filter(document=document)
+            )
+
+            for existing in existing_entries:
+
+                # Skip invalid records
+                if existing.from_page is None or existing.to_page is None:
+                    continue
+
+                # Check overlap
+                overlap = (
+                    from_page <= existing.to_page and
+                    to_page >= existing.from_page
+                )
+
+                if overlap:
+                    return JsonResponse({
+                        "success": False,
+                        "error": (
+                            f"Pages {from_page}-{to_page} overlap with "
+                            f"'{existing.document_type}' "
+                            f"({existing.from_page}-{existing.to_page})."
+                        )
+                    })
+
+        # ---------------- UPDATE DOCUMENT ----------------
+        # document.document_type = document_type
+        # document.survey_type = survey_type
+        document.from_page = from_page
+        document.to_page = to_page
+
+        # try:
+        #     document.from_page = int(from_page) if from_page else None
+        #     document.to_page = int(to_page) if to_page else None
+        # except ValueError:
+        #     return JsonResponse({'success': False, 'error': 'Invalid page numbers.'})
 
         document.save()
 

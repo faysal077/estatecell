@@ -17,6 +17,12 @@ from django.shortcuts import render
 from accounts.models import UserProfile, UserRole
 from documents.models import DocumentTagEntry
 from .models import Land
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404, redirect
+from django.utils import timezone
+
+from .models import LandVerification
+from .models import Land
 
 
 @login_required
@@ -240,3 +246,119 @@ def verify_land_super_admin(request, pk):
     verification.save()
 
     return redirect("lands:land_list")
+
+# ------------------------------
+#      Admin and SuperAdmin Verification
+# ------------------------------
+@login_required
+def land_verification(request, pk):
+
+    land = get_object_or_404(Land, pk=pk)
+
+    verification, created = LandVerification.objects.get_or_create(
+        land=land
+    )
+
+    entries = (
+        DocumentTagEntry.objects
+        .filter(document__land=land)
+        .prefetch_related("tags")
+        .select_related(
+            "document",
+            "created_by"
+        )
+        .order_by("-created_at")
+    )
+
+    profile = request.user.userprofile
+    
+
+    if request.method == "POST":
+
+        action = request.POST.get("action")
+
+        ###################################
+        # ADMIN VERIFY
+        ###################################
+
+        if action == "admin":
+
+            if profile.role != UserRole.ADMIN:
+
+                messages.error(
+                    request,
+                    "Only Admin can verify."
+                )
+
+            else:
+
+                verification.admin_verified = True
+
+                verification.admin_verified_by = request.user
+
+                verification.admin_verified_date = timezone.now()
+
+                verification.save()
+
+                messages.success(
+                    request,
+                    "Successfully verified."
+                )
+
+        ###################################
+        # SUPER ADMIN VERIFY
+        ###################################
+
+        elif action == "super":
+
+            if profile.role != UserRole.SUPER_ADMIN:
+
+                messages.error(
+                    request,
+                    "Only Super Admin can verify."
+                )
+
+            elif not verification.admin_verified:
+
+                messages.error(
+                    request,
+                    "Admin verification required."
+                )
+
+            else:
+
+                verification.super_admin_verified = True
+
+                verification.super_admin_verified_by = request.user
+
+                verification.super_admin_verified_date = timezone.now()
+
+                verification.save()
+
+                messages.success(
+                    request,
+                    "Super Admin verification completed."
+                )
+
+        return redirect(
+            "lands:land_verification",
+            pk=pk
+        )
+
+    context = {
+        "land": land,
+        "verification": verification,
+        "entries": entries,
+        "profile": profile,
+
+        "is_admin": profile.role == UserRole.ADMIN,
+        "is_super_admin": profile.role == UserRole.SUPER_ADMIN,
+        
+    }
+    print("Verification context:", context)  # Debugging line
+
+    return render(
+        request,
+        "lands/admin_verification.html",
+        context
+    )

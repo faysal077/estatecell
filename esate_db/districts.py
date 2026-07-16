@@ -7,9 +7,10 @@ JSON_PATH = BASE_DIR / 'data' / 'bd-districts.json'
 
 # Division mapping
 DIVISION_NAMES = {
-    "1": "Barishal", "2": "Chattogram", "3": "Dhaka",
-    "4": "Khulna", "5": "Rajshahi", "6": "Rangpur",
-    "7": "Sylhet", "8": "Mymensingh"
+    "1": "------Select Division------", 
+    "2": "ঢাকা", "3": "চট্টগ্রাম", "4": "খুলনা", 
+    "5": "রাজশাহী", "6": "রংপুর", "7": "সিলেট", "8": "ময়মনসিংহ"
+    
 }
 
 # Load districts from JSON

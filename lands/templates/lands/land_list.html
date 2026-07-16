@@ -1060,6 +1060,83 @@ ADMIN VERIFICATION
         font-weight:700;
 
     }
+    .verification-panel{
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:12px;
+
+    min-width:165px;
+
+    }
+
+    .status-badge{
+
+        width:135px;
+
+        padding:10px;
+
+        border-radius:10px;
+
+        font-size:15px;
+
+        font-weight:600;
+
+    }
+
+    .status-success{
+
+        background:#e9f8ef;
+
+        color:#0f8b43;
+
+    }
+
+    .status-warning{
+
+        background:#fff6df;
+
+        color:#d97706;
+
+    }
+
+    .status-danger{
+
+        background:#fdecec;
+
+        color:#dc2626;
+
+    }
+
+    .status-disabled{
+
+        background:#ececec;
+
+        color:#666;
+
+    }
+
+    .verify-btn{
+
+        width:135px;
+
+        font-weight:600;
+
+    }
+
+    .verification-panel small{
+
+        font-size:14px;
+
+        color:#666;
+
+    }
 </style>
 
 <div class="land-dashboard">
@@ -1098,15 +1175,6 @@ ADMIN VERIFICATION
     <div class="dashboard-card">
 
         <div class="table-responsive">
-            {{ land.tag_status }}
-            <p>Total Required Tags: {{ required_tags|length }}</p>
-            {{ lands.total_required_tags }}
-            <ul>
-                {% for tag in required_tags %}
-                    <li>{{ tag }}</li>
-                    
-                {% endfor %}
-            </ul>
 
             <table class="table land-table">
 
@@ -1366,280 +1434,260 @@ ADMIN VERIFICATION
 						====================================================== -->
 						<td class="text-center">
 
-    <div class="tagging-card-simple">
+                            <div class="tagging-card-simple">
 
-        <!-- Progress Circle -->
-        <div class="tagging-circle mx-auto">
+                                <!-- Progress Circle -->
+                                <div class="tagging-circle mx-auto">
 
-            <svg width="82" height="82">
+                                    <svg width="82" height="82">
 
-                <circle
-                    cx="41"
-                    cy="41"
-                    r="32"
-                    class="tag-bg">
-                </circle>
+                                        <circle
+                                            cx="41"
+                                            cy="41"
+                                            r="32"
+                                            class="tag-bg">
+                                        </circle>
 
-                <circle
-                    cx="41"
-                    cy="41"
-                    r="32"
-                    class="tag-progress"
-                    style="
-                        stroke-dasharray:201;
-                        stroke-dashoffset:
-                        calc(201 - (201 * {{ land.tagging_percentage }}) / 100);
-                    ">
-                </circle>
+                                        <circle
+                                            cx="41"
+                                            cy="41"
+                                            r="32"
+                                            class="tag-progress"
+                                            style="
+                                                stroke-dasharray:201;
+                                                stroke-dashoffset:
+                                                calc(201 - (201 * {{ land.tagging_percentage }}) / 100);
+                                            ">
+                                        </circle>
 
-            </svg>
+                                    </svg>
 
-            <div class="tag-count">
+                                    <div class="tag-count">
 
-                <div class="count-main">
+                                        <div class="count-main">
 
-                    {{ land.completed_tags }}
+                                            {{ land.completed_tags }}
 
-                </div>
+                                        </div>
 
-                <div class="count-total">
+                                        <div class="count-total">
 
-                    of {{ land.total_required_tags }}
+                                            of {{ land.total_required_tags }}
 
-                </div>
+                                        </div>
 
-            </div>
+                                    </div>
 
-        </div>
+                                </div>
 
-        <!-- Summary -->
+                                <!-- Summary -->
 
-        <div class="mt-3">
+                                <div class="mt-3">
 
-            <div class="pending-text text-warning fw-bold">
+                                    <div class="pending-text text-warning fw-bold">
 
-                {{ land.pending_tags }} Pending
+                                        {{ land.pending_tags }} Pending
 
-            </div>
+                                    </div>
 
-            <div class="completed-text text-success fw-bold">
+                                    <div class="completed-text text-success fw-bold">
 
-                {{ land.completed_tags }} Completed
+                                        {{ land.completed_tags }} Completed
 
-            </div>
+                                    </div>
 
-        </div>
+                                </div>
 
-        <!-- Optional Debug -->
-        <!-- Remove this after testing -->
+                                <!-- Optional Debug -->
+                                <!-- Remove this after testing -->
 
-        <small class="text-muted d-block mt-2">
+                                <small class="text-muted d-block mt-2">
 
-            Total Tags : {{ land.tag_status|length }}
+                                    Total Tags : {{ land.tag_status|length }}
 
-        </small>
+                                </small>
 
-        <!-- Button -->
+                                <!-- Button -->
 
-        <button
-            type="button"
-            class="btn btn-outline-success btn-sm mt-3"
-            data-bs-toggle="modal"
-            data-bs-target="#pendingModal{{ land.id }}">
+                                <button
+                                    type="button"
+                                    class="btn btn-outline-success btn-sm mt-3"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#pendingModal{{ land.id }}">
 
-            <i class="bi bi-list-task"></i>
+                                    <i class="bi bi-list-task"></i>
 
-            View Pending
+                                    View Pending
 
-        </button>
+                                </button>
 
-    </div>
+                            </div>
 
-</td>
+                        </td>
 
 						<!-- =====================================================
 								ADMIN VERIFICATION
 								Starts Part-05
 						====================================================== -->
-						<td>
+						<td class="text-center">
 
-							<div class="verification-card">
+                            <div class="verification-panel">
 
-								<!-- ========================= -->
-								<!-- Verification Icon -->
-								<!-- ========================= -->
+                                {% if land.documents.count == 0 %}
 
-								<div class="verification-icon">
+                                    <span class="status-badge status-disabled">
 
-									{% if land.documents.exists %}
+                                        <i class="bi bi-x-circle"></i>
 
-										{% with verified_docs=land.documents.all %}
+                                        No Documents
 
-											{% if verified_docs|length %}
+                                    </span>
 
-												<i class="bi bi-patch-check-fill verified-icon"></i>
+                                    <button
+                                        class="verify-btn btn btn-light"
+                                        disabled>
 
-											{% else %}
+                                        Verify
 
-												<i class="bi bi-clock-history pending-icon"></i>
+                                    </button>
 
-											{% endif %}
+                                {% else %}
 
-										{% endwith %}
+                                    {% if land.is_admin_verified %}
 
-									{% else %}
+                                        <span class="status-badge status-success">
 
-										<i class="bi bi-exclamation-circle-fill no-doc-icon"></i>
+                                            <i class="bi bi-check-circle"></i>
 
-									{% endif %}
+                                            Verified
 
-								</div>
-                                
-								<!-- ========================= -->
-								<!-- Verification Details -->
-								<!-- ========================= -->
+                                        </span>
 
-								<div class="verification-info">
+                                        <a
+                                            href="{% url 'lands:land_verification' land.id %}"
+                                            class="verify-btn btn btn-outline-dark">
 
-									{% if land.documents.count == 0 %}
+                                            <i class="bi bi-person-lines-fill"></i>
 
-										<span class="badge bg-secondary">
+                                            View Details
 
-											No Documents
+                                        </a>
 
-										</span>
+                                    {% else %}
 
-										<small>
+                                        <span class="status-badge status-warning">
 
-											Upload documents first
+                                            <i class="bi bi-clock-history"></i>
 
-										</small>
+                                            Pending
 
-									{% else %}
+                                        </span>
 
-										{% if land.documents.first.verified %}
+                                        <a
+                                            href="{% url 'lands:land_verification' land.id %}"
+                                            class="verify-btn btn btn-outline-dark">
 
-											<span class="badge bg-success">
+                                            <i class="bi bi-patch-check-fill"></i>
 
-												Admin Verified
+                                            Verify
 
-											</span>
+                                        </a>
 
-											<small>
+                                    {% endif %}
 
-												All required documents verified
+                                {% endif %}
 
-											</small>
+                                <small>
 
-										{% else %}
+                                    By Admin
 
-											<span class="badge bg-warning text-dark">
+                                </small>
 
-												Pending Review
+                            </div>
 
-											</span>
-
-											<small>
-
-												Waiting for Admin verification
-
-											</small>
-
-										{% endif %}
-
-									{% endif %}
-
-								</div>
-
-							</div>
-
-						</td>
+                        </td>
 
 						<!-- =====================================================
 								SUPER ADMIN VERIFICATION
 								Starts Part-06
 						====================================================== -->
-						<td>
+						<td class="text-center">
 
-							<div class="superadmin-card">
+                            <div class="verification-panel">
 
-								<!-- ============================== -->
-								<!-- Shield Icon -->
-								<!-- ============================== -->
+                                {% if not land.is_admin_verified %}
 
-								<div class="superadmin-icon">
+                                    <span class="status-badge status-disabled">
 
-									{% if land.documents.count == 0 %}
+                                        <i class="bi bi-clock"></i>
 
-										<i class="bi bi-shield-x text-secondary"></i>
+                                        Waiting
 
-									{% elif land.documents.first.verified %}
+                                    </span>
 
-										<i class="bi bi-shield-lock-fill shield-pending"></i>
+                                    <button
+                                        class="verify-btn btn btn-light"
+                                        disabled>
 
-									{% else %}
+                                        Verify
 
-										<i class="bi bi-shield-fill-exclamation shield-wait"></i>
+                                    </button>
 
-									{% endif %}
+                                {% else %}
 
-								</div>
+                                    {% if land.is_super_admin_verified %}
 
-								<!-- ============================== -->
-								<!-- Status -->
-								<!-- ============================== -->
+                                        <span class="status-badge status-success">
 
-								<div class="superadmin-info">
+                                            <i class="bi bi-check-circle"></i>
 
-									{% if land.documents.count == 0 %}
+                                            Verified
 
-										<span class="badge bg-secondary">
+                                        </span>
 
-											No Submission
+                                        <a
+                                            href="{% url 'lands:land_verification' land.id %}"
+                                            class="verify-btn btn btn-outline-dark">
 
-										</span>
+                                            <i class="bi bi-person-lines-fill"></i>
 
-										<small>
+                                            View Details
 
-											Documents have not been uploaded.
+                                        </a>
 
-										</small>
+                                    {% else %}
 
-									{% elif land.documents.first.verified %}
+                                        <span class="status-badge status-danger">
 
-										<span class="badge bg-info text-dark">
+                                            <i class="bi bi-clock-history"></i>
 
-											Awaiting Super Admin
+                                            Pending
 
-										</span>
+                                        </span>
 
-										<small>
+                                        <a
+                                            href="{% url 'lands:land_verification' land.id %}"
+                                            class="verify-btn btn btn-outline-dark">
 
-											Waiting for final approval.
+                                            <i class="bi bi-patch-check-fill"></i>
 
-										</small>
+                                            Verify
 
-									{% else %}
+                                        </a>
 
-										<span class="badge bg-light text-dark border">
+                                    {% endif %}
 
-											Waiting for Admin
+                                {% endif %}
 
-										</span>
+                                <small>
 
-										<small>
+                                    By Super Admin
 
-											Admin verification required first.
+                                </small>
 
-										</small>
+                            </div>
 
-									{% endif %}
-
-								</div>
-
-							</div>
-
-						</td>
+                        </td>
 
 						<!-- =====================================================
 								DOCUMENTS

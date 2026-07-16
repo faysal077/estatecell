@@ -50,9 +50,21 @@ def lands_by_district(request, district_name):
 
     # Use canonical name for DB query
     query_name = canonical or district_name
-    lands = Land.objects.filter(district__iexact=query_name).values(
-        'id', 'owner_name', 'area', 'district', 'upazila', 'mouza',
-        'rd_office', 'division', 'dag_no', 'khatian_no'
+    lands = (
+        Land.objects
+        .filter(district__iexact=query_name)
+        .values(
+            "id",
+            "owner_name",
+            "division",
+            "district",
+            "upazila",
+            "rd_office",
+            "total_area",
+            "total_plots",
+            "allocated_plots",
+            "remaining_plots",
+        )
     )
     return JsonResponse({'lands': list(lands), 'matched_district': query_name})
 
