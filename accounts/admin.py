@@ -17,6 +17,7 @@ class UserProfileAdmin(admin.ModelAdmin):
 
     list_filter = (
         "role",
+        "rd_admin__user__username",
         "department",
         "designation",
     )
@@ -25,6 +26,7 @@ class UserProfileAdmin(admin.ModelAdmin):
         "user__username",
         "user__first_name",
         "user__last_name",
+        "rd_admin",
         "full_name",
         "phone",
         "designation",
@@ -53,6 +55,7 @@ class UserProfileAdmin(admin.ModelAdmin):
                 "fields": (
                     "user",
                     "role",
+                    "rd_admin",
                 )
             },
         ),

@@ -20,7 +20,7 @@ from .models import Land
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
-
+from django.contrib.auth.models import User
 from .models import LandVerification
 from .models import Land
 
@@ -47,17 +47,28 @@ def land_list(request):
     )
 
     if profile.role == UserRole.SUPER_ADMIN:
-        lands = (
-            Land.objects
-            .all()
-            .order_by("-created_at")
+
+        lands = Land.objects.all()
+
+    elif profile.role == UserRole.RD_ADMIN:
+
+        data_entry_users = User.objects.filter(
+            userprofile__rd_admin=profile
         )
+
+        lands = Land.objects.filter(
+            created_by__in=data_entry_users
+        )
+
+    elif profile.role == UserRole.DATA_ENTRY:
+
+        lands = Land.objects.filter(
+            created_by=request.user
+        )
+
     else:
-        lands = (
-            Land.objects
-            .filter(created_by=request.user)
-            .order_by("-created_at")
-        )
+
+        lands = Land.objects.none()
 
     for land in lands:
 
@@ -283,7 +294,7 @@ def land_verification(request, pk):
 
         if action == "admin":
 
-            if profile.role != UserRole.ADMIN:
+            if profile.role != UserRole.RD_ADMIN:
 
                 messages.error(
                     request,

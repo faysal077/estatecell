@@ -15,6 +15,7 @@ from lands.models import Land
 from django.core.files.base import ContentFile
 from .utils import extract_pages
 import re
+from django.contrib.auth.models import User
 from accounts.models import UserProfile, UserRole
 # ------------------------------------------------------------------
 # Document CRUD
@@ -58,7 +59,20 @@ def document_edit(request, pk):
             Document,
             pk=pk
         )
+    elif profile.role == UserRole.RD_ADMIN:
+
+        data_entry_users = User.objects.filter(
+            userprofile__rd_admin=profile
+        )
+
+        document = get_object_or_404(
+            Document,
+            pk=pk,
+            issued_by__in=data_entry_users
+        )
+
     else:
+
         document = get_object_or_404(
             Document,
             pk=pk,

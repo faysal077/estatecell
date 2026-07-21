@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 
 class UserRole(models.TextChoices):
     SUPER_ADMIN = "SUPER_ADMIN", "Super Admin"
-    ADMIN = "ADMIN", "Admin"
+    RD_ADMIN = "RD_ADMIN", "Regional Admin"
     DATA_ENTRY = "DATA_ENTRY", "Data Entry"
     VIEWER = "VIEWER", "Viewer"
 
@@ -16,6 +16,14 @@ class UserProfile(models.Model):
         max_length=30,
         choices=UserRole.choices,
         default=UserRole.DATA_ENTRY
+    )
+    rd_admin = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        limit_choices_to={"role": UserRole.RD_ADMIN},
+        related_name="data_entry_users",
     )
 
     # Optional fields — you can add more later
