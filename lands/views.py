@@ -362,11 +362,11 @@ def land_verification(request, pk):
         "entries": entries,
         "profile": profile,
 
-        "is_admin": profile.role == UserRole.ADMIN,
+        "is_admin": profile.role == UserRole.RD_ADMIN,
         "is_super_admin": profile.role == UserRole.SUPER_ADMIN,
         
     }
-    print("Verification context:", context)  # Debugging line
+    # print("Verification context:", context)  # Debugging line
 
     return render(
         request,

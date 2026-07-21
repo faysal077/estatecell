@@ -46,6 +46,19 @@ class Land(models.Model):
         )
         super().save(*args, **kwargs)
 
+    REQUIRED_DOCUMENT_TYPES = [
+        "Gazette",
+        "Deed (Sale Deed / Registry Deed)",
+        "Khatiyan",
+        "Mutation (Namjari)",
+        "Lease Deed",
+        "Land Tax (Khajna / DCR)",
+        "Porcha",
+        "Mouza Map",
+        "Baina / Agreement for Sale",
+        "Land Survey Report",
+        "Building Plan Approval",
+    ]
     @property
     def utilization_percentage(self):
 
@@ -84,14 +97,15 @@ class Land(models.Model):
         )
     @property
     def tagging_percentage(self):
+        """
+        Tagging progress based on required document types.
+        """
 
-        total = self.documents.count()
-
-        if total == 0:
+        if self.total_required_tags == 0:
             return 0
 
         return round(
-            self.completed_tag_count * 100 / total,
+            (self.completed_tags / self.total_required_tags) * 100,
             2
         )
     @property
@@ -109,7 +123,7 @@ class Land(models.Model):
         """
         Total required unique document types.
         """
-        return 11
+        return len(self.REQUIRED_DOCUMENT_TYPES)
     @property
     def completed_tags(self):
 
