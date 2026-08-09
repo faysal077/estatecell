@@ -71,6 +71,7 @@ def lands_by_district(request, district_name):
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path(settings.ADMIN_URL.lstrip("/"), admin.site.urls),
 
     # Default route → redirect to login
     path('', lambda request: redirect('accounts:login')),

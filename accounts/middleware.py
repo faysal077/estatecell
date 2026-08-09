@@ -1,6 +1,8 @@
 from django.shortcuts import redirect
 from django.contrib import messages
 
+from esate_db import settings
+
 
 class AdminAccessMiddleware:
     """
@@ -14,7 +16,7 @@ class AdminAccessMiddleware:
     def __call__(self, request):
 
         # Protect Django Admin URLs
-        if request.path.startswith("/admin"):
+        if request.path.startswith(settings.ADMIN_URL):
 
             # User is not logged in
             if not request.user.is_authenticated:
