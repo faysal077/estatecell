@@ -6,22 +6,107 @@ from django.http import JsonResponse
 from lands.models import Land
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required 
+from django.db.models import Count, Sum 
+from django.shortcuts import render
 
 @login_required(login_url='accounts:login')
 def dashboard(request):
-    """Render dashboard with context data."""
-    from django.shortcuts import render
+    """Render dashboard with summary cards and RD office table."""
 
-    total_lands = Land.objects.count()
-    total_documents = 0
-    pending_verifications = total_lands  # Placeholder
-    legal_cases = 0  # Placeholder
+    # =====================================================
+    # Overall Summary Cards
+    # =====================================================
+
+    total_estates = Land.objects.count()
+
+    total_land_area = (
+        Land.objects.aggregate(total=Sum('total_area'))['total'] or 0
+    )
+
+    total_plots = (
+        Land.objects.aggregate(total=Sum('total_plots'))['total'] or 0
+    )
+
+    allocated_plots = (
+        Land.objects.aggregate(total=Sum('allocated_plots'))['total'] or 0
+    )
+
+    remaining_plots = (
+        Land.objects.aggregate(total=Sum('remaining_plots'))['total'] or 0
+    )
+
+    # =====================================================
+    # RD Office Wise Summary Table
+    # =====================================================
+
+    rd_office_summary = []
+
+    rd_offices = (
+        Land.objects
+        .values_list('rd_office', flat=True)
+        .distinct()
+        .order_by('rd_office')
+    )
+
+    for office in rd_offices:
+
+        lands = Land.objects.filter(rd_office=office)
+
+        total_estates_office = lands.count()
+
+        total_area_office = (
+            lands.aggregate(total=Sum('total_area'))['total'] or 0
+        )
+
+        total_plots_office = (
+            lands.aggregate(total=Sum('total_plots'))['total'] or 0
+        )
+
+        allocated_plots_office = (
+            lands.aggregate(total=Sum('allocated_plots'))['total'] or 0
+        )
+
+        remaining_plots_office = (
+            lands.aggregate(total=Sum('remaining_plots'))['total'] or 0
+        )
+
+        # Average tagging percentage for this RD office
+        if total_estates_office > 0:
+
+            tagging_percentage = round(
+                sum(l.tagging_percentage for l in lands) / total_estates_office,
+                1
+            )
+
+        else:
+            tagging_percentage = 0
+
+        rd_office_summary.append({
+            'rd_office': office,
+            'total_estates': total_estates_office,
+            'total_area': total_area_office,
+            'total_plots': total_plots_office,
+            'allocated_plots': allocated_plots_office,
+            'remaining_plots': remaining_plots_office,
+            'tagging_percentage': tagging_percentage,
+        })
+
+    # =====================================================
+    # Render Dashboard
+    # =====================================================
 
     return render(request, 'dashboard.html', {
-        'total_lands': total_lands,
-        'total_documents': total_documents,
-        'pending_verifications': pending_verifications,
-        'legal_cases': legal_cases,
+
+        # Card data
+        'total_estates': total_estates,
+        'total_land_area': total_land_area,
+        'total_plots': total_plots,
+        'allocated_plots': allocated_plots,
+        'remaining_plots': remaining_plots,
+
+        # Table data
+        'rd_office_summary': rd_office_summary,
     })
 
 

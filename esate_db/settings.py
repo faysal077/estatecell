@@ -34,7 +34,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 SECRET_KEY = 'django-insecure-k9o1j5a2sa1#)qjy$7b0+!&i)6__5wu6sb*e#@vr$z!@hzgai6'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = [
     'localhost',
@@ -43,7 +43,6 @@ ALLOWED_HOSTS = [
     'prescientific-unexpandable-gracelynn.ngrok-free.dev'
 ]
 # ALLOWED_HOSTS = ['estate.bscic.gov.bd',]
-
 
 # ALLOWED_HOSTS = ['*']
 CSRF_TRUSTED_ORIGINS = [

@@ -6,45 +6,135 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<h2 class="mb-4 fw-bold text-success">🌱 BSCIC Land Management Dashboard</h2>
-<div class="row g-4">
+<br>
 
-    <!-- Total Lands -->
-    <div class="col-md-3">
-        <div class="card shadow-sm border-0" style="border-left: 6px solid #4caf50;">
+<!-- ===================================================== -->
+<!-- Dashboard Summary Cards (Replace Old 4 Cards)       -->
+<!-- ===================================================== -->
+
+<div class="row g-4 mb-4">
+
+    <!-- Card 1: Estates & Land Area -->
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0 h-100"
+             style="border-left: 6px solid #198754;">
+
+            <div class="card-header bg-success text-white fw-bold d-flex align-items-center">
+                <i class="bi bi-building me-2"></i>
+                শিল্পনগরী ও জমির সারসংক্ষেপ
+            </div>
+
             <div class="card-body">
-                <h1 class="text-success">{{ total_lands }}</h1>
-                <p class="mb-0">Total Lands</p>
+
+                <div class="row text-center">
+
+                    <!-- Total Estates -->
+                    <div class="col-6 border-end">
+                        <div class="py-3">
+                            <div class =" d-flex align-items-center gap-3 center justify-content-center"> 
+                                <i class="bi bi-geo-alt-fill text-success"
+                                style="font-size: 2rem;"></i>
+
+                                <h2 class="fw-bold text-success mb-0">
+                                    {{ total_estates }}
+                                </h2>
+                            </div>
+                            <p class="text-muted mb-0 fw-semibold">
+                                মোট শিল্পনগরী
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Total Land Area -->
+                    <div class="col-6">
+                        <div class="py-3">
+                            <div class =" d-flex align-items-center gap-3 center justify-content-center">
+                            <i class="bi bi-arrows-fullscreen text-success"
+                               style="font-size: 2rem;"></i>
+
+                            <h2 class="fw-bold text-success mt-2 mb-1">
+                                {{ total_land_area|floatformat:2 }}
+                            </h2>
+                            </div>
+                            <p class="text-muted mb-0 fw-semibold">
+                                মোট জমির পরিমাণ (একর)
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+
             </div>
         </div>
     </div>
 
-    <!-- Total Documents -->
-    <div class="col-md-3">
-        <div class="card shadow-sm border-0" style="border-left: 6px solid #795548;">
-            <div class="card-body">
-                <h1 class="text-brown">{{ total_documents }}</h1>
-                <p class="mb-0">Documents Archived</p>
-            </div>
-        </div>
-    </div>
+    <!-- Card 2: Plot Statistics -->
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0 h-100"
+             style="border-left: 6px solid #0d6efd;">
 
-    <!-- Pending Verifications -->
-    <div class="col-md-3">
-        <div class="card shadow-sm border-0" style="border-left: 6px solid #ff9800;">
-            <div class="card-body">
-                <h1 class="text-warning">{{ pending_verifications }}</h1>
-                <p class="mb-0">Pending Verifications</p>
+            <div class="card-header bg-primary text-white fw-bold d-flex align-items-center">
+                <i class="bi bi-grid-3x3-gap-fill me-2"></i>
+                প্লটের সারসংক্ষেপ
             </div>
-        </div>
-    </div>
 
-    <!-- Legal Cases -->
-    <div class="col-md-3">
-        <div class="card shadow-sm border-0" style="border-left: 6px solid #e53935;">
             <div class="card-body">
-                <h1 class="text-danger">{{ legal_cases }}</h1>
-                <p class="mb-0">Open Land Cases</p>
+
+                <div class="row text-center g-3">
+
+                    <!-- Total Plots -->
+                    <div class="col-4">
+                        <div class="bg-light rounded-4 p-3 h-100">
+                            <div class =" d-flex align-items-center gap-3 center justify-content-center">
+                            <i class="bi bi-grid text-primary"
+                               style="font-size: 1.8rem;"></i>
+
+                            <h4 class="fw-bold text-primary mt-2 mb-1">
+                                {{ total_plots }}
+                            </h4>
+                            </div>  
+                            <p class="text-muted mb-0 small fw-semibold">
+                                মোট প্লট
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Allocated Plots -->
+                    <div class="col-4">
+                        <div class="bg-light rounded-4 p-3 h-100">
+                            <div class =" d-flex align-items-center gap-3 center justify-content-center">
+                            <i class="bi bi-check2-square text-success"
+                               style="font-size: 1.8rem;"></i>
+
+                            <h4 class="fw-bold text-success mt-2 mb-1">
+                                {{ allocated_plots }}
+                            </h4>
+                            </div>
+                            <p class="text-muted mb-0 small fw-semibold">
+                                বরাদ্দকৃত
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Remaining Plots -->
+                    <div class="col-4">
+                        <div class="bg-light rounded-4 p-3 h-100">
+                            <div class =" d-flex align-items-center gap-3 center justify-content-center">
+                            <i class="bi bi-plus-square text-warning"
+                               style="font-size: 1.8rem;"></i>
+
+                            <h4 class="fw-bold text-warning mt-2 mb-1">
+                                {{ remaining_plots }}
+                            </h4>
+                            </div>
+                            <p class="text-muted mb-0 small fw-semibold">
+                                বরাদ্দযোগ্য
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+
             </div>
         </div>
     </div>
@@ -73,6 +163,7 @@
         </div>
     </div>
 </div>
+
 
 <script>
     // District metadata - loaded from API
