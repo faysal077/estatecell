@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth import update_session_auth_hash
 from .models import UserProfile, UserRole 
 from .forms import FirstPasswordChangeForm
-
+from .models import UserProfile, UserRole, PasswordChangeLog
 # -----------------------------
 # 🔑 USER LOGIN
 # -----------------------------
@@ -102,15 +102,57 @@ def user_login(request):
 # 🔐 FIRST TIME PASSWORD CHANGE
 # -----------------------------
 
+# @login_required
+# def first_password_change(request):
+#     profile = request.user.userprofile
+
+#     # Only DATA_ENTRY users can use this page
+#     if profile.role != UserRole.DATA_ENTRY:
+#         return redirect("dashboard")
+
+#     # If already changed, skip
+#     if not profile.must_change_password:
+#         return redirect("dashboard")
+
+#     form = FirstPasswordChangeForm(request.POST or None)
+
+#     if request.method == "POST" and form.is_valid():
+#         new_password = form.cleaned_data["new_password"]
+
+#         # Set new password
+#         request.user.set_password(new_password)
+#         request.user.save()
+
+#         # Mark password as changed
+#         profile.must_change_password = False
+#         profile.save()
+
+#         # Logout user after password change
+#         logout(request)
+
+#         messages.success(
+#             request,
+#             "Password changed successfully. Please login again."
+#         )
+
+#         return redirect("accounts:login")
+
+#     return render(
+#         request,
+#         "accounts/first_password_change.html",
+#         {
+#             "form": form
+#         }
+#     )
 @login_required
 def first_password_change(request):
     profile = request.user.userprofile
 
-    # Only DATA_ENTRY users can use this page
+    # Only DATA_ENTRY users can access
     if profile.role != UserRole.DATA_ENTRY:
         return redirect("dashboard")
 
-    # If already changed, skip
+    # Already changed
     if not profile.must_change_password:
         return redirect("dashboard")
 
@@ -119,20 +161,38 @@ def first_password_change(request):
     if request.method == "POST" and form.is_valid():
         new_password = form.cleaned_data["new_password"]
 
-        # Set new password
+        # Change password
         request.user.set_password(new_password)
         request.user.save()
 
-        # Mark password as changed
+        # Mark as changed
         profile.must_change_password = False
         profile.save()
 
-        # Logout user after password change
+        # Create audit log
+        # PasswordChangeLog.objects.create(
+        #     user=request.user,
+        #     changed_by=request.user,
+        #     ip_address=get_client_ip(request),
+        #     user_agent=request.META.get("HTTP_USER_AGENT", ""),
+        # )
+
+        # ------------------------------
+        # CREATE PASSWORD CHANGE LOG
+        # ------------------------------
+        PasswordChangeLog.objects.create(
+            user=request.user,
+            changed_by=request.user,
+            ip_address=get_client_ip(request),
+            user_agent=request.META.get("HTTP_USER_AGENT", ""),
+        )
+
+        # Logout user
         logout(request)
 
         messages.success(
             request,
-            "Password changed successfully. Please login again."
+            "Password changed successfully. Please login again.",
         )
 
         return redirect("accounts:login")
@@ -140,10 +200,17 @@ def first_password_change(request):
     return render(
         request,
         "accounts/first_password_change.html",
-        {
-            "form": form
-        }
+        {"form": form},
     )
+# -----------------------------
+# 🔒 Client IP
+# -----------------------------
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        return x_forwarded_for.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR')
+
 # -----------------------------
 # 🔒 USER LOGOUT
 # -----------------------------
