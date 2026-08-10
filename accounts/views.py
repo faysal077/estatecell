@@ -4,7 +4,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.auth import update_session_auth_hash
-
+from .models import UserProfile, UserRole 
+from .forms import FirstPasswordChangeForm
 
 # -----------------------------
 # 🔑 USER LOGIN
@@ -25,7 +26,25 @@ from django.contrib.auth import update_session_auth_hash
 
 #     return render(request, "accounts/login.html")
 
+# def user_login(request):
+#     if request.user.is_authenticated:
+#         return redirect("dashboard")
+
+#     if request.method == "POST":
+#         username = request.POST.get("username")
+#         password = request.POST.get("password")
+
+#         user = authenticate(request, username=username, password=password)
+
+#         if user is not None:
+#             login(request, user)
+#             return redirect("dashboard")
+#         else:
+#             messages.error(request, "Invalid username or password.")
+
+#     return render(request, "accounts/login.html")
 def user_login(request):
+    # If already logged in
     if request.user.is_authenticated:
         return redirect("dashboard")
 
@@ -33,15 +52,98 @@ def user_login(request):
         username = request.POST.get("username")
         password = request.POST.get("password")
 
-        user = authenticate(request, username=username, password=password)
+        user = authenticate(
+            request,
+            username=username,
+            password=password
+        )
 
         if user is not None:
             login(request, user)
-            return redirect("dashboard")
-        else:
-            messages.error(request, "Invalid username or password.")
 
-    return render(request, "accounts/login.html")
+            # Get or create user profile
+            profile, _ = UserProfile.objects.get_or_create(
+                user=user
+            )
+
+            # Force password change for DATA_ENTRY users
+            if (
+                profile.role == UserRole.DATA_ENTRY
+                and profile.must_change_password
+            ):
+                messages.warning(
+                    request,
+                    "Please change your temporary password first."
+                )
+
+                return redirect(
+                    "accounts:first_password_change"
+                )
+
+            # Normal login
+            messages.success(
+                request,
+                "Login successful!"
+            )
+
+            return redirect("dashboard")
+
+        else:
+            messages.error(
+                request,
+                "Invalid username or password."
+            )
+
+    return render(
+        request,
+        "accounts/login.html"
+    )
+# -----------------------------
+# 🔐 FIRST TIME PASSWORD CHANGE
+# -----------------------------
+
+@login_required
+def first_password_change(request):
+    profile = request.user.userprofile
+
+    # Only DATA_ENTRY users can use this page
+    if profile.role != UserRole.DATA_ENTRY:
+        return redirect("dashboard")
+
+    # If already changed, skip
+    if not profile.must_change_password:
+        return redirect("dashboard")
+
+    form = FirstPasswordChangeForm(request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        new_password = form.cleaned_data["new_password"]
+
+        # Set new password
+        request.user.set_password(new_password)
+        request.user.save()
+
+        # Mark password as changed
+        profile.must_change_password = False
+        profile.save()
+
+        # Logout user after password change
+        logout(request)
+
+        messages.success(
+            request,
+            "Password changed successfully. Please login again."
+        )
+
+        return redirect("accounts:login")
+
+    return render(
+        request,
+        "accounts/first_password_change.html",
+        {
+            "form": form
+        }
+    )
 # -----------------------------
 # 🔒 USER LOGOUT
 # -----------------------------

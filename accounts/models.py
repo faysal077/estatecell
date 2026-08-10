@@ -25,7 +25,8 @@ class UserProfile(models.Model):
         limit_choices_to={"role": UserRole.RD_ADMIN},
         related_name="data_entry_users",
     )
-
+    # NEW FIELD 
+    must_change_password = models.BooleanField(default=True)
     # Optional fields — you can add more later
     full_name = models.CharField(max_length=200, blank=True, null=True)
     phone = models.CharField(max_length=20, blank=True, null=True)
