@@ -24,15 +24,32 @@ from django.contrib.auth.models import User
 from .models import LandVerification
 from .models import Land
 
+# lands/views.py
+
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from django.contrib import messages
+from django.shortcuts import render, redirect, get_object_or_404
+from django.utils import timezone
+
+from accounts.models import UserProfile, UserRole
+from documents.models import DocumentTagEntry
+from .models import Land, LandVerification
+from .forms import LandForm
+from esate_db.districts import DISTRICTS, DIVISION_NAMES
+
 
 @login_required
 def land_list(request):
 
+    # -------------------------------------------------
+    # Required Document Tags
+    # -------------------------------------------------
     REQUIRED_TAGS = [
         "Gazette",
         "Deed (Sale Deed / Registry Deed)",
         "Khatiyan",
-        "Mutation (Namjari)",
+        "Mutation (Namamari)",
         "Lease Deed",
         "Land Tax (Khajna / DCR)",
         "Porcha",
@@ -42,45 +59,273 @@ def land_list(request):
         "Building Plan Approval",
     ]
 
+    # -------------------------------------------------
+    # Get logged-in user's profile
+    # -------------------------------------------------
     profile, _ = UserProfile.objects.get_or_create(
         user=request.user
     )
 
+    # =================================================
+    # SUPER ADMIN
+    # =================================================
     if profile.role == UserRole.SUPER_ADMIN:
 
-        lands = Land.objects.all()
+        # -------------------------------------------------
+        # Get selected filters from URL
+        # Example:
+        # ?rd_admin=5&estate=17
+        # -------------------------------------------------
+        selected_rd = request.GET.get("rd_admin", "")
+        selected_estate = request.GET.get("estate", "")
 
+        # -------------------------------------------------
+        # Base queryset
+        # Super Admin can see all lands
+        # -------------------------------------------------
+        lands = (
+            Land.objects
+            .all()
+            .select_related("created_by")
+            .order_by("-created_at")
+        )
+
+        # -------------------------------------------------
+        # FIRST DROPDOWN
+        # Regional Offices / RD Admins
+        # -------------------------------------------------
+        rd_admins = (
+            UserProfile.objects
+            .filter(role=UserRole.RD_ADMIN)
+            .select_related("user")
+            .order_by("user__username")
+        )
+
+        # -------------------------------------------------
+        # SECOND DROPDOWN
+        # Default:
+        # Show ALL Data Entry users
+        # -------------------------------------------------
+        estate_users = (
+            User.objects
+            .filter(
+                userprofile__role=UserRole.DATA_ENTRY
+            )
+            .select_related("userprofile")
+            .order_by("username")
+        )
+
+        # -------------------------------------------------
+        # If a particular RD Admin is selected
+        # -------------------------------------------------
+        selected_rd_profile = None
+
+        if selected_rd:
+
+            selected_rd_profile = (
+                UserProfile.objects
+                .filter(
+                    id=selected_rd,
+                    role=UserRole.RD_ADMIN
+                )
+                .select_related("user")
+                .first()
+            )
+
+            if selected_rd_profile:
+
+                # -----------------------------------------
+                # SECOND DROPDOWN:
+                # Only Data Entry users under selected RD
+                # -----------------------------------------
+                estate_users = (
+                    User.objects
+                    .filter(
+                        userprofile__role=UserRole.DATA_ENTRY,
+                        userprofile__rd_admin=selected_rd_profile
+                    )
+                    .select_related("userprofile")
+                    .order_by("username")
+                )
+
+                # -----------------------------------------
+                # LAND RECORDS:
+                # Only lands created by those users
+                # -----------------------------------------
+                lands = lands.filter(
+                    created_by__in=estate_users
+                )
+
+        # -------------------------------------------------
+        # If a particular Estate/Data Entry user is selected
+        # -------------------------------------------------
+        if selected_estate:
+
+            # Make sure selected estate is actually
+            # a Data Entry user
+            estate_user = (
+                User.objects
+                .filter(
+                    id=selected_estate,
+                    userprofile__role=UserRole.DATA_ENTRY
+                )
+                .first()
+            )
+
+            if estate_user:
+
+                # -----------------------------------------
+                # If RD is also selected, make sure the
+                # estate belongs to that RD
+                # -----------------------------------------
+                if selected_rd_profile:
+
+                    if estate_user.userprofile.rd_admin_id != selected_rd_profile.id:
+                        # Invalid combination:
+                        # selected estate does not belong
+                        # to selected RD
+                        lands = Land.objects.none()
+
+                    else:
+                        lands = lands.filter(
+                            created_by=estate_user
+                        )
+
+                else:
+
+                    # No RD selected
+                    # Filter only by selected estate
+                    lands = lands.filter(
+                        created_by=estate_user
+                    )
+
+        # -------------------------------------------------
+        # Context for Super Admin
+        # -------------------------------------------------
+        context = {
+            "lands": lands,
+
+            "rd_admins": rd_admins,
+            "estate_users": estate_users,
+
+            "selected_rd": selected_rd,
+            "selected_estate": selected_estate,
+
+            "selected_rd_profile": selected_rd_profile,
+
+            "is_superadmin": True,
+        }
+
+    # =================================================
+    # RD ADMIN
+    # =================================================
     elif profile.role == UserRole.RD_ADMIN:
 
-        data_entry_users = User.objects.filter(
-            userprofile__rd_admin=profile
+        # -------------------------------------------------
+        # Get all Data Entry users under this RD Admin
+        # -------------------------------------------------
+        data_entry_users = (
+            User.objects
+            .filter(
+                userprofile__role=UserRole.DATA_ENTRY,
+                userprofile__rd_admin=profile
+            )
         )
 
-        lands = Land.objects.filter(
-            created_by__in=data_entry_users
+        # -------------------------------------------------
+        # Get lands created by those Data Entry users
+        # -------------------------------------------------
+        lands = (
+            Land.objects
+            .filter(
+                created_by__in=data_entry_users
+            )
+            .select_related("created_by")
+            .order_by("-created_at")
         )
 
+        context = {
+            "lands": lands,
+
+            "rd_admins": [],
+            "estate_users": [],
+
+            "selected_rd": "",
+            "selected_estate": "",
+
+            "selected_rd_profile": profile,
+
+            "is_superadmin": False,
+        }
+
+    # =================================================
+    # DATA ENTRY
+    # =================================================
     elif profile.role == UserRole.DATA_ENTRY:
 
-        lands = Land.objects.filter(
-            created_by=request.user
+        # -------------------------------------------------
+        # Data Entry can only see their own lands
+        # -------------------------------------------------
+        lands = (
+            Land.objects
+            .filter(
+                created_by=request.user
+            )
+            .select_related("created_by")
+            .order_by("-created_at")
         )
 
+        context = {
+            "lands": lands,
+
+            "rd_admins": [],
+            "estate_users": [],
+
+            "selected_rd": "",
+            "selected_estate": "",
+
+            "selected_rd_profile": profile,
+
+            "is_superadmin": False,
+        }
+
+    # =================================================
+    # OTHER ROLES
+    # =================================================
     else:
 
         lands = Land.objects.none()
 
+        context = {
+            "lands": lands,
+
+            "rd_admins": [],
+            "estate_users": [],
+
+            "selected_rd": "",
+            "selected_estate": "",
+
+            "selected_rd_profile": None,
+
+            "is_superadmin": False,
+        }
+
+    # =================================================
+    # Calculate document/tag progress
+    # =================================================
+
     for land in lands:
 
         uploaded_types = set(
-
-            DocumentTagEntry.objects.filter(
+            DocumentTagEntry.objects
+            .filter(
                 document__land=land
-            ).values_list(
+            )
+            .values_list(
                 "document_type",
                 flat=True
-            ).distinct()
-
+            )
+            .distinct()
         )
 
         land.tag_status = []
@@ -95,28 +340,29 @@ def land_list(request):
                 completed_count += 1
 
             land.tag_status.append({
-
                 "name": tag,
-
                 "completed": is_completed,
-
             })
 
         land.completed_count = completed_count
 
-        land.pending_count = len(REQUIRED_TAGS) - completed_count
+        land.pending_count = (
+            len(REQUIRED_TAGS) - completed_count
+        )
 
         land.progress = round(
             completed_count * 100 / len(REQUIRED_TAGS),
             1
         )
 
+    # =================================================
+    # Render
+    # =================================================
+
     return render(
         request,
         "lands/land_list.html",
-        {
-            "lands": lands,
-        },
+        context
     )
 
 @login_required
