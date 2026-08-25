@@ -1278,104 +1278,125 @@ ADMIN VERIFICATION
 <div class="land-dashboard">
 
     <!-- ================= HEADER ================= -->
-
     <div class="land-record-header">
 
-    <!-- LEFT: TITLE -->
-    <div class="land-record-title">
-        <h2 class="dashboard-title mb-0">
-            Land Records
-        </h2>
-    </div>
+        <!-- LEFT: TITLE -->
+        <div class="land-record-title">
 
-
-    <!-- RIGHT: FILTER BOX -->
-    {% if is_superadmin %}
-
-        <div class="land-filter-box">
-
-            <form method="GET" class="land-filter-form">
-
-                <!-- REGIONAL OFFICE -->
-                <div class="filter-group">
-
-                    <label for="rd_admin">
-                        Regional Office
-                    </label>
-
-                    <select
-                        id="rd_admin"
-                        name="rd_admin"
-                        class="form-select"
-                        onchange="this.form.submit()"
-                    >
-
-                        <option value="">
-                            All Regional Offices
-                        </option>
-
-                        {% for rd in rd_admins %}
-
-                            <option
-                                value="{{ rd.id }}"
-                                {% if selected_rd|stringformat:"s" == rd.id|stringformat:"s" %}
-                                    selected
-                                {% endif %}
-                            >
-                                {{ rd.user.username }}
-                            </option>
-
-                        {% endfor %}
-
-                    </select>
-
-                </div>
-
-
-                <!-- ESTATE -->
-                <div class="filter-group">
-
-                    <label for="estate">
-                        Estate
-                    </label>
-
-                    <select
-                        id="estate"
-                        name="estate"
-                        class="form-select"
-                        onchange="this.form.submit()"
-                    >
-
-                        <option value="">
-                            All Estates
-                        </option>
-
-                        {% for user in estate_users %}
-
-                            <option
-                                value="{{ user.id }}"
-                                {% if selected_estate|stringformat:"s" == user.id|stringformat:"s" %}
-                                    selected
-                                {% endif %}
-                            >
-                                {{ user.username }}
-                            </option>
-
-                        {% endfor %}
-
-                    </select>
-
-                </div>
-
-            </form>
+            <h2 class="dashboard-title mb-0">
+                Land Records
+            </h2>
 
         </div>
 
-    {% endif %}
+
+        <!-- RIGHT SIDE -->
+        <div class="d-flex align-items-center gap-3">
+
+            <!-- ADD LAND: DATA ENTRY ONLY -->
+            {% if request.user.userprofile.role == "DATA_ENTRY" %}
+
+                <a href="{% url 'lands:land_create' %}"
+                class="btn add-land-btn">
+
+                    <i class="bi bi-plus-lg"></i>
+
+                    Add Land
+
+                </a>
+
+            {% endif %}
+
+
+            <!-- SUPER ADMIN FILTER -->
+            {% if is_superadmin %}
+
+                <div class="land-filter-box">
+
+                    <form method="GET" class="land-filter-form">
+
+                        <div class="filter-group">
+
+                            <label for="rd_admin">
+                                Regional Office
+                            </label>
+
+                            <select
+                                id="rd_admin"
+                                name="rd_admin"
+                                class="form-select"
+                                onchange="this.form.submit()">
+
+                                <option value="">
+                                    All Regional Offices
+                                </option>
+
+                                {% for rd in rd_admins %}
+
+                                    <option
+                                        value="{{ rd.id }}"
+                                        {% if selected_rd|stringformat:"s" == rd.id|stringformat:"s" %}
+                                            selected
+                                        {% endif %}>
+
+                                        {{ rd.user.username }}
+
+                                    </option>
+
+                                {% endfor %}
+
+                            </select>
+
+                        </div>
+
+
+                        <div class="filter-group">
+
+                            <label for="estate">
+                                Estate
+                            </label>
+
+                            <select
+                                id="estate"
+                                name="estate"
+                                class="form-select"
+                                onchange="this.form.submit()">
+
+                                <option value="">
+                                    All Estates
+                                </option>
+
+                                {% for user in estate_users %}
+
+                                    <option
+                                        value="{{ user.id }}"
+                                        {% if selected_estate|stringformat:"s" == user.id|stringformat:"s" %}
+                                            selected
+                                        {% endif %}>
+
+                                        {{ user.username }}
+
+                                    </option>
+
+                                {% endfor %}
+
+                            </select>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+    
 
 </div>
-
-
 <!-- SUBTITLE -->
 <div class="dashboard-subtitle">
     Estate Management Dashboard
