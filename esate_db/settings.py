@@ -73,6 +73,7 @@ MIDDLEWARE = [
     'accounts.middleware.AdminAccessMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "accounts.middleware.AuditLogMiddleware",
 ]
 
 ROOT_URLCONF = 'esate_db.urls'

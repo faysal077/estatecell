@@ -146,3 +146,78 @@ class PasswordChangeLogAdmin(admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         return False
+
+from django.contrib import admin
+from .models import (
+    UserProfile,
+    PasswordChangeLog,
+    AuditLog,
+)
+
+
+@admin.register(AuditLog)
+class AuditLogAdmin(admin.ModelAdmin):
+
+    list_display = (
+        "user",
+        "role",
+        "action",
+        "request_summary",
+        "timestamp",
+        "ip_address",
+        "status_code",
+    )
+
+    list_filter = (
+        "role",
+        "action",
+        "method",
+        "status_code",
+        "timestamp",
+    )
+
+    search_fields = (
+        "user__username",
+        "user__first_name",
+        "user__last_name",
+        "role",
+        "action",
+        "path",
+        "ip_address",
+        "user_agent",
+    )
+
+    readonly_fields = (
+        "user",
+        "role",
+        "action",
+        "method",
+        "path",
+        "request_data",
+        "timestamp",
+        "ip_address",
+        "user_agent",
+        "status_code",
+    )
+
+    ordering = (
+        "-timestamp",
+    )
+
+    date_hierarchy = "timestamp"
+
+    list_per_page = 50
+
+    def request_summary(self, obj):
+
+        if not obj.request_data:
+            return "-"
+
+        text = str(obj.request_data)
+
+        if len(text) > 100:
+            return text[:100] + "..."
+
+        return text
+
+    request_summary.short_description = "Requests"
