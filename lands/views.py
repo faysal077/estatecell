@@ -38,6 +38,8 @@ from .models import Land, LandVerification
 from .forms import LandForm
 from esate_db.districts import DISTRICTS, DIVISION_NAMES
 
+# New view for land verification with admin and super admin checks
+from documents.models import DocumentTagEntry
 
 @login_required
 def land_list(request):
@@ -507,10 +509,125 @@ def verify_land_super_admin(request, pk):
 # ------------------------------
 #      Admin and SuperAdmin Verification
 # ------------------------------
+# @login_required
+# def land_verification(request, pk):
+
+#     land = get_object_or_404(Land, pk=pk)
+
+#     verification, created = LandVerification.objects.get_or_create(
+#         land=land
+#     )
+
+#     entries = (
+#         DocumentTagEntry.objects
+#         .filter(document__land=land)
+#         .prefetch_related("tags")
+#         .select_related(
+#             "document",
+#             "created_by"
+#         )
+#         .order_by("-created_at")
+#     )
+
+#     profile = request.user.userprofile
+    
+
+#     if request.method == "POST":
+
+#         action = request.POST.get("action")
+
+#         ###################################
+#         # ADMIN VERIFY
+#         ###################################
+
+#         if action == "admin":
+
+#             if profile.role != UserRole.RD_ADMIN:
+
+#                 messages.error(
+#                     request,
+#                     "Only Admin can verify."
+#                 )
+
+#             else:
+
+#                 verification.admin_verified = True
+
+#                 verification.admin_verified_by = request.user
+
+#                 verification.admin_verified_date = timezone.now()
+
+#                 verification.save()
+
+#                 messages.success(
+#                     request,
+#                     "Successfully verified."
+#                 )
+
+#         ###################################
+#         # SUPER ADMIN VERIFY
+#         ###################################
+
+#         elif action == "super":
+
+#             if profile.role != UserRole.SUPER_ADMIN:
+
+#                 messages.error(
+#                     request,
+#                     "Only Super Admin can verify."
+#                 )
+
+#             elif not verification.admin_verified:
+
+#                 messages.error(
+#                     request,
+#                     "Admin verification required."
+#                 )
+
+#             else:
+
+#                 verification.super_admin_verified = True
+
+#                 verification.super_admin_verified_by = request.user
+
+#                 verification.super_admin_verified_date = timezone.now()
+
+#                 verification.save()
+
+#                 messages.success(
+#                     request,
+#                     "Super Admin verification completed."
+#                 )
+
+#         return redirect(
+#             "lands:land_verification",
+#             pk=pk
+#         )
+
+#     context = {
+#         "land": land,
+#         "verification": verification,
+#         "entries": entries,
+#         "profile": profile,
+
+#         "is_admin": profile.role == UserRole.RD_ADMIN,
+#         "is_super_admin": profile.role == UserRole.SUPER_ADMIN,
+        
+#     }
+#     # print("Verification context:", context)  # Debugging line
+
+#     return render(
+#         request,
+#         "lands/admin_verification.html",
+#         context
+#     )
 @login_required
 def land_verification(request, pk):
 
-    land = get_object_or_404(Land, pk=pk)
+    land = get_object_or_404(
+        Land,
+        pk=pk
+    )
 
     verification, created = LandVerification.objects.get_or_create(
         land=land
@@ -518,7 +635,9 @@ def land_verification(request, pk):
 
     entries = (
         DocumentTagEntry.objects
-        .filter(document__land=land)
+        .filter(
+            document__land=land
+        )
         .prefetch_related("tags")
         .select_related(
             "document",
@@ -527,92 +646,254 @@ def land_verification(request, pk):
         .order_by("-created_at")
     )
 
-    profile = request.user.userprofile
-    
+    profile, _ = UserProfile.objects.get_or_create(
+        user=request.user
+    )
+
+    # =====================================================
+    # CURRENT VERIFICATION STATUS
+    # =====================================================
+
+    admin_verified_current = (
+        verification.is_admin_currently_verified()
+    )
+
+    super_admin_verified_current = (
+        verification.is_super_admin_currently_verified()
+    )
+
+    # =====================================================
+    # LATEST TAGGED DOCUMENT
+    # =====================================================
+
+    latest_entry = (
+        entries.first()
+    )
+
+    latest_tagged_date = (
+        latest_entry.created_at
+        if latest_entry
+        else None
+    )
+
+    # =====================================================
+    # POST
+    # =====================================================
 
     if request.method == "POST":
 
         action = request.POST.get("action")
 
-        ###################################
-        # ADMIN VERIFY
-        ###################################
+        # =================================================
+        # ADMIN VERIFICATION
+        # =================================================
 
         if action == "admin":
 
+            # Only RD Admin
             if profile.role != UserRole.RD_ADMIN:
 
                 messages.error(
                     request,
-                    "Only Admin can verify."
+                    "Only RD Admin can verify documents."
                 )
 
-            else:
+                return redirect(
+                    "lands:land_verification",
+                    pk=pk
+                )
 
-                verification.admin_verified = True
+            # No tagged document
+            if not latest_entry:
 
-                verification.admin_verified_by = request.user
-
-                verification.admin_verified_date = timezone.now()
-
-                verification.save()
-
-                messages.success(
+                messages.error(
                     request,
-                    "Successfully verified."
+                    "There are no tagged documents to verify."
                 )
 
-        ###################################
-        # SUPER ADMIN VERIFY
-        ###################################
+                return redirect(
+                    "lands:land_verification",
+                    pk=pk
+                )
+
+            # Verify current document/tagging cycle
+            verification.admin_verified = True
+
+            verification.admin_verified_by = request.user
+
+            verification.admin_verified_date = timezone.now()
+
+            # IMPORTANT:
+            # A new Admin verification creates a new
+            # verification cycle for Super Admin.
+
+            verification.super_admin_verified = False
+
+            verification.super_admin_verified_by = None
+
+            verification.super_admin_verified_date = None
+
+            verification.save()
+
+            messages.success(
+                request,
+                "Documents successfully verified by RD Admin."
+            )
+
+        # =================================================
+        # SUPER ADMIN VERIFICATION
+        # =================================================
 
         elif action == "super":
 
+            # Only Super Admin
             if profile.role != UserRole.SUPER_ADMIN:
 
                 messages.error(
                     request,
-                    "Only Super Admin can verify."
+                    "Only Super Admin can perform final verification."
                 )
 
-            elif not verification.admin_verified:
+                return redirect(
+                    "lands:land_verification",
+                    pk=pk
+                )
+
+            # Admin must have verified CURRENT documents
+            if not verification.is_admin_currently_verified():
 
                 messages.error(
                     request,
-                    "Admin verification required."
+                    "Current documents must be verified by RD Admin first."
                 )
 
-            else:
-
-                verification.super_admin_verified = True
-
-                verification.super_admin_verified_by = request.user
-
-                verification.super_admin_verified_date = timezone.now()
-
-                verification.save()
-
-                messages.success(
-                    request,
-                    "Super Admin verification completed."
+                return redirect(
+                    "lands:land_verification",
+                    pk=pk
                 )
+
+            # Final verification
+            verification.super_admin_verified = True
+
+            verification.super_admin_verified_by = request.user
+
+            verification.super_admin_verified_date = timezone.now()
+
+            verification.save()
+
+            messages.success(
+                request,
+                "Super Admin final verification completed."
+            )
+
+        else:
+
+            messages.error(
+                request,
+                "Invalid verification action."
+            )
 
         return redirect(
             "lands:land_verification",
             pk=pk
         )
 
+    # =====================================================
+    # TAGGING PROGRESS
+    # =====================================================
+
+    REQUIRED_TAGS = [
+        "Gazette",
+        "Deed (Sale Deed / Registry Deed)",
+        "Khatiyan",
+        "Mutation (Namamari)",
+        "Lease Deed",
+        "Land Tax (Khajna / DCR)",
+        "Porcha",
+        "Mouza Map",
+        "Baina / Agreement for Sale",
+        "Land Survey Report",
+        "Building Plan Approval",
+    ]
+
+    uploaded_types = set(
+        DocumentTagEntry.objects
+        .filter(
+            document__land=land
+        )
+        .values_list(
+            "document_type",
+            flat=True
+        )
+        .distinct()
+    )
+
+    completed_tags = sum(
+        1
+        for tag in REQUIRED_TAGS
+        if tag in uploaded_types
+    )
+
+    total_required_tags = len(REQUIRED_TAGS)
+
+    pending_tags = (
+        total_required_tags -
+        completed_tags
+    )
+
+    tagging_percentage = (
+        round(
+            completed_tags * 100 / total_required_tags,
+            1
+        )
+        if total_required_tags
+        else 0
+    )
+
+    # =====================================================
+    # CONTEXT
+    # =====================================================
+
     context = {
+
         "land": land,
+
         "verification": verification,
+
         "entries": entries,
+
         "profile": profile,
 
-        "is_admin": profile.role == UserRole.RD_ADMIN,
-        "is_super_admin": profile.role == UserRole.SUPER_ADMIN,
-        
+        "is_admin": (
+            profile.role == UserRole.RD_ADMIN
+        ),
+
+        "is_super_admin": (
+            profile.role == UserRole.SUPER_ADMIN
+        ),
+
+        # Dynamic verification status
+        "admin_verified_current": (
+            admin_verified_current
+        ),
+
+        "super_admin_verified_current": (
+            super_admin_verified_current
+        ),
+
+        "latest_entry": latest_entry,
+
+        "latest_tagged_date": latest_tagged_date,
+
+        # Tagging statistics
+        "completed_tags": completed_tags,
+
+        "pending_tags": pending_tags,
+
+        "total_required_tags": total_required_tags,
+
+        "tagging_percentage": tagging_percentage,
     }
-    # print("Verification context:", context)  # Debugging line
 
     return render(
         request,

@@ -48,6 +48,7 @@ ALLOWED_HOSTS = [
 CSRF_TRUSTED_ORIGINS = [
         
         'https://prescientific-unexpandable-gracelynn.ngrok-free.dev',
+        
 ]
 
 # Application definition

@@ -25,6 +25,85 @@ Land ID :
 <hr>
 <div class="row mb-4">
 
+    <div class="col-md-4">
+
+        {% if admin_verified_current %}
+
+            <div class="alert alert-success mb-0">
+
+                <i class="bi bi-check-circle-fill"></i>
+
+                <strong>Admin Verified</strong>
+
+            </div>
+
+        {% else %}
+
+            <div class="alert alert-warning mb-0">
+
+                <i class="bi bi-clock-history"></i>
+
+                <strong>Admin Verification Pending</strong>
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+
+    <div class="col-md-4">
+
+        {% if super_admin_verified_current %}
+
+            <div class="alert alert-success mb-0">
+
+                <i class="bi bi-check-circle-fill"></i>
+
+                <strong>Super Admin Verified</strong>
+
+            </div>
+
+        {% else %}
+
+            <div class="alert alert-warning mb-0">
+
+                <i class="bi bi-clock-history"></i>
+
+                <strong>Super Admin Verification Pending</strong>
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+
+    <div class="col-md-4">
+
+        {% if latest_tagged_date %}
+
+            <div class="alert alert-info mb-0">
+
+                <i class="bi bi-calendar-event"></i>
+
+                Latest Tag:
+
+                <strong>
+
+                    {{ latest_tagged_date|date:"d M Y H:i" }}
+
+                </strong>
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
+<div class="row mb-4">
+
     <!-- Land Information -->
     <div class="col-lg-7">
 
@@ -361,121 +440,197 @@ View PDF
 
 <div class="col-md-6">
 
-<div class="card">
+    <div class="card">
 
-<div class="card-header">
+        <div class="card-header">
 
-<h4>
+            <h4>
+                <i class="bi bi-person-check"></i>
+                Admin Verification
+            </h4>
 
-Admin Verification
-
-</h4>
-
-</div>
-
-<div class="card-body">
-
-    {% if verification.admin_verified %}
-
-        <div class="alert alert-success">
-            <strong>Verified</strong><br>
-            {{ verification.admin_verified_by }}<br>
-            {{ verification.admin_verified_date }}
         </div>
 
-    {% elif is_admin %}
+        <div class="card-body">
 
-        <form method="post">
-            {% csrf_token %}
+            {% if admin_verified_current %}
 
-            <input
-                type="hidden"
-                name="action"
-                value="admin">
+                <div class="alert alert-success">
 
-            <button class="btn btn-success">
-                <i class="bi bi-patch-check-fill"></i>
-                Verify by Admin
-            </button>
+                    <strong>
+                        <i class="bi bi-check-circle-fill"></i>
+                        Verified
+                    </strong>
 
-        </form>
+                    <br>
 
-    {% else %}
+                    Verified By:
+                    <strong>
+                        {{ verification.admin_verified_by }}
+                    </strong>
 
-        <div class="alert alert-warning">
-            Waiting for Admin Verification
+                    <br>
+
+                    Date:
+                    {{ verification.admin_verified_date|date:"d M Y H:i" }}
+
+                </div>
+
+            {% elif is_admin %}
+
+                <div class="alert alert-warning">
+
+                    <i class="bi bi-clock-history"></i>
+
+                    New documents are waiting for Admin verification.
+
+                </div>
+
+                <form method="post">
+
+                    {% csrf_token %}
+
+                    <input
+                        type="hidden"
+                        name="action"
+                        value="admin">
+
+                    <button
+                        type="submit"
+                        class="btn btn-success">
+
+                        <i class="bi bi-patch-check-fill"></i>
+
+                        Verify Current Documents
+
+                    </button>
+
+                </form>
+
+            {% else %}
+
+                <div class="alert alert-warning">
+
+                    <i class="bi bi-clock-history"></i>
+
+                    Waiting for Admin Verification
+
+                </div>
+
+            {% endif %}
+
         </div>
 
-    {% endif %}
-
-</div>
-
-</div>
+    </div>
 
 </div>
 
 <div class="col-md-6">
 
-<div class="card">
+    <div class="card">
 
-<div class="card-header">
+        <div class="card-header">
 
-<h4>
+            <h4>
 
-Super Admin Verification
+                <i class="bi bi-shield-check"></i>
 
-</h4>
+                Super Admin Verification
 
-</div>
+            </h4>
 
-<div class="card-body">
-
-    {% if verification.super_admin_verified %}
-
-        <div class="alert alert-success">
-            <strong>Verified</strong><br>
-            {{ verification.super_admin_verified_by }}<br>
-            {{ verification.super_admin_verified_date }}
         </div>
 
-    {% elif is_super_admin %}
+        <div class="card-body">
 
-        {% if verification.admin_verified %}
+            {% if super_admin_verified_current %}
 
-            <form method="post">
-                {% csrf_token %}
+                <div class="alert alert-success">
 
-                <input
-                    type="hidden"
-                    name="action"
-                    value="super">
+                    <strong>
 
-                <button class="btn btn-danger">
-                    <i class="bi bi-shield-check"></i>
-                    Final Verification
-                </button>
+                        <i class="bi bi-check-circle-fill"></i>
 
-            </form>
+                        Verified
 
-        {% else %}
+                    </strong>
 
-            <div class="alert alert-warning">
-                Admin verification is required first.
-            </div>
+                    <br>
 
-        {% endif %}
+                    Verified By:
 
-    {% else %}
+                    <strong>
+                        {{ verification.super_admin_verified_by }}
+                    </strong>
 
-        <div class="alert alert-secondary">
-            Only Super Admin can perform final verification.
+                    <br>
+
+                    Date:
+
+                    {{ verification.super_admin_verified_date|date:"d M Y H:i" }}
+
+                </div>
+
+            {% elif is_super_admin %}
+
+                {% if admin_verified_current %}
+
+                    <div class="alert alert-danger">
+
+                        <i class="bi bi-exclamation-circle"></i>
+
+                        New documents are ready for final verification.
+
+                    </div>
+
+                    <form method="post">
+
+                        {% csrf_token %}
+
+                        <input
+                            type="hidden"
+                            name="action"
+                            value="super">
+
+                        <button
+                            type="submit"
+                            class="btn btn-danger">
+
+                            <i class="bi bi-shield-check"></i>
+
+                            Final Verification
+
+                        </button>
+
+                    </form>
+
+                {% else %}
+
+                    <div class="alert alert-warning">
+
+                        <i class="bi bi-clock-history"></i>
+
+                        Admin verification is required first.
+
+                    </div>
+
+                {% endif %}
+
+            {% else %}
+
+                <div class="alert alert-secondary">
+
+                    <i class="bi bi-info-circle"></i>
+
+                    Only Super Admin can perform final verification.
+
+                </div>
+
+            {% endif %}
+
         </div>
 
-    {% endif %}
-
-</div>
-
-</div>
+    </div>
 
 </div>
 
