@@ -155,7 +155,7 @@ def lands_by_district(request, district_name):
 
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('adnim/', admin.site.urls),
     path(settings.ADMIN_URL.lstrip("/"), admin.site.urls),
 
     # Default route → redirect to login
@@ -172,6 +172,9 @@ urlpatterns = [
     # API
     path('api/lands/by-district/<str:district_name>/', lands_by_district, name='lands_by_district'),
     path('api/districts/', district_metadata, name='district_metadata'),
+
+    # Reports
+    path("reports/", include("reports.urls")),
 ]
 
 # Serve media files in development

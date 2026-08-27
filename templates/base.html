@@ -332,24 +332,98 @@ footer {
     </button>
 
     <div class="collapse navbar-collapse" id="navbarNav">
+
         <ul class="navbar-nav ms-auto">
 
+
+            <!-- Lands -->
+
             <li class="nav-item">
-                <a class="nav-link" href="/lands/">Lands</a>
+
+                <a
+                    class="nav-link"
+                    href="{% url 'lands:land_list' %}"
+                >
+
+                    <i class="bi bi-map"></i>
+
+                    Lands
+
+                </a>
+
             </li>
+
+
+            <!-- Reports - Super Admin Only -->
+
             {% if user.is_authenticated %}
+
+                {% if user.userprofile.role == "SUPER_ADMIN" %}
+
+                    <li class="nav-item">
+
+                        <a
+                            class="nav-link"
+                            href="{% url 'reports:rd_office_report' %}"
+                        >
+
+                            <i class="bi bi-bar-chart-line"></i>
+
+                            Reports
+
+                        </a>
+
+                    </li>
+
+                {% endif %}
+
+
+                <!-- User -->
+
                 <li class="nav-item">
-                    <a class="nav-link" href="#">Hi, {{ user.username }}</a>
+
+                    <a
+                        class="nav-link"
+                        href="#"
+                    >
+
+                        Hi, {{ user.username }}
+
+                    </a>
+
                 </li>
+
+
+                <!-- Logout -->
+
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'accounts:logout' %}">Logout</a>
+
+                    <a
+                        class="nav-link"
+                        href="{% url 'accounts:logout' %}"
+                    >
+
+                        Logout
+
+                    </a>
+
                 </li>
+
+
             {% else %}
+
+                <!-- Login -->
+
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'accounts:login' %}">Login</a>
+
+                    <a
+                        class="nav-link"
+                        href="{% url 'accounts:login' %}" >
+
+                        Login
+                    </a>
                 </li>
             {% endif %}
-
         </ul>
     </div>
 </nav>

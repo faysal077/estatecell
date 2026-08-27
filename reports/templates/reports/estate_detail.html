@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container-fluid py-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+
+            <h2 class="fw-bold">
+
+                Estate Details
+
+            </h2>
+
+            <p class="text-muted">
+
+                Estate ID: {{ land.id }}
+
+            </p>
+
+        </div>
+
+        <a
+            href="{% url 'reports:estate_report' land.rd_office land.district %}"
+            class="btn btn-outline-secondary"
+        >
+
+            <i class="bi bi-arrow-left"></i>
+
+            Back
+
+        </a>
+
+    </div>
+
+
+    <div class="card shadow-sm">
+
+        <div class="card-header bg-white">
+
+            <h4 class="mb-0">
+
+                {{ land.owner_name }}
+
+            </h4>
+
+        </div>
+
+
+        <div class="card-body">
+
+            <div class="row">
+
+
+                <div class="col-md-6">
+
+                    <table class="table table-bordered">
+
+                        <tr>
+
+                            <th>Estate ID</th>
+
+                            <td>{{ land.id }}</td>
+
+                        </tr>
+
+                        <tr>
+
+                            <th>Estate Name</th>
+
+                            <td>{{ land.owner_name }}</td>
+
+                        </tr>
+
+                        <tr>
+
+                            <th>RD Office</th>
+
+                            <td>{{ land.rd_office }}</td>
+
+                        </tr>
+
+                        <tr>
+
+                            <th>Division</th>
+
+                            <td>{{ land.division }}</td>
+
+                        </tr>
+
+                        <tr>
+
+                            <th>District</th>
+
+                            <td>{{ land.district }}</td>
+
+                        </tr>
+
+                        <tr>
+
+                            <th>Upazila</th>
+
+                            <td>{{ land.upazila }}</td>
+
+                        </tr>
+
+                    </table>
+
+                </div>
+
+
+                <div class="col-md-6">
+
+                    <table class="table table-bordered">
+
+                        <tr>
+
+                            <th>Total Area</th>
+
+                            <td>
+
+                                {{ land.total_area|floatformat:2 }}
+
+                                Acre
+
+                            </td>
+
+                        </tr>
+
+                        <tr>
+
+                            <th>Total Plots</th>
+
+                            <td>
+
+                                {{ land.total_plots }}
+
+                            </td>
+
+                        </tr>
+
+                        <tr>
+
+                            <th>Allocated Plots</th>
+
+                            <td>
+
+                                {{ land.allocated_plots }}
+
+                            </td>
+
+                        </tr>
+
+                        <tr>
+
+                            <th>Remaining Plots</th>
+
+                            <td>
+
+                                {{ land.remaining_plots }}
+
+                            </td>
+
+                        </tr>
+
+                        <tr>
+
+                            <th>Utilization</th>
+
+                            <td>
+
+                                {{ land.utilization_percentage }}%
+
+                            </td>
+
+                        </tr>
+
+                        <tr>
+
+                            <th>Created</th>
+
+                            <td>
+
+                                {{ land.created_at|date:"d M Y H:i" }}
+
+                            </td>
+
+                        </tr>
+
+                    </table>
+
+                </div>
+
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

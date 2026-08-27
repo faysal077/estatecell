@@ -17,6 +17,42 @@ from .utils import extract_pages
 import re
 from django.contrib.auth.models import User
 from accounts.models import UserProfile, UserRole
+
+# ------------------------------------------------------------------
+# New view for land verification with admin and super admin checks
+# ------------------------------------------------------------------
+
+import os
+import io
+import re
+import fitz
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.core.files.base import ContentFile
+
+from .models import (
+    Document,
+    DocumentPage,
+    Tag,
+    PageTag,
+    DocumentIndex,
+    DocumentTag,
+    DocumentTagEntry,
+)
+
+from .forms import (
+    DocumentForm,
+    TagForm,
+    DocumentIndexForm,
+)
+
+from lands.models import Land
+from .utils import extract_pages
+
+from django.contrib.auth.models import User
+from accounts.models import UserProfile, UserRole
 # ------------------------------------------------------------------
 # Document CRUD
 # ------------------------------------------------------------------
@@ -103,18 +139,183 @@ def document_edit(request, pk):
 
 @login_required
 def document_delete(request, pk):
-    document = get_object_or_404(Document, pk=pk)
-    document.delete()
-    return JsonResponse({'success': True})
 
+    # ---------------------------------------------
+    # Only POST allowed
+    # ---------------------------------------------
+
+    if request.method != "POST":
+        return JsonResponse({
+            "success": False,
+            "error": "POST request required."
+        }, status=405)
+
+    # ---------------------------------------------
+    # Get current user's profile
+    # ---------------------------------------------
+
+    profile, _ = UserProfile.objects.get_or_create(
+        user=request.user
+    )
+
+    # ---------------------------------------------
+    # ONLY DATA ENTRY CAN DELETE
+    # ---------------------------------------------
+
+    if profile.role != UserRole.DATA_ENTRY:
+        return JsonResponse({
+            "success": False,
+            "error": "Only Data Entry users can delete documents."
+        }, status=403)
+
+    # ---------------------------------------------
+    # Only allow user to delete their own document
+    # ---------------------------------------------
+
+    document = get_object_or_404(
+        Document,
+        pk=pk,
+        issued_by=request.user
+    )
+
+    # ---------------------------------------------
+    # Collect all related Tag IDs BEFORE deletion
+    # ---------------------------------------------
+
+    tag_ids = set()
+
+    # Tags from DocumentTag
+    tag_ids.update(
+        DocumentTag.objects
+        .filter(document=document)
+        .values_list('tag_id', flat=True)
+    )
+
+    # Tags from DocumentTagEntry
+    for entry in DocumentTagEntry.objects.filter(
+        document=document
+    ):
+        tag_ids.update(
+            entry.tags.values_list(
+                'id',
+                flat=True
+            )
+        )
+
+        # Delete separated PDF
+        if entry.separated_pdf:
+
+            try:
+                entry.separated_pdf.delete(
+                    save=False
+                )
+            except Exception:
+                pass
+
+    # Tags from PageTag
+    tag_ids.update(
+        PageTag.objects
+        .filter(
+            document_page__document=document
+        )
+        .values_list('tag_id', flat=True)
+    )
+
+    # ---------------------------------------------
+    # Delete Document
+    # ---------------------------------------------
+
+    document.delete()
+
+    # ---------------------------------------------
+    # Delete orphan Tags
+    #
+    # This prevents deleting a Tag that is still
+    # being used by another document.
+    # ---------------------------------------------
+
+    for tag_id in tag_ids:
+
+        tag = Tag.objects.filter(
+            pk=tag_id
+        ).first()
+
+        if tag:
+
+            still_used = (
+                DocumentTag.objects.filter(
+                    tag=tag
+                ).exists()
+                or
+                PageTag.objects.filter(
+                    tag=tag
+                ).exists()
+                or
+                DocumentTagEntry.objects.filter(
+                    tags=tag
+                ).exists()
+            )
+
+            if not still_used:
+                tag.delete()
+
+    return JsonResponse({
+        "success": True,
+        "message": (
+            "Document and its corresponding "
+            "unused tags were deleted successfully."
+        )
+    })
 @login_required
 def document_list(request, land_id):
-    land = get_object_or_404(Land, pk=land_id)
-    documents = land.documents.prefetch_related('pages', 'index_entries').all()
-    return render(request, "documents/document_list.html", {
+
+    land = get_object_or_404(
+        Land,
+        pk=land_id
+    )
+
+    documents = (
+        Document.objects
+        .filter(land=land)
+        .prefetch_related(
+            'pages',
+            'index_entries',
+            'tag_entries__tags'
+        )
+        .select_related(
+            'land',
+            'issued_by'
+        )
+        .order_by('-created_at')
+    )
+
+    profile, _ = UserProfile.objects.get_or_create(
+        user=request.user
+    )
+
+    context = {
         'documents': documents,
-        'land': land
-    })
+        'land': land,
+        'profile': profile,
+
+        'is_data_entry': (
+            profile.role == UserRole.DATA_ENTRY
+        ),
+
+        'is_rd_admin': (
+            profile.role == UserRole.RD_ADMIN
+        ),
+
+        'is_super_admin': (
+            profile.role == UserRole.SUPER_ADMIN
+        ),
+    }
+
+    return render(
+        request,
+        "documents/document_list.html",
+        context
+    )
 
 
 
@@ -652,59 +853,107 @@ def serve_document_pdf(request, pk):
 @login_required
 def delete_tag_entry(request, entry_id):
 
-    # entry = get_object_or_404(
-    #     DocumentTagEntry,
-    #     pk=entry_id
-    # )
-    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    # ---------------------------------------------
+    # Only POST allowed
+    # ---------------------------------------------
 
-    if profile.role == UserRole.SUPER_ADMIN:
-        entry = get_object_or_404(
-            DocumentTagEntry,
-            pk=entry_id
-        )
-    else:
-        entry = get_object_or_404(
-            DocumentTagEntry,
-            pk=entry_id,
-            created_by=request.user
-        )
-
-    if entry.separated_pdf:
-
-        pdf_path = entry.separated_pdf.path
-
-        if os.path.exists(pdf_path):
-            os.remove(pdf_path)
-
-    entry.delete()
-
-    return JsonResponse({
-        "success": True
-    })
-
-@login_required
-def delete_tag_entry(request, entry_id):
-
-    if request.method != 'POST':
+    if request.method != "POST":
         return JsonResponse({
-            'success': False,
-            'error': 'POST required'
-        })
+            "success": False,
+            "error": "POST request required."
+        }, status=405)
+
+    # ---------------------------------------------
+    # Current user's profile
+    # ---------------------------------------------
+
+    profile, _ = UserProfile.objects.get_or_create(
+        user=request.user
+    )
+
+    # ---------------------------------------------
+    # ONLY DATA ENTRY CAN DELETE TAG ENTRY
+    # ---------------------------------------------
+
+    if profile.role != UserRole.DATA_ENTRY:
+        return JsonResponse({
+            "success": False,
+            "error": (
+                "Only Data Entry users can "
+                "delete tag entries."
+            )
+        }, status=403)
+
+    # ---------------------------------------------
+    # Only creator can delete their tag entry
+    # ---------------------------------------------
 
     entry = get_object_or_404(
         DocumentTagEntry,
-        pk=entry_id
+        pk=entry_id,
+        created_by=request.user
     )
 
-    # Delete generated PDF if exists
+    # ---------------------------------------------
+    # Store tag IDs before deleting entry
+    # ---------------------------------------------
+
+    tag_ids = list(
+        entry.tags.values_list(
+            'id',
+            flat=True
+        )
+    )
+
+    # ---------------------------------------------
+    # Delete separated PDF
+    # ---------------------------------------------
+
     if entry.separated_pdf:
 
-        if os.path.exists(entry.separated_pdf.path):
-            os.remove(entry.separated_pdf.path)
+        try:
+            entry.separated_pdf.delete(
+                save=False
+            )
+        except Exception:
+            pass
+
+    # ---------------------------------------------
+    # Delete tag entry
+    # ---------------------------------------------
 
     entry.delete()
 
+    # ---------------------------------------------
+    # Delete orphan Tags
+    # ---------------------------------------------
+
+    for tag_id in tag_ids:
+
+        tag = Tag.objects.filter(
+            pk=tag_id
+        ).first()
+
+        if tag:
+
+            still_used = (
+                DocumentTag.objects.filter(
+                    tag=tag
+                ).exists()
+                or
+                PageTag.objects.filter(
+                    tag=tag
+                ).exists()
+                or
+                DocumentTagEntry.objects.filter(
+                    tags=tag
+                ).exists()
+            )
+
+            if not still_used:
+                tag.delete()
+
     return JsonResponse({
-        'success': True
+        "success": True,
+        "message": "Tag entry deleted successfully."
     })

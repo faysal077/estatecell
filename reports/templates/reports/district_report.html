@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container-fluid py-4">
+
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+
+            <h2 class="fw-bold mb-1">
+
+                <i class="bi bi-geo-alt"></i>
+
+                District Report
+
+            </h2>
+
+            <p class="text-muted mb-0">
+
+                RD Office:
+                <strong>{{ rd_office }}</strong>
+
+            </p>
+
+        </div>
+
+
+        <div>
+
+            <a
+                href="{% url 'reports:rd_office_report' %}"
+                class="btn btn-outline-secondary"
+            >
+
+                <i class="bi bi-arrow-left"></i>
+
+                Back to RD Offices
+
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <div class="card shadow-sm">
+
+        <div class="card-header bg-white">
+
+            <h5 class="mb-0">
+
+                District Summary
+
+            </h5>
+
+        </div>
+
+
+        <div class="card-body">
+
+            <div class="table-responsive">
+
+                <table class="table table-bordered table-hover align-middle">
+
+                    <thead class="table-dark">
+
+                        <tr>
+
+                            <th>#</th>
+
+                            <th>District</th>
+
+                            <th class="text-end">
+                                Total Estates
+                            </th>
+
+                            <th class="text-end">
+                                Total Acre
+                            </th>
+
+                            <th class="text-end">
+                                Total Plots
+                            </th>
+
+                            <th class="text-end">
+                                Allocated Plots
+                            </th>
+
+                            <th class="text-end">
+                                Remains Plots
+                            </th>
+
+                            <th class="text-center">
+                                Action
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        {% for district in districts %}
+
+                        <tr>
+
+                            <td>
+                                {{ forloop.counter }}
+                            </td>
+
+                            <td class="fw-semibold">
+
+                                {{ district.district }}
+
+                            </td>
+
+                            <td class="text-end">
+
+                                {{ district.total_estates }}
+
+                            </td>
+
+                            <td class="text-end">
+
+                                {{ district.total_acre|floatformat:2 }}
+
+                            </td>
+
+                            <td class="text-end">
+
+                                {{ district.total_plots }}
+
+                            </td>
+
+                            <td class="text-end">
+
+                                {{ district.allocated_plots }}
+
+                            </td>
+
+                            <td class="text-end">
+
+                                {{ district.remaining_plots }}
+
+                            </td>
+
+                            <td class="text-center">
+
+                                <a
+                                    href="{% url 'reports:estate_report' rd_office district.district %}"
+                                    class="btn btn-primary btn-sm"
+                                >
+
+                                    <i class="bi bi-arrow-right-circle"></i>
+
+                                    View Estates
+
+                                </a>
+
+                            </td>
+
+                        </tr>
+
+                        {% empty %}
+
+                        <tr>
+
+                            <td
+                                colspan="8"
+                                class="text-center text-muted py-4"
+                            >
+
+                                No district data found.
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+
+                    {% if districts %}
+
+                    <tfoot class="table-light fw-bold">
+
+                        <tr>
+
+                            <td
+                                colspan="2"
+                                class="text-end"
+                            >
+
+                                Grand Total
+
+                            </td>
+
+                            <td class="text-end">
+
+                                {{ total.total_estates }}
+
+                            </td>
+
+                            <td class="text-end">
+
+                                {{ total.total_acre|floatformat:2 }}
+
+                            </td>
+
+                            <td class="text-end">
+
+                                {{ total.total_plots }}
+
+                            </td>
+
+                            <td class="text-end">
+
+                                {{ total.allocated_plots }}
+
+                            </td>
+
+                            <td class="text-end">
+
+                                {{ total.remaining_plots }}
+
+                            </td>
+
+                            <td></td>
+
+                        </tr>
+
+                    </tfoot>
+
+                    {% endif %}
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

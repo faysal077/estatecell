@@ -26,27 +26,72 @@
             </div>
             <div class="card-body p-2" style="max-height: 220px; overflow-y: auto;">
                 <div id="documentsList">
+
                     {% for d in documents %}
-                    <div class="border rounded p-2 mb-2 document-item" id="doc-item-{{ d.pk }}">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="fw-bold small text-truncate" style="max-width: 140px;" title="{{ d.file_name|default:'Unnamed' }}">{{ d.file_name|default:"Unnamed" }}</div>
-                            {% if d.scanned_copy %}
-                            <span class="badge bg-success">PDF</span>
-                            {% else %}
-                            <span class="badge bg-secondary">No PDF</span>
-                            {% endif %}
+
+                    <div class="border rounded p-2 mb-2 document-item"
+                        id="doc-item-{{ d.pk }}">
+
+                        <div class="fw-bold small text-truncate mb-1"
+                            style="max-width: 140px;"
+                            title="{{ d.file_name|default:'Unnamed' }}">
+
+                            {{ d.file_name|default:"Unnamed" }}
+
                         </div>
-                        <div class="small text-muted mb-1">Doc No: {{ d.document_number|default:"N/A" }}</div>
+
+                        <div class="small text-muted mb-2">
+                            Doc No:
+                            {{ d.document_number|default:"N/A" }}
+                        </div>
+
                         {% if d.scanned_copy %}
-                        <!-- <button class="btn btn-outline-primary btn-sm w-100" onclick="selectDocument({{ d.pk }});"> -->
-                            <button class="btn btn-outline-primary btn-sm w-100" onclick="selectDocument('{{ d.pk }}');">
-                            <i class="bi bi-eye"></i> Preview
-                        </button>
+
+                            <div class="d-flex gap-1">
+
+                                <!-- Preview: Everyone -->
+
+                                <button
+                                    type="button"
+                                    class="btn btn-outline-primary btn-sm flex-grow-1"
+                                    onclick="selectDocument('{{ d.pk }}');">
+
+                                    <i class="bi bi-eye"></i>
+                                    Preview
+
+                                </button>
+
+
+                                <!-- Delete: Data Entry Only -->
+
+                                {% if is_data_entry %}
+
+                                    <button
+                                        type="button"
+                                        class="btn btn-outline-danger btn-sm flex-grow-1"
+                                        onclick="deleteDocument('{{ d.pk }}');">
+
+                                        <i class="bi bi-trash"></i>
+                                        Delete
+
+                                    </button>
+
+                                {% endif %}
+
+                            </div>
+
                         {% endif %}
+
                     </div>
+
                     {% empty %}
-                    <p class="text-muted small text-center">No documents uploaded yet.</p>
+
+                    <p class="text-muted small text-center">
+                        No documents uploaded yet.
+                    </p>
+
                     {% endfor %}
+
                 </div>
             </div>
         </div>
@@ -188,6 +233,9 @@
 
 {% block extra_js %}
 <script>
+    // Django role → JavaScript boolean
+    const isDataEntry = {{ is_data_entry|yesno:"true,false" }};
+
     let currentDocId = null;
     let currentFileName = '';
 
@@ -275,21 +323,106 @@
     // }
 
     function addDocumentToList(docId, docNumber, fileName) {
+
         const container = document.getElementById('documentsList');
+
         const docItem = document.createElement('div');
-        docItem.className = 'border rounded p-2 mb-2 document-item';
-        docItem.id = 'doc-item-' + docId;
-        docItem.innerHTML = `
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="fw-bold small text-truncate" style="max-width: 140px;" title="${fileName}">${fileName}</div>
-                <span class="badge bg-success">PDF</span>
-            </div>
-            <div class="small text-muted mb-1">Doc No: ${docNumber}</div>
-            <button class="btn btn-outline-primary btn-sm w-100" onclick="selectDocument(${docId})">
-                <i class="bi bi-eye"></i> Preview
+
+        docItem.className =
+            'border rounded p-2 mb-2 document-item';
+
+        docItem.id =
+            'doc-item-' + docId;
+
+
+        // -----------------------------------------
+        // Build buttons
+        // -----------------------------------------
+
+        let actionButtons = `
+
+            <!-- Preview -->
+
+            <button
+                type="button"
+                class="btn btn-outline-primary btn-sm flex-grow-1"
+                onclick="selectDocument(${docId});">
+
+                <i class="bi bi-eye"></i>
+                Preview
+
             </button>
         `;
-        container.insertBefore(docItem, container.firstChild);
+
+
+        // -----------------------------------------
+        // DATA ENTRY ONLY → DELETE BUTTON
+        // -----------------------------------------
+
+        if ({{ is_data_entry|yesno:"true,false" }}) {
+            actionButtons += `
+
+                <button
+                    type="button"
+                    class="btn btn-outline-danger btn-sm flex-grow-1"
+                    onclick="deleteDocument(${docId});">
+
+                    <i class="bi bi-trash"></i>
+                    Delete
+
+                </button>
+
+            `;
+
+        }
+
+
+        // -----------------------------------------
+        // Create document item
+        // -----------------------------------------
+
+        docItem.innerHTML = `
+
+            <div class="fw-bold small text-truncate mb-1"
+                style="max-width: 140px;"
+                title="${fileName}">
+
+                ${fileName}
+
+            </div>
+
+
+            <div class="small text-muted mb-2">
+
+                Doc No:
+                ${docNumber}
+
+            </div>
+
+
+            <div class="d-flex gap-1">
+
+                ${actionButtons}
+
+            </div>
+
+        `;
+
+
+        // -----------------------------------------
+        // Add at top
+        // -----------------------------------------
+
+        container.insertBefore(
+            docItem,
+            container.firstChild
+        );
+
+
+        // -----------------------------------------
+        // Update document count
+        // -----------------------------------------
+
         updateDocCount();
     }
 
@@ -353,7 +486,7 @@
                 : '<span class="text-muted">—</span>';
 
             const row = `
-                <tr>
+                <tr id="tag-entry-${e.id}">
 
                     <td class="small">
                         ${e.document_type || 'Unnamed'}
@@ -368,13 +501,21 @@
                     </td>
 
                     <td>
+
+                        {% if is_data_entry %}
+
                         <button
+                            type="button"
                             class="btn btn-danger btn-sm"
                             onclick="deleteTagEntry(${e.id})">
 
+                            <i class="bi bi-trash"></i>
                             Delete
 
                         </button>
+
+                        {% endif %}
+
                     </td>
 
                 </tr>
@@ -439,48 +580,219 @@
         }
     });
 
+
+
     function deleteTagEntry(entryId) {
 
-        if (!confirm("Delete this tag and generated PDF?")) {
+        const confirmed = confirm(
+            "⚠️ Delete Tag Entry?\n\n" +
+            "This will permanently delete this tag entry " +
+            "and its generated PDF.\n\n" +
+            "This action cannot be undone.\n\n" +
+            "Do you want to continue?"
+        );
+
+        if (!confirmed) {
             return;
         }
 
-        fetch(`/documents/tag-entry/${entryId}/delete/`, {
+        fetch(
+            "{% url 'documents:delete_tag_entry' 0 %}"
+            .replace(
+                "/0/",
+                "/" + entryId + "/"
+            ),
+            {
+                method: "POST",
 
-            method: 'POST',
+                headers: {
+                    "X-CSRFToken": getCookie("csrftoken"),
+                    "X-Requested-With": "XMLHttpRequest"
+                }
+            }
+        )
+        .then(response => {
 
-            headers: {
-                'X-CSRFToken': getCSRFToken()
+            if (!response.ok) {
+
+                return response.json().then(data => {
+
+                    throw new Error(
+                        data.error ||
+                        "Permission denied."
+                    );
+
+                });
+
             }
 
+            return response.json();
+
         })
-
-        .then(response => response.json())
-
         .then(data => {
 
             if (data.success) {
 
-                alert('Tag deleted successfully.');
+                const row = document.getElementById(
+                    "tag-entry-" + entryId
+                );
 
-                if (currentDocId) {
-                    selectDocument(currentDocId);
+                if (row) {
+                    row.remove();
                 }
+
+                alert(
+                    "Tag entry deleted successfully."
+                );
 
             } else {
 
-                alert(data.error || 'Delete failed.');
+                alert(
+                    data.error ||
+                    "Unable to delete tag entry."
+                );
 
             }
 
         })
+        .catch(error => {
 
-        .catch(err => {
+            console.error(error);
 
-            alert('Error: ' + err);
+            alert(
+                error.message ||
+                "An error occurred while deleting tag entry."
+            );
+
+        });
+
+    }
+
+
+
+
+    function deleteDocument(documentId) {
+
+        const confirmed = confirm(
+            "⚠️ Delete Document?\n\n" +
+            "This will permanently delete:\n" +
+            "• The document\n" +
+            "• All corresponding tag entries\n" +
+            "• Generated separated PDFs\n" +
+            "• Related document data\n\n" +
+            "This action cannot be undone.\n\n" +
+            "Do you want to continue?"
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        fetch(
+            "{% url 'documents:document_delete' 0 %}"
+            .replace(
+                "/0/",
+                "/" + documentId + "/"
+            ),
+            {
+                method: "POST",
+
+                headers: {
+                    "X-CSRFToken": getCookie("csrftoken"),
+                    "X-Requested-With": "XMLHttpRequest"
+                }
+            }
+        )
+        .then(response => {
+
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(
+                        data.error ||
+                        "Permission denied."
+                    );
+                });
+            }
+
+            return response.json();
+
+        })
+        .then(data => {
+
+            if (data.success) {
+
+                const item = document.getElementById(
+                    "doc-item-" + documentId
+                );
+
+                if (item) {
+                    item.remove();
+                }
+
+                alert(
+                    "Document and all corresponding tags were deleted successfully."
+                );
+
+            } else {
+
+                alert(
+                    data.error ||
+                    "Unable to delete document."
+                );
+            }
+
+        })
+        .catch(error => {
+
+            console.error(error);
+
+            alert(
+                error.message ||
+                "An error occurred while deleting the document."
+            );
 
         });
     }
+
+
+    /* ---------------------------------------------
+    CSRF Cookie
+    --------------------------------------------- */
+
+    function getCookie(name) {
+
+        let cookieValue = null;
+
+        if (document.cookie && document.cookie !== "") {
+
+            const cookies = document.cookie.split(";");
+
+            for (let cookie of cookies) {
+
+                cookie = cookie.trim();
+
+                if (
+                    cookie.substring(
+                        0,
+                        name.length + 1
+                    ) === name + "="
+                ) {
+
+                    cookieValue = decodeURIComponent(
+                        cookie.substring(
+                            name.length + 1
+                        )
+                    );
+
+                    break;
+                }
+            }
+        }
+
+        return cookieValue;
+    }
+
+
 </script>
 {% endblock extra_js %}
 
