@@ -139,8 +139,11 @@ USE_I18N = True
 
 USE_TZ = True
 
-DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
-FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
+# Maximum request body size: 80 MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 80 * 1024 * 1024
+
+# Maximum size of an uploaded file kept in memory: 80 MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 80 * 1024 * 1024
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
