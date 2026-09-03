@@ -12,131 +12,429 @@
 <!-- Dashboard Summary Cards (Replace Old 4 Cards)       -->
 <!-- ===================================================== -->
 
-<div class="row g-4 mb-4">
+<!-- ===================================================== -->
+<!-- Dashboard Summary Cards - 4 Cards in One Row -->
+<!-- ===================================================== -->
 
+<div class="row g-3 mb-4">
+
+    <!-- ================================================= -->
     <!-- Card 1: Estates & Land Area -->
-    <div class="col-lg-6">
-        <div class="card shadow-sm border-0 h-100"
-             style="border-left: 6px solid #198754;">
+    <!-- ================================================= -->
 
-            <div class="card-header bg-success text-white fw-bold d-flex align-items-center">
+    <div class="col-12 col-sm-6 col-xl-3">
+
+        <div class="card shadow-sm border-0 h-100"
+             style="border-left: 5px solid #198754;">
+
+            <div class="card-header bg-success text-white fw-bold
+                        d-flex align-items-center py-2 px-3">
+
                 <i class="bi bi-building me-2"></i>
-                শিল্পনগরী ও জমির সারসংক্ষেপ
+
+                <span class="small">
+                    শিল্পনগরী ও জমির সারসংক্ষেপ
+                </span>
+
             </div>
 
-            <div class="card-body">
+            <div class="card-body py-3 px-2">
 
-                <div class="row text-center">
+                <div class="row text-center g-0">
 
                     <!-- Total Estates -->
                     <div class="col-6 border-end">
-                        <div class="py-3">
-                            <div class =" d-flex align-items-center gap-3 center justify-content-center"> 
-                                <i class="bi bi-geo-alt-fill text-success"
-                                style="font-size: 2rem;"></i>
 
-                                <h2 class="fw-bold text-success mb-0">
+                        <div class="py-2">
+
+                            <div class="d-flex align-items-center
+                                        justify-content-center gap-2">
+
+                                <i class="bi bi-geo-alt-fill text-success"
+                                   style="font-size: 1.4rem;"></i>
+
+                                <h4 class="fw-bold text-success mb-0">
                                     {{ total_estates }}
-                                </h2>
+                                </h4>
+
                             </div>
-                            <p class="text-muted mb-0 fw-semibold">
+
+                            <p class="text-muted mb-0 mt-1"
+                               style="font-size: 0.72rem;">
+
                                 মোট শিল্পনগরী
+
                             </p>
+
                         </div>
+
                     </div>
+
 
                     <!-- Total Land Area -->
                     <div class="col-6">
-                        <div class="py-3">
-                            <div class =" d-flex align-items-center gap-3 center justify-content-center">
-                            <i class="bi bi-arrows-fullscreen text-success"
-                               style="font-size: 2rem;"></i>
 
-                            <h2 class="fw-bold text-success mt-2 mb-1">
-                                {{ total_land_area|floatformat:2 }}
-                            </h2>
+                        <div class="py-2">
+
+                            <div class="d-flex align-items-center
+                                        justify-content-center gap-2">
+
+                                <i class="bi bi-arrows-fullscreen text-success"
+                                   style="font-size: 1.4rem;"></i>
+
+                                <h4 class="fw-bold text-success mb-0">
+
+                                    {{ total_land_area|floatformat:2 }}
+
+                                </h4>
+
                             </div>
-                            <p class="text-muted mb-0 fw-semibold">
-                                মোট জমির পরিমাণ (একর)
+
+                            <p class="text-muted mb-0 mt-1"
+                               style="font-size: 0.72rem;">
+
+                                জমির পরিমাণ (একর)
+
                             </p>
+
                         </div>
+
                     </div>
 
                 </div>
 
             </div>
+
         </div>
+
     </div>
 
-    <!-- Card 2: Plot Statistics -->
-    <div class="col-lg-6">
-        <div class="card shadow-sm border-0 h-100"
-             style="border-left: 6px solid #0d6efd;">
 
-            <div class="card-header bg-primary text-white fw-bold d-flex align-items-center">
+    <!-- ================================================= -->
+    <!-- Card 2: Plot Statistics -->
+    <!-- ================================================= -->
+
+    <div class="col-12 col-sm-6 col-xl-3">
+
+        <div class="card shadow-sm border-0 h-100"
+             style="border-left: 5px solid #0d6efd;">
+
+            <div class="card-header bg-primary text-white fw-bold
+                        d-flex align-items-center py-2 px-3">
+
                 <i class="bi bi-grid-3x3-gap-fill me-2"></i>
-                প্লটের সারসংক্ষেপ
+
+                <span class="small">
+                    প্লটের সারসংক্ষেপ
+                </span>
+
             </div>
 
-            <div class="card-body">
 
-                <div class="row text-center g-3">
+            <div class="card-body py-3 px-2">
+
+                <div class="row text-center g-1">
 
                     <!-- Total Plots -->
                     <div class="col-4">
-                        <div class="bg-light rounded-4 p-3 h-100">
-                            <div class =" d-flex align-items-center gap-3 center justify-content-center">
+
+                        <div class="bg-light rounded-3 py-2 px-1 h-100">
+
                             <i class="bi bi-grid text-primary"
-                               style="font-size: 1.8rem;"></i>
+                               style="font-size: 1.25rem;"></i>
 
-                            <h4 class="fw-bold text-primary mt-2 mb-1">
+                            <h5 class="fw-bold text-primary mb-0">
+
                                 {{ total_plots }}
-                            </h4>
-                            </div>  
-                            <p class="text-muted mb-0 small fw-semibold">
+
+                            </h5>
+
+                            <p class="text-muted mb-0"
+                               style="font-size: 0.68rem;">
+
                                 মোট প্লট
+
                             </p>
+
                         </div>
+
                     </div>
 
-                    <!-- Allocated Plots -->
+
+                    <!-- Allocated -->
                     <div class="col-4">
-                        <div class="bg-light rounded-4 p-3 h-100">
-                            <div class =" d-flex align-items-center gap-3 center justify-content-center">
+
+                        <div class="bg-light rounded-3 py-2 px-1 h-100">
+
                             <i class="bi bi-check2-square text-success"
-                               style="font-size: 1.8rem;"></i>
+                               style="font-size: 1.25rem;"></i>
 
-                            <h4 class="fw-bold text-success mt-2 mb-1">
+                            <h5 class="fw-bold text-success mb-0">
+
                                 {{ allocated_plots }}
-                            </h4>
-                            </div>
-                            <p class="text-muted mb-0 small fw-semibold">
+
+                            </h5>
+
+                            <p class="text-muted mb-0"
+                               style="font-size: 0.68rem;">
+
                                 বরাদ্দকৃত
+
                             </p>
+
                         </div>
+
                     </div>
 
-                    <!-- Remaining Plots -->
-                    <div class="col-4">
-                        <div class="bg-light rounded-4 p-3 h-100">
-                            <div class =" d-flex align-items-center gap-3 center justify-content-center">
-                            <i class="bi bi-plus-square text-warning"
-                               style="font-size: 1.8rem;"></i>
 
-                            <h4 class="fw-bold text-warning mt-2 mb-1">
+                    <!-- Remaining -->
+                    <div class="col-4">
+
+                        <div class="bg-light rounded-3 py-2 px-1 h-100">
+
+                            <i class="bi bi-plus-square text-warning"
+                               style="font-size: 1.25rem;"></i>
+
+                            <h5 class="fw-bold text-warning mb-0">
+
                                 {{ remaining_plots }}
-                            </h4>
-                            </div>
-                            <p class="text-muted mb-0 small fw-semibold">
+
+                            </h5>
+
+                            <p class="text-muted mb-0"
+                               style="font-size: 0.68rem;">
+
                                 বরাদ্দযোগ্য
+
                             </p>
+
                         </div>
+
                     </div>
 
                 </div>
 
             </div>
+
         </div>
+
+    </div>
+
+
+    <!-- ================================================= -->
+    <!-- Card 3: AnotherLand Summary -->
+    <!-- ================================================= -->
+
+    <div class="col-12 col-sm-6 col-xl-3">
+
+        <div class="card shadow-sm border-0 h-100"
+             style="border-left: 5px solid #6f42c1;">
+
+            <div class="card-header text-white fw-bold
+                        d-flex align-items-center py-2 px-3"
+                 style="background-color: #6f42c1;">
+
+                <i class="bi bi-buildings me-2"></i>
+
+                <span class="small">
+                    অন্যান্য জমি / অফিসের সারসংক্ষেপ
+                </span>
+
+            </div>
+
+
+            <div class="card-body py-3 px-2">
+
+                <div class="row text-center g-0">
+
+                    <!-- AnotherLand Count -->
+                    <div class="col-6 border-end">
+
+                        <div class="py-2">
+
+                            <div class="d-flex align-items-center
+                                        justify-content-center gap-2">
+
+                                <i class="bi bi-building-check"
+                                   style="font-size: 1.4rem;
+                                          color: #6f42c1;"></i>
+
+                                <h4 class="fw-bold mb-0"
+                                    style="color: #6f42c1;">
+
+                                    {{ another_land_count }}
+
+                                </h4>
+
+                            </div>
+
+                            <p class="text-muted mb-0 mt-1"
+                               style="font-size: 0.72rem;">
+
+                                মোট রেকর্ড
+
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- AnotherLand Area -->
+                    <div class="col-6">
+
+                        <div class="py-2">
+
+                            <div class="d-flex align-items-center
+                                        justify-content-center gap-2">
+
+                                <i class="bi bi-arrows-fullscreen"
+                                   style="font-size: 1.4rem;
+                                          color: #6f42c1;"></i>
+
+                                <h4 class="fw-bold mb-0"
+                                    style="color: #6f42c1;">
+
+                                    {{ another_land_area|floatformat:2 }}
+
+                                </h4>
+
+                            </div>
+
+                            <p class="text-muted mb-0 mt-1"
+                               style="font-size: 0.72rem;">
+
+                                জমির পরিমাণ (একর)
+
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ================================================= -->
+    <!-- Card 4: AnotherLand Office Type Summary -->
+    <!-- ================================================= -->
+
+    <div class="col-12 col-sm-6 col-xl-3">
+
+        <div class="card shadow-sm border-0 h-100">
+
+            <div class="card-header bg-secondary text-white fw-bold
+                        d-flex align-items-center py-2 px-3">
+
+                <i class="bi bi-diagram-3 me-2"></i>
+
+                <span class="small">
+                    অফিসের ধরন অনুযায়ী রেকর্ড
+                </span>
+
+            </div>
+
+
+            <div class="card-body py-2 px-2">
+
+                {% if another_land_office_types %}
+
+                    <div class="table-responsive">
+
+                        <table class="table table-sm table-hover
+                                      align-middle mb-0"
+                               style="font-size: 0.68rem;">
+
+                            <thead>
+
+                                <tr>
+
+                                    <th class="py-1">
+                                        Office Type
+                                    </th>
+
+                                    <th class="text-center py-1">
+                                        Records
+                                    </th>
+
+                                    <th class="text-end py-1">
+                                        Area
+                                    </th>
+
+                                </tr>
+
+                            </thead>
+
+
+                            <tbody>
+
+                                {% for item in another_land_office_types %}
+
+                                    <tr>
+
+                                        <td class="py-1">
+
+                                            {{ item.office_type|default:"N/A" }}
+
+                                        </td>
+
+
+                                        <td class="text-center py-1">
+
+                                            <span class="badge bg-primary"
+                                                  style="font-size: 0.62rem;">
+
+                                                {{ item.total }}
+
+                                            </span>
+
+                                        </td>
+
+
+                                        <td class="text-end py-1">
+
+                                            {{ item.area|default:0|floatformat:2 }}
+
+                                        </td>
+
+                                    </tr>
+
+                                {% endfor %}
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                {% else %}
+
+                    <div class="text-center text-muted py-3">
+
+                        <i class="bi bi-info-circle"
+                           style="font-size: 1.5rem;"></i>
+
+                        <p class="mt-2 mb-0"
+                           style="font-size: 0.75rem;">
+
+                            No AnotherLand records found.
+
+                        </p>
+
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
     </div>
 
 </div>
@@ -222,116 +520,508 @@
 
     // Click handler - show district info
     function onFeatureClick(e) {
+
         const props = e.target.feature.properties;
-        // The new GeoJSON uses ADM2_EN for district name and ADM1_EN for division
+
+        // =====================================================
+        // DISTRICT INFORMATION
+        // =====================================================
+
         const geoName = props.ADM2_EN || props.name || '';
         const geoDivision = props.ADM1_EN || '';
 
-        // Try to find matching district in our metadata (case-insensitive)
+        // Try to find matching district in metadata
         const matchedKey = Object.keys(districtData).find(k =>
             k.toLowerCase() === geoName.toLowerCase() ||
             geoName.toLowerCase().includes(k.toLowerCase()) ||
             k.toLowerCase().includes(geoName.toLowerCase())
         );
-        const info = matchedKey ? districtData[matchedKey] : null;
-        const districtName = info ? info.name : geoName;
-        const divisionName = info ? (divisionNames[info.division_id] || 'Unknown') : (geoDivision || 'Unknown');
+
+        const info = matchedKey
+            ? districtData[matchedKey]
+            : null;
+
+        const districtName = info
+            ? info.name
+            : geoName;
+
+        const divisionName = info
+            ? (divisionNames[info.division_id] || 'Unknown')
+            : (geoDivision || 'Unknown');
+
+
+        // =====================================================
+        // SHOW DISTRICT PANEL
+        // =====================================================
 
         const panel = document.getElementById('infoPanel');
+
         panel.innerHTML = `
             <div class="card border-0 shadow-sm h-100">
+
                 <div class="card-header bg-success text-white fw-bold">
-                    <i class="bi bi-geo-alt-fill"></i> ${districtName}
+                    <i class="bi bi-geo-alt-fill"></i>
+                    ${districtName}
                 </div>
+
                 <div class="card-body">
-                    <table class="table table-sm table-borderless mb-0">
-                        ${info ? `
-                        <tr><td class="text-muted fw-bold">বাংলা নাম</td><td>${info.bn_name || 'N/A'}</td></tr>
-                        <tr><td class="text-muted fw-bold">Division</td><td>${divisionName}</td></tr>
-                        <tr><td class="text-muted fw-bold">Latitude</td><td>${info.lat || 'N/A'}</td></tr>
-                        <tr><td class="text-muted fw-bold">Longitude</td><td>${info.long || 'N/A'}</td></tr>
-                        <tr><td class="text-muted fw-bold">District ID</td><td>${info.id || 'N/A'}</td></tr>
-                        ` : `
-                        <tr><td class="text-muted fw-bold">District</td><td>${geoName || 'N/A'}</td></tr>
-                        <tr><td class="text-muted fw-bold">Division</td><td>${geoDivision || 'N/A'}</td></tr>
-                        <tr><td class="text-muted fw-bold">District Code</td><td>${props.ADM2_PCODE || 'N/A'}</td></tr>
-                        `}
-                    </table>
-                    <hr>
-                    <div id="districtLandInfo" class="text-center text-muted">
-                        <i class="bi bi-hourglass-split"></i> Loading land data...
+
+                    <div id="districtLandInfo"
+                        class="text-center text-muted">
+
+                        <i class="bi bi-hourglass-split"></i>
+                        Loading land data...
+
                     </div>
+
                 </div>
+
             </div>
         `;
 
-        // Try to fetch land data for this district via API
-        fetch(`/api/lands/by-district/${encodeURIComponent(districtName)}`)
-            .then(r => r.json())
-            .then(data => {
-                const landInfo = document.getElementById('districtLandInfo');
-                if (data.lands && data.lands.length > 0) {
-                    landInfo.innerHTML = `
-                        <div class="alert alert-success py-2 mb-2">
-                            <strong>${data.lands.length}</strong> land record(s) found in ${data.matched_district || districtName}
-                        </div>
-                        <div class="small text-start" style="max-height: 200px; overflow-y: auto;">
-                            ${data.lands.map(l => `
-                                <div class="border-bottom pb-2 mb-2">
-                                    <strong><i class="bi bi-house"></i> ${l.owner_name || 'Land #' + l.id}</strong>
-                                    <div class="text-muted small">
-                                        <div>
-                                            <i class="bi bi-geo"></i>
-                                            ${l.upazila || 'N/A'}
-                                        </div>
 
-                                        <div>
-                                            <i class="bi bi-rulers"></i>
-                                            Total Area:
-                                            ${l.total_area} Acres
-                                        </div>
+        // =====================================================
+        // DISTRICT API URL
+        // =====================================================
 
-                                        <div>
-                                            <i class="bi bi-grid"></i>
-                                            Total Plots:
-                                            ${l.total_plots}
-                                        </div>
+        const encodedDistrict =
+            encodeURIComponent(districtName);
 
-                                        <div>
-                                            <i class="bi bi-check-circle"></i>
-                                            Allocated:
-                                            ${l.allocated_plots}
-                                        </div>
 
-                                        <div>
-                                            <i class="bi bi-circle"></i>
-                                            Remaining:
-                                            ${l.remaining_plots}
-                                        </div>
+        // =====================================================
+        // FETCH LAND + ANOTHER LAND
+        // =====================================================
 
-                                        <div>
-                                            <i class="bi bi-building"></i>
-                                            ${l.rd_office}
-                                        </div>
+        Promise.all([
+
+            fetch(
+                `/api/lands/by-district/${encodedDistrict}`
+            ).then(r => r.json()),
+
+            fetch(
+                `/api/another-lands/by-district/${encodedDistrict}`
+            ).then(r => r.json())
+
+        ])
+
+        .then(([landData, anotherLandData]) => {
+
+            const landRecords =
+                landData.lands || [];
+
+            const anotherLandRecords =
+                anotherLandData.lands || [];
+
+
+            const landInfo =
+                document.getElementById(
+                    'districtLandInfo'
+                );
+
+
+            let html = '';
+
+
+            // =================================================
+            // LAND RECORDS
+            // =================================================
+
+            if (landRecords.length > 0) {
+
+                html += `
+
+                    <div class="alert alert-success py-2 mb-3">
+
+                        <strong>
+                            ${landRecords.length}
+                        </strong>
+
+                        Land record(s) found
+
+                    </div>
+
+
+                    <div class="small text-start"
+                        style="
+                            max-height: 220px;
+                            overflow-y: auto;
+                        ">
+
+                        ${landRecords.map(l => `
+
+                            <div class="border-bottom pb-2 mb-2">
+
+                                <strong>
+
+                                    <i class="bi bi-house"></i>
+
+                                    ${l.owner_name ||
+                                    'Land #' + l.id}
+
+                                </strong>
+
+
+                                <div class="text-muted small">
+
+                                    <div>
+                                        <i class="bi bi-geo"></i>
+
+                                        ${l.upazila || 'N/A'}
+
                                     </div>
-                                    <a href="/lands/edit/${l.id}/" class="badge bg-success text-decoration-none mt-1 me-1">View / Edit</a>
-                                    <a href="/documents/${l.id}/list/" class="badge bg-primary text-decoration-none mt-1">Lands</a>
+
+
+                                    <div>
+                                        <i class="bi bi-rulers"></i>
+
+                                        Total Area:
+                                        ${l.total_area || 0}
+                                        Acres
+
+                                    </div>
+
+
+                                    <div>
+                                        <i class="bi bi-grid"></i>
+
+                                        Total Plots:
+                                        ${l.total_plots || 0}
+
+                                    </div>
+
+
+                                    <div>
+                                        <i class="bi bi-check-circle"></i>
+
+                                        Allocated:
+                                        ${l.allocated_plots || 0}
+
+                                    </div>
+
+
+                                    <div>
+                                        <i class="bi bi-circle"></i>
+
+                                        Remaining:
+                                        ${l.remaining_plots || 0}
+
+                                    </div>
+
+
+                                    <div>
+                                        <i class="bi bi-building"></i>
+
+                                        ${l.rd_office || 'N/A'}
+
+                                    </div>
+
                                 </div>
-                            `).join('')}
-                        </div>
-                    `;
-                } else {
-                    landInfo.innerHTML = `
-                        <div class="alert alert-secondary py-2">No land records found in ${data.matched_district || districtName}</div>
-                        <a href="/lands/add/?district=${encodeURIComponent(data.matched_district || districtName)}" class="btn btn-sm btn-outline-success w-100">
-                            <i class="bi bi-plus-circle"></i> Add First Land Record
-                        </a>
-                    `;
-                }
-            })
-            .catch(() => {
-                document.getElementById('districtLandInfo').innerHTML = '<div class="text-muted small">Land data unavailable</div>';
-            });
+
+
+                                <a href="/lands/edit/${l.id}/"
+                                class="badge bg-success
+                                        text-decoration-none
+                                        mt-1 me-1">
+
+                                    View / Edit
+
+                                </a>
+
+
+                                <a href="/documents/${l.id}/list/"
+                                class="badge bg-primary
+                                        text-decoration-none
+                                        mt-1">
+
+                                    Documents
+
+                                </a>
+
+                            </div>
+
+                        `).join('')}
+
+                    </div>
+
+                `;
+
+
+            } else {
+
+                // =============================================
+                // NO LAND RECORD
+                // =============================================
+
+                html += `
+
+                    <div class="alert alert-secondary py-2 mb-2">
+
+                        No Land records found in
+                        <strong>
+                            ${landData.matched_district ||
+                            districtName}
+                        </strong>
+
+                    </div>
+
+
+                    <a href="/lands/add/?district=${encodeURIComponent(
+                        landData.matched_district ||
+                        districtName
+                    )}"
+                    class="btn btn-sm
+                            btn-outline-success
+                            w-100">
+
+                        <i class="bi bi-plus-circle"></i>
+
+                        Add First Land Record
+
+                    </a>
+
+                `;
+
+            }
+
+
+            // =================================================
+            // ANOTHER LAND RECORDS
+            // =================================================
+
+            if (anotherLandRecords.length > 0) {
+
+                html += `
+
+                    <hr>
+
+
+                    <div class="alert alert-primary
+                                py-2 mb-3">
+
+                        <strong>
+                            ${anotherLandRecords.length}
+                        </strong>
+
+                        AnotherLand record(s) found
+
+                    </div>
+
+
+                    <div class="small text-start"
+                        style="
+                            max-height: 220px;
+                            overflow-y: auto;
+                        ">
+
+                        ${anotherLandRecords.map(l => `
+
+                            <div class="border-bottom
+                                        pb-2
+                                        mb-2">
+
+
+                                <strong>
+
+                                    <i class="bi bi-building"></i>
+
+                                    ${l.office_name ||
+                                    'Record #' + l.id}
+
+                                </strong>
+
+
+                                <div class="text-muted small">
+
+                                    <div>
+
+                                        <i class="bi bi-diagram-3"></i>
+
+                                        Office Type:
+                                        ${l.office_type || 'N/A'}
+
+                                    </div>
+
+
+                                    <div>
+
+                                        <i class="bi bi-geo-alt"></i>
+
+                                        Upazila:
+                                        ${l.upazila || 'N/A'}
+
+                                    </div>
+
+
+                                    <div>
+
+                                        <i class="bi bi-rulers"></i>
+
+                                        Total Area:
+                                        ${l.total_area || 0}
+                                        Acres
+
+                                    </div>
+
+
+                                    <div>
+
+                                        <i class="bi bi-building"></i>
+
+                                        RD Office:
+                                        ${l.rd_office || 'N/A'}
+
+                                    </div>
+
+                                </div>
+
+
+                                <a href="/another-land/"
+                                class="badge bg-primary
+                                        text-decoration-none
+                                        mt-1 me-1">
+
+                                    <i class="bi bi-eye"></i>
+
+                                    View AnotherLand
+
+                                </a>
+
+
+                                
+                                <a href="/another-land/add/?district=${encodeURIComponent(
+                                    anotherLandData.matched_district ||
+                                    districtName
+                                )}"
+                                class="badge bg-success
+                                        text-decoration-none
+                                        mt-1">
+
+                                    <i class="bi bi-plus-circle"></i>
+
+                                    Add Another Land
+
+                                </a>
+
+
+                            </div>
+
+                        `).join('')}
+
+                    </div>
+
+
+                    <!-- Add Another Land Button -->
+
+                    <a href="/another-land/add/?district=${encodeURIComponent(
+                        anotherLandData.matched_district ||
+                        districtName
+                    )}"
+                    class="btn btn-sm
+                            btn-outline-primary
+                            w-100
+                            mt-2">
+
+                        <i class="bi bi-plus-circle"></i>
+
+                        Add Another Land
+
+                    </a>
+
+                `;
+
+
+            } else {
+
+                // =============================================
+                // NO ANOTHER LAND RECORD
+                // =============================================
+
+                html += `
+
+                    <hr>
+
+
+                    <div class="alert alert-light
+                                border
+                                py-2
+                                mb-2">
+
+                        <i class="bi bi-info-circle me-1"></i>
+
+                        No AnotherLand records found in
+
+                        <strong>
+                            ${anotherLandData.matched_district ||
+                            districtName}
+                        </strong>
+
+                    </div>
+
+
+                    <!-- ADD FIRST ANOTHER LAND -->
+
+                    <a href="/another-land/add/?district=${encodeURIComponent(
+                        anotherLandData.matched_district ||
+                        districtName
+                    )}"
+                    class="btn btn-sm
+                            btn-outline-primary
+                            w-100">
+
+                        <i class="bi bi-plus-circle"></i>
+
+                        Add First Another Land Record
+
+                    </a>
+
+                `;
+
+            }
+
+
+            // =================================================
+            // DISPLAY EVERYTHING
+            // =================================================
+
+            landInfo.innerHTML = html;
+
+        })
+
+
+        // =====================================================
+        // ERROR HANDLING
+        // =====================================================
+
+        .catch(error => {
+
+            console.error(
+                'Error loading land data:',
+                error
+            );
+
+
+            const landInfo =
+                document.getElementById(
+                    'districtLandInfo'
+                );
+
+
+            if (landInfo) {
+
+                landInfo.innerHTML = `
+
+                    <div class="alert alert-danger py-2">
+
+                        Unable to load land information.
+
+                    </div>
+
+                `;
+
+            }
+
+        });
+
     }
 
     function onEachFeature(feature, layer) {

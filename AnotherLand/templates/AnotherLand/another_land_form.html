@@ -1,0 +1,471 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <h3 class="mb-4">
+        {{ title }}
+    </h3>
+
+    <form method="post">
+
+        {% csrf_token %}
+
+        <div class="card shadow-lg border-0 rounded-4 p-4">
+
+            <!-- ==========================================
+                 OFFICE TYPE
+            =========================================== -->
+
+            <!-- 
+            <div class="row justify-content-center mb-4">
+
+                <div class="col-md-6">
+
+                    <label class="fw-semibold text-success mb-2">
+                        <i class="bi bi-diagram-3-fill"></i>
+                        Office Type
+                    </label>
+
+                    {{ form.office_type }}
+                    {{ form.office_type.errors }}
+
+                </div>
+
+            </div> 
+            -->
+
+
+            <!-- ==========================================
+                 RD OFFICE & DIVISION
+            =========================================== -->
+
+            <div class="row">
+
+                <div class="col-md-6 mb-4">
+
+                    <label class="fw-semibold text-success mb-2">
+
+                        <i class="bi bi-building"></i>
+
+                        RD Office
+
+                    </label>
+
+                    {{ form.rd_office }}
+                    {{ form.rd_office.errors }}
+
+                </div>
+
+
+                <div class="col-md-6 mb-4">
+
+                    <label class="fw-semibold text-success mb-2">
+
+                        <i class="bi bi-map"></i>
+
+                        Division
+
+                    </label>
+
+                    {{ form.division }}
+                    {{ form.division.errors }}
+
+                </div>
+
+            </div>
+
+
+            <!-- ==========================================
+                 DISTRICT & UPAZILA
+            =========================================== -->
+
+            <div class="row">
+
+                <div class="col-md-6 mb-4">
+
+                    <label class="fw-semibold text-success mb-2">
+
+                        <i class="bi bi-geo-alt"></i>
+
+                        District
+
+                    </label>
+
+                    {{ form.district }}
+                    {{ form.district.errors }}
+
+                </div>
+
+
+                <div class="col-md-6 mb-4">
+
+                    <label class="fw-semibold text-success mb-2">
+
+                        <i class="bi bi-pin-map"></i>
+
+                        Upazila (Bangla)
+
+                    </label>
+
+                    {{ form.upazila }}
+                    {{ form.upazila.errors }}
+
+                </div>
+
+            </div>
+
+
+            <!-- ==========================================
+                 OFFICE NAME & AREA
+            =========================================== -->
+
+            <div class="row">
+
+                <div class="col-md-6 mb-4">
+
+                    <label class="fw-semibold text-success mb-2">
+
+                        <i class="bi bi-person-workspace"></i>
+
+                        Office Name
+
+                    </label>
+
+                    {{ form.office_name }}
+                    {{ form.office_name.errors }}
+
+                </div>
+
+
+                <div class="col-md-6 mb-4">
+
+                    <label class="fw-semibold text-success mb-2">
+
+                        <i class="bi bi-rulers"></i>
+
+                        Total Area (Acres, English)
+
+                    </label>
+
+                    {{ form.total_area }}
+                    {{ form.total_area.errors }}
+
+                </div>
+
+            </div>
+
+
+            <!-- ==========================================
+                 BUTTONS
+            =========================================== -->
+
+            <div class="mt-2">
+
+                <button
+                    type="submit"
+                    class="btn btn-success">
+
+                    <i class="bi bi-check-circle"></i>
+
+                    Save
+
+                </button>
+
+
+                <a
+                    href="{% url 'AnotherLand:another_land_list' %}"
+                    class="btn btn-secondary">
+
+                    <i class="bi bi-x-circle"></i>
+
+                    Cancel
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </form>
+
+</div>
+{{ districts_json|json_script:"district-data" }}
+
+
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    // =====================================================
+    // ELEMENTS
+    // =====================================================
+
+    const districtSelect =
+        document.querySelector("select[name='district']");
+
+    const divisionSelect =
+        document.querySelector("select[name='division']");
+
+
+    // =====================================================
+    // GET DISTRICT FROM URL
+    // =====================================================
+
+    const urlParams =
+        new URLSearchParams(window.location.search);
+
+    const urlDistrict =
+        urlParams.get("district");
+
+
+    // =====================================================
+    // AUTO SELECT DISTRICT
+    // =====================================================
+
+    if (
+        districtSelect &&
+        urlDistrict
+    ) {
+
+        let districtFound = false;
+
+
+        // First try exact option value
+        for (
+            const option
+            of districtSelect.options
+        ) {
+
+            if (
+                option.value === urlDistrict
+            ) {
+
+                option.selected = true;
+
+                districtFound = true;
+
+                break;
+            }
+
+        }
+
+
+        // If value didn't match, try option text
+        if (!districtFound) {
+
+            for (
+                const option
+                of districtSelect.options
+            ) {
+
+                if (
+                    option.text.trim() ===
+                    urlDistrict.trim()
+                ) {
+
+                    option.selected = true;
+
+                    districtFound = true;
+
+                    break;
+                }
+
+            }
+
+        }
+
+
+        console.log(
+            "URL District:",
+            urlDistrict
+        );
+
+        console.log(
+            "District selected:",
+            districtFound
+        );
+
+    }
+
+
+    // =====================================================
+    // DISTRICT DATA
+    // =====================================================
+
+    const districtDataElement =
+        document.getElementById("district-data");
+
+
+    let districtData = [];
+
+
+    if (districtDataElement) {
+
+        try {
+
+            districtData =
+                JSON.parse(
+                    districtDataElement.textContent
+                );
+
+        } catch (error) {
+
+            console.error(
+                "Unable to parse district data:",
+                error
+            );
+
+        }
+
+    }
+
+
+    // =====================================================
+    // FIND DIVISION
+    // =====================================================
+
+    function updateDivision() {
+
+        if (
+            !districtSelect ||
+            !divisionSelect
+        ) {
+            return;
+        }
+
+
+        const selectedDistrict =
+            districtSelect.value;
+
+
+        if (!selectedDistrict) {
+            return;
+        }
+
+
+        // Make sure districtData is an array
+        if (!Array.isArray(districtData)) {
+
+            console.warn(
+                "districtData is not an array:",
+                districtData
+            );
+
+            return;
+
+        }
+
+
+        const district =
+            districtData.find(
+                d =>
+                    d.name === selectedDistrict
+            );
+
+
+        if (!district) {
+
+            console.warn(
+                "District not found:",
+                selectedDistrict
+            );
+
+            return;
+
+        }
+
+
+        const divisionId =
+            String(district.division_id);
+
+
+        // =================================================
+        // DIVISION ID -> DIVISION NAME
+        // =================================================
+
+        const divisionMap = {
+
+            "1": "ঢাকা",
+            "2": "চট্টগ্রাম",
+            "3": "রাজশাহী",
+            "4": "খুলনা",
+            "5": "বরিশাল",
+            "6": "সিলেট",
+            "7": "ময়মনসিংহ",
+            "8": "রংপুর"
+
+        };
+
+
+        const divisionName =
+            divisionMap[divisionId];
+
+
+        if (!divisionName) {
+
+            console.warn(
+                "Division not found for ID:",
+                divisionId
+            );
+
+            return;
+
+        }
+
+
+        // =================================================
+        // SELECT DIVISION
+        // =================================================
+
+        for (
+            const option
+            of divisionSelect.options
+        ) {
+
+            if (
+                option.value === divisionName
+            ) {
+
+                option.selected = true;
+
+                break;
+
+            }
+
+        }
+
+    }
+
+
+    // =====================================================
+    // DISTRICT CHANGE
+    // =====================================================
+
+    if (districtSelect) {
+
+        districtSelect.addEventListener(
+            "change",
+            updateDivision
+        );
+
+    }
+
+
+    // =====================================================
+    // INITIAL LOAD
+    // =====================================================
+
+    if (districtSelect && urlDistrict) {
+
+        updateDivision();
+
+    }
+
+});
+
+</script>
+
+{% endblock %}

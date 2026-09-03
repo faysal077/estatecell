@@ -1,0 +1,720 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <h2 class="fw-bold">
+
+        <i class="bi bi-shield-check"></i>
+
+        Admin Verification
+
+    </h2>
+
+
+    <p>
+
+        Land ID :
+        <strong>
+
+            {{ land.id }}
+
+        </strong>
+
+    </p>
+
+    <hr>
+
+
+    <!-- =========================================
+         CURRENT STATUS
+    ========================================== -->
+
+    <div class="row mb-4">
+
+
+        <div class="col-md-4">
+
+            {% if admin_verified_current %}
+
+                <div class="alert alert-success">
+
+                    <i class="bi bi-check-circle-fill"></i>
+
+                    <strong>
+                        Admin Verified
+                    </strong>
+
+                </div>
+
+            {% else %}
+
+                <div class="alert alert-warning">
+
+                    <i class="bi bi-clock-history"></i>
+
+                    <strong>
+                        Admin Verification Pending
+                    </strong>
+
+                </div>
+
+            {% endif %}
+
+        </div>
+
+
+        <div class="col-md-4">
+
+            {% if super_admin_verified_current %}
+
+                <div class="alert alert-success">
+
+                    <i class="bi bi-check-circle-fill"></i>
+
+                    <strong>
+                        Super Admin Verified
+                    </strong>
+
+                </div>
+
+            {% else %}
+
+                <div class="alert alert-warning">
+
+                    <i class="bi bi-clock-history"></i>
+
+                    <strong>
+                        Super Admin Verification Pending
+                    </strong>
+
+                </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================================
+         OFFICE / LAND INFORMATION
+    ========================================== -->
+
+    <div class="card shadow-sm mb-4">
+
+        <div class="card-header bg-success text-white">
+
+            <h4 class="mb-0">
+
+                <i class="bi bi-building"></i>
+
+                Office & Land Information
+
+            </h4>
+
+        </div>
+
+
+        <div class="card-body">
+
+            <div class="row">
+
+
+                <div class="col-md-6">
+
+                    <table class="table table-borderless">
+
+                        <tr>
+
+                            <th>Land ID</th>
+
+                            <td>{{ land.id }}</td>
+
+                        </tr>
+
+
+                        <tr>
+
+                            <th>Office Type</th>
+
+                            <td>{{ land.anotherland.office_type }}</td>
+
+                        </tr>
+
+
+                        <tr>
+
+                            <th>Office Name</th>
+
+                            <td>{{ land.anotherland.office_name }}</td>
+
+                        </tr>
+
+
+                        <tr>
+
+                            <th>RD Office</th>
+
+                            <td>{{ land.rd_office }}</td>
+
+                        </tr>
+
+                    </table>
+
+                </div>
+
+
+                <div class="col-md-6">
+
+                    <table class="table table-borderless">
+
+                        <tr>
+
+                            <th>Division</th>
+
+                            <td>{{ land.division }}</td>
+
+                        </tr>
+
+
+                        <tr>
+
+                            <th>District</th>
+
+                            <td>{{ land.district }}</td>
+
+                        </tr>
+
+
+                        <tr>
+
+                            <th>Upazila</th>
+
+                            <td>{{ land.upazila }}</td>
+
+                        </tr>
+
+
+                        <tr>
+
+                            <th>Total Area</th>
+
+                            <td>
+
+                                <strong>
+                                    {{ land.total_area }}
+                                </strong>
+
+                                Acres
+
+                            </td>
+
+                        </tr>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================================
+         TAGGING PROGRESS
+    ========================================== -->
+
+    <div class="card shadow-sm mb-4">
+
+        <div class="card-header">
+
+            <h4 class="mb-0">
+
+                <i class="bi bi-pie-chart"></i>
+
+                Tagging Progress
+
+            </h4>
+
+        </div>
+
+
+        <div class="card-body">
+
+            <div class="text-center">
+
+                <div class="display-4 fw-bold text-success">
+
+                    {{ land.progress }}%
+
+                </div>
+
+                <small class="text-muted">
+
+                    Overall Progress
+
+                </small>
+
+            </div>
+
+
+            <hr>
+
+
+            <div class="row text-center">
+
+                <div class="col-4">
+
+                    <h3 class="text-success">
+
+                        {{ land.completed_count }}
+
+                    </h3>
+
+                    <small>
+                        Completed
+                    </small>
+
+                </div>
+
+
+                <div class="col-4">
+
+                    <h3 class="text-warning">
+
+                        {{ land.pending_count }}
+
+                    </h3>
+
+                    <small>
+                        Pending
+                    </small>
+
+                </div>
+
+
+                <div class="col-4">
+
+                    <h3 class="text-primary">
+
+                        {{ required_tags|length }}
+
+                    </h3>
+
+                    <small>
+                        Required
+                    </small>
+
+                </div>
+
+            </div>
+
+
+            <div
+                class="progress mt-4"
+                style="height:12px;">
+
+                <div
+                    class="progress-bar bg-success"
+                    role="progressbar"
+                    style="width: {{ land.progress }}%;">
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================================
+         TAG ENTRIES
+    ========================================== -->
+
+    <div class="card shadow-sm mb-4">
+
+        <div class="card-header">
+
+            <h4>
+
+                All Tag Entries
+
+            </h4>
+
+        </div>
+
+
+        <div class="card-body">
+
+            <div class="table-responsive">
+
+                <table class="table table-striped">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>#</th>
+
+                            <th>Document</th>
+
+                            <th>Type</th>
+
+                            <th>Pages</th>
+
+                            <th>Tags</th>
+
+                            <th>PDF</th>
+
+                            <th>Tagged By</th>
+
+                            <th>Date</th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                    {% for entry in entries %}
+
+                    <tr>
+
+                        <td>
+                            {{ forloop.counter }}
+                        </td>
+
+
+                        <td>
+
+                            DOC-
+                            {{ entry.document.document_number }}
+
+                        </td>
+
+
+                        <td>
+                            {{ entry.document_type }}
+                        </td>
+
+
+                        <td>
+                            {{ entry.page_range }}
+                        </td>
+
+
+                        <td>
+
+                            {% for tag in entry.tags.all %}
+
+                                <span class="badge bg-success">
+
+                                    {{ tag.name }}
+
+                                </span>
+
+                            {% endfor %}
+
+                        </td>
+
+
+                        <td>
+
+                            {% if entry.separated_pdf %}
+
+                                <a
+                                    target="_blank"
+                                    href="{{ entry.separated_pdf.url }}"
+                                    class="btn btn-success btn-sm">
+
+                                    View PDF
+
+                                </a>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+                            {{ entry.created_by }}
+                        </td>
+
+
+                        <td>
+
+                            {{ entry.created_at|date:"d M Y H:i" }}
+
+                        </td>
+
+                    </tr>
+
+                    {% empty %}
+
+                    <tr>
+
+                        <td
+                            colspan="8"
+                            class="text-center">
+
+                            No tag entries found.
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================================
+         ADMIN + SUPER ADMIN
+    ========================================== -->
+
+    <div class="row mt-4">
+
+
+        <!-- ADMIN -->
+
+        <div class="col-md-6">
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <h4>
+
+                        <i class="bi bi-person-check"></i>
+
+                        Admin Verification
+
+                    </h4>
+
+                </div>
+
+
+                <div class="card-body">
+
+
+                    {% if admin_verified_current %}
+
+                        <div class="alert alert-success">
+
+                            <strong>
+
+                                <i class="bi bi-check-circle-fill"></i>
+
+                                Verified
+
+                            </strong>
+
+                            <br>
+
+                            Verified By:
+
+                            <strong>
+                                {{ verification.admin_verified_by }}
+                            </strong>
+
+                            <br>
+
+                            Date:
+
+                            {{ verification.admin_verified_date|date:"d M Y H:i" }}
+
+                        </div>
+
+
+                    {% elif is_admin %}
+
+                        <div class="alert alert-warning">
+
+                            <i class="bi bi-clock-history"></i>
+
+                            New documents are waiting for Admin verification.
+
+                        </div>
+
+
+                        <form method="post">
+
+                            {% csrf_token %}
+
+                            <input
+                                type="hidden"
+                                name="action"
+                                value="admin">
+
+
+                            <button
+                                type="submit"
+                                class="btn btn-success">
+
+                                <i class="bi bi-patch-check-fill"></i>
+
+                                Verify Current Documents
+
+                            </button>
+
+                        </form>
+
+
+                    {% else %}
+
+                        <div class="alert alert-warning">
+
+                            <i class="bi bi-clock-history"></i>
+
+                            Waiting for Admin Verification
+
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- SUPER ADMIN -->
+
+        <div class="col-md-6">
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <h4>
+
+                        <i class="bi bi-shield-check"></i>
+
+                        Super Admin Verification
+
+                    </h4>
+
+                </div>
+
+
+                <div class="card-body">
+
+
+                    {% if super_admin_verified_current %}
+
+                        <div class="alert alert-success">
+
+                            <strong>
+
+                                <i class="bi bi-check-circle-fill"></i>
+
+                                Verified
+
+                            </strong>
+
+                            <br>
+
+                            Verified By:
+
+                            <strong>
+                                {{ verification.super_admin_verified_by }}
+                            </strong>
+
+                            <br>
+
+                            Date:
+
+                            {{ verification.super_admin_verified_date|date:"d M Y H:i" }}
+
+                        </div>
+
+
+                    {% elif is_super_admin %}
+
+                        {% if admin_verified_current %}
+
+                            <div class="alert alert-danger">
+
+                                <i class="bi bi-exclamation-circle"></i>
+
+                                New documents are ready for final verification.
+
+                            </div>
+
+
+                            <form method="post">
+
+                                {% csrf_token %}
+
+                                <input
+                                    type="hidden"
+                                    name="action"
+                                    value="super">
+
+
+                                <button
+                                    type="submit"
+                                    class="btn btn-danger">
+
+                                    <i class="bi bi-shield-check"></i>
+
+                                    Final Verification
+
+                                </button>
+
+                            </form>
+
+
+                        {% else %}
+
+                            <div class="alert alert-warning">
+
+                                <i class="bi bi-clock-history"></i>
+
+                                Admin verification is required first.
+
+                            </div>
+
+                        {% endif %}
+
+
+                    {% else %}
+
+                        <div class="alert alert-secondary">
+
+                            <i class="bi bi-info-circle"></i>
+
+                            Only Super Admin can perform final verification.
+
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

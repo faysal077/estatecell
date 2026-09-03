@@ -9,9 +9,5 @@ urlpatterns = [
     path('add/', views.land_create, name='land_create'),
     path('edit/<int:pk>/', views.land_update, name='land_update'),
     path('delete/<int:pk>/', views.land_delete, name='land_delete'),
-    path(
-    "verification/<int:pk>/",
-    views.land_verification,
-    name="land_verification",
-    ),
+    path("verification/<int:pk>/",views.land_verification,name="land_verification",),
 ]

@@ -9,73 +9,223 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import login_required 
 from django.db.models import Count, Sum 
 from django.shortcuts import render
+from AnotherLand.models import AnotherLand
+
+# @login_required(login_url='accounts:login')
+# def dashboard(request):
+#     """Render dashboard with summary cards and RD office table."""
+
+#     # =====================================================
+#     # Overall Summary Cards
+#     # =====================================================
+
+#     total_estates = Land.objects.count()
+
+#     total_land_area = (
+#         Land.objects.aggregate(total=Sum('total_area'))['total'] or 0
+#     )
+
+#     total_plots = (
+#         Land.objects.aggregate(total=Sum('total_plots'))['total'] or 0
+#     )
+
+#     allocated_plots = (
+#         Land.objects.aggregate(total=Sum('allocated_plots'))['total'] or 0
+#     )
+
+#     remaining_plots = (
+#         Land.objects.aggregate(total=Sum('remaining_plots'))['total'] or 0
+#     )
+
+#     # =====================================================
+#     # RD Office Wise Summary Table
+#     # =====================================================
+
+#     rd_office_summary = []
+
+#     rd_offices = (
+#         Land.objects
+#         .values_list('rd_office', flat=True)
+#         .distinct()
+#         .order_by('rd_office')
+#     )
+
+#     for office in rd_offices:
+
+#         lands = Land.objects.filter(rd_office=office)
+
+#         total_estates_office = lands.count()
+
+#         total_area_office = (
+#             lands.aggregate(total=Sum('total_area'))['total'] or 0
+#         )
+
+#         total_plots_office = (
+#             lands.aggregate(total=Sum('total_plots'))['total'] or 0
+#         )
+
+#         allocated_plots_office = (
+#             lands.aggregate(total=Sum('allocated_plots'))['total'] or 0
+#         )
+
+#         remaining_plots_office = (
+#             lands.aggregate(total=Sum('remaining_plots'))['total'] or 0
+#         )
+
+#         # Average tagging percentage for this RD office
+#         if total_estates_office > 0:
+
+#             tagging_percentage = round(
+#                 sum(l.tagging_percentage for l in lands) / total_estates_office,
+#                 1
+#             )
+
+#         else:
+#             tagging_percentage = 0
+
+#         rd_office_summary.append({
+#             'rd_office': office,
+#             'total_estates': total_estates_office,
+#             'total_area': total_area_office,
+#             'total_plots': total_plots_office,
+#             'allocated_plots': allocated_plots_office,
+#             'remaining_plots': remaining_plots_office,
+#             'tagging_percentage': tagging_percentage,
+#         })
+
+#     # =====================================================
+#     # Render Dashboard
+#     # =====================================================
+
+#     return render(request, 'dashboard.html', {
+
+#         # Card data
+#         'total_estates': total_estates,
+#         'total_land_area': total_land_area,
+#         'total_plots': total_plots,
+#         'allocated_plots': allocated_plots,
+#         'remaining_plots': remaining_plots,
+
+#         # Table data
+#         'rd_office_summary': rd_office_summary,
+#     })
 
 @login_required(login_url='accounts:login')
 def dashboard(request):
-    """Render dashboard with summary cards and RD office table."""
+    """Render dashboard with Land and AnotherLand summaries."""
 
     # =====================================================
-    # Overall Summary Cards
+    # LAND SUMMARY
     # =====================================================
 
     total_estates = Land.objects.count()
 
     total_land_area = (
-        Land.objects.aggregate(total=Sum('total_area'))['total'] or 0
+        Land.objects.aggregate(
+            total=Sum('total_area')
+        )['total'] or 0
     )
 
     total_plots = (
-        Land.objects.aggregate(total=Sum('total_plots'))['total'] or 0
+        Land.objects.aggregate(
+            total=Sum('total_plots')
+        )['total'] or 0
     )
 
     allocated_plots = (
-        Land.objects.aggregate(total=Sum('allocated_plots'))['total'] or 0
+        Land.objects.aggregate(
+            total=Sum('allocated_plots')
+        )['total'] or 0
     )
 
     remaining_plots = (
-        Land.objects.aggregate(total=Sum('remaining_plots'))['total'] or 0
+        Land.objects.aggregate(
+            total=Sum('remaining_plots')
+        )['total'] or 0
     )
 
     # =====================================================
-    # RD Office Wise Summary Table
+    # ANOTHER LAND SUMMARY
+    # =====================================================
+
+    another_land_count = AnotherLand.objects.count()
+
+    another_land_area = (
+        AnotherLand.objects.aggregate(
+            total=Sum('total_area')
+        )['total'] or 0
+    )
+
+    # =====================================================
+    # ANOTHER LAND OFFICE TYPES
+    # =====================================================
+
+    another_land_office_types = (
+        AnotherLand.objects
+        .values('office_type')
+        .annotate(
+            total=Count('id'),
+            area=Sum('total_area')
+        )
+        .order_by('office_type')
+    )
+
+    # =====================================================
+    # RD OFFICE WISE LAND SUMMARY
     # =====================================================
 
     rd_office_summary = []
 
     rd_offices = (
         Land.objects
-        .values_list('rd_office', flat=True)
+        .values_list(
+            'rd_office',
+            flat=True
+        )
         .distinct()
         .order_by('rd_office')
     )
 
     for office in rd_offices:
 
-        lands = Land.objects.filter(rd_office=office)
+        lands = Land.objects.filter(
+            rd_office=office
+        )
 
         total_estates_office = lands.count()
 
         total_area_office = (
-            lands.aggregate(total=Sum('total_area'))['total'] or 0
+            lands.aggregate(
+                total=Sum('total_area')
+            )['total'] or 0
         )
 
         total_plots_office = (
-            lands.aggregate(total=Sum('total_plots'))['total'] or 0
+            lands.aggregate(
+                total=Sum('total_plots')
+            )['total'] or 0
         )
 
         allocated_plots_office = (
-            lands.aggregate(total=Sum('allocated_plots'))['total'] or 0
+            lands.aggregate(
+                total=Sum('allocated_plots')
+            )['total'] or 0
         )
 
         remaining_plots_office = (
-            lands.aggregate(total=Sum('remaining_plots'))['total'] or 0
+            lands.aggregate(
+                total=Sum('remaining_plots')
+            )['total'] or 0
         )
 
-        # Average tagging percentage for this RD office
+        # Average tagging percentage
         if total_estates_office > 0:
 
             tagging_percentage = round(
-                sum(l.tagging_percentage for l in lands) / total_estates_office,
+                sum(
+                    l.tagging_percentage
+                    for l in lands
+                ) / total_estates_office,
                 1
             )
 
@@ -93,21 +243,35 @@ def dashboard(request):
         })
 
     # =====================================================
-    # Render Dashboard
+    # RENDER DASHBOARD
     # =====================================================
 
-    return render(request, 'dashboard.html', {
+    return render(
+        request,
+        'dashboard.html',
+        {
+            # -----------------------------
+            # Land
+            # -----------------------------
+            'total_estates': total_estates,
+            'total_land_area': total_land_area,
+            'total_plots': total_plots,
+            'allocated_plots': allocated_plots,
+            'remaining_plots': remaining_plots,
 
-        # Card data
-        'total_estates': total_estates,
-        'total_land_area': total_land_area,
-        'total_plots': total_plots,
-        'allocated_plots': allocated_plots,
-        'remaining_plots': remaining_plots,
+            # -----------------------------
+            # AnotherLand
+            # -----------------------------
+            'another_land_count': another_land_count,
+            'another_land_area': another_land_area,
+            'another_land_office_types': another_land_office_types,
 
-        # Table data
-        'rd_office_summary': rd_office_summary,
-    })
+            # -----------------------------
+            # RD Summary
+            # -----------------------------
+            'rd_office_summary': rd_office_summary,
+        }
+    )
 
 
 def district_metadata(request):
@@ -152,7 +316,30 @@ def lands_by_district(request, district_name):
         )
     )
     return JsonResponse({'lands': list(lands), 'matched_district': query_name})
+def another_lands_by_district(request, district_name):
 
+    lands = (
+        AnotherLand.objects
+        .filter(
+            district__iexact=district_name
+        )
+        .values(
+            "id",
+            "office_type",
+            "office_name",
+            "division",
+            "district",
+            "upazila",
+            "rd_office",
+            "total_area",
+        )
+        .order_by("office_name")
+    )
+
+    return JsonResponse({
+        "lands": list(lands),
+        "matched_district": district_name,
+    })
 
 urlpatterns = [
     path('adnim/', admin.site.urls),
@@ -161,21 +348,52 @@ urlpatterns = [
     # Default route → redirect to login
     path('', lambda request: redirect('accounts:login')),
 
-    # Dashboard (protected)
+    # Dashboard
     path('dashboard/', dashboard, name='dashboard'),
 
-    # App URLs
+    # Apps
     path('accounts/', include('accounts.urls')),
     path('lands/', include('lands.urls')),
     path('documents/', include('documents.urls')),
 
-    # API
-    path('api/lands/by-district/<str:district_name>/', lands_by_district, name='lands_by_district'),
-    path('api/districts/', district_metadata, name='district_metadata'),
+    # =====================================================
+    # APIs
+    # =====================================================
+
+    # Industrial Land
+    path(
+        'api/lands/by-district/<str:district_name>/',
+        lands_by_district,
+        name='lands_by_district'
+    ),
+
+    # Non-Industrial / Another Land
+    path(
+        'api/another-lands/by-district/<str:district_name>/',
+        another_lands_by_district,
+        name='another_lands_by_district'
+    ),
+
+    # District metadata
+    path(
+        'api/districts/',
+        district_metadata,
+        name='district_metadata'
+    ),
 
     # Reports
-    path("reports/", include("reports.urls")),
+    path(
+        "reports/",
+        include("reports.urls")
+    ),
+
+    # AnotherLand application
+    path(
+        'another-land/',
+        include('AnotherLand.urls')
+    ),
 ]
+
 
 # Serve media files in development
 if settings.DEBUG:

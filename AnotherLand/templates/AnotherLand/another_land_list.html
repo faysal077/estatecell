@@ -1,0 +1,630 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+
+    .another-dashboard {
+        padding: 10px 0;
+    }
+
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .dashboard-title {
+        font-weight: 700;
+        margin-bottom: 3px;
+    }
+
+    .dashboard-subtitle {
+        color: #6c757d;
+    }
+
+    .add-land-btn {
+        background: #198754;
+        color: white;
+        border-radius: 8px;
+        padding: 10px 18px;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .add-land-btn:hover {
+        background: #146c43;
+        color: white;
+    }
+
+    .dashboard-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 18px rgba(0,0,0,.08);
+        overflow: hidden;
+    }
+
+    .land-table {
+        margin-bottom: 0;
+        vertical-align: middle;
+    }
+
+    .land-table th {
+        background: #198754;
+        color: white;
+        font-weight: 600;
+        padding: 14px;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .land-table td {
+        padding: 15px;
+    }
+
+    .owner-card {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .owner-avatar {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        background: #198754;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 18px;
+        flex-shrink: 0;
+    }
+
+    .owner-info h5 {
+        margin: 0;
+        font-weight: 700;
+    }
+
+    .owner-office {
+        color: #198754;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .location-item {
+        font-size: 13px;
+        color: #6c757d;
+        margin-top: 2px;
+    }
+
+    .land-id {
+        display: inline-block;
+        margin-top: 4px;
+        font-size: 12px;
+        color: #6c757d;
+    }
+
+    .land-details-card {
+        text-align: center;
+        min-width: 150px;
+    }
+
+    .area-number {
+        font-size: 24px;
+        font-weight: 700;
+        color: #198754;
+    }
+
+    .area-label {
+        font-size: 12px;
+        color: #6c757d;
+    }
+
+    .tagging-card-simple {
+        min-width: 120px;
+    }
+
+    .tagging-circle {
+        width: 82px;
+        height: 82px;
+        position: relative;
+    }
+
+    .tagging-circle svg {
+        transform: rotate(-90deg);
+    }
+
+    .tag-bg {
+        fill: none;
+        stroke: #e9ecef;
+        stroke-width: 8;
+    }
+
+    .tag-progress {
+        fill: none;
+        stroke: #198754;
+        stroke-width: 8;
+        stroke-linecap: round;
+    }
+
+    .tagging-percent {
+        font-weight: 700;
+        color: #198754;
+        margin-top: 5px;
+    }
+
+    .action-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 7px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        margin: 2px;
+    }
+
+    .action-view {
+        background: #0d6efd;
+        color: white;
+    }
+
+    .action-edit {
+        background: #ffc107;
+        color: #212529;
+    }
+
+    .action-document {
+        background: #6f42c1;
+        color: white;
+    }
+
+    .action-delete {
+        background: #dc3545;
+        color: white;
+    }
+
+    .action-verify {
+        background: #198754;
+        color: white;
+    }
+
+</style>
+
+
+<div class="another-dashboard">
+
+
+    <!-- ===============================================
+         HEADER
+    ================================================ -->
+
+    <div class="dashboard-header">
+
+        <div>
+
+            <h2 class="dashboard-title">
+
+                Non-Industrial Estate Land
+
+            </h2>
+
+            <div class="dashboard-subtitle">
+
+                শিল্পনগরী ব্যাতিত জমির তথ্য
+
+            </div>
+
+        </div>
+
+
+        <a
+            href="{% url 'AnotherLand:another_land_create' %}"
+            class="add-land-btn">
+
+            <i class="bi bi-plus-lg"></i>
+
+            Add Land
+
+        </a>
+
+    </div>
+
+
+    <!-- ===============================================
+         TABLE
+    ================================================ -->
+
+    <div class="dashboard-card">
+
+        <div class="table-responsive">
+
+            <table class="table land-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Office & Location
+                        </th>
+
+                        <th>
+                            Land Details
+                        </th>
+
+                        <th>
+                            Pending Tagging
+                        </th>
+
+                        <th>
+                            Admin Verification
+                        </th>
+
+                        <th>
+                            Super Admin Verification
+                        </th>
+
+                        <th>
+                            Add Documents
+                        </th>
+
+                        <th>
+                            Comment & Actions
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+
+                {% for land in lands %}
+
+                <tr>
+
+
+                    <!-- ===================================
+                         OFFICE & LOCATION
+                    ==================================== -->
+
+                    <td>
+
+                        <div class="owner-card">
+
+                            <div class="owner-avatar">
+
+                                {{ land.office_name|slice:":1" }}
+
+                            </div>
+
+
+                            <div class="owner-info">
+
+                                <h5>
+
+                                    {{ land.office_name }}
+
+                                </h5>
+
+
+                                <div class="owner-office">
+
+                                    {{ land.office_type }}
+
+                                </div>
+
+
+                                <div class="owner-office">
+
+                                    {{ land.rd_office }}
+
+                                </div>
+
+
+                                <div class="location-item">
+
+                                    <i class="bi bi-geo-alt-fill"></i>
+
+                                    {{ land.division }},
+                                    {{ land.district }}
+
+                                </div>
+
+
+                                <div class="location-item">
+
+                                    <i class="bi bi-pin-map-fill"></i>
+
+                                    {{ land.upazila }}
+
+                                </div>
+
+
+                                <span class="land-id">
+
+                                    ID : {{ land.id }}
+
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </td>
+
+
+                    <!-- ===================================
+                         LAND DETAILS
+                    ==================================== -->
+
+                    <td>
+
+                        <div class="land-details-card">
+
+                            <i
+                                class="bi bi-rulers text-success"
+                                style="font-size: 2rem;">
+                            </i>
+
+                            <div class="area-number">
+
+                                {{ land.total_area }}
+
+                            </div>
+
+                            <div class="area-label">
+
+                                Acres
+
+                            </div>
+
+                        </div>
+
+                    </td>
+
+
+                    <!-- ===================================
+                         PENDING TAGGING
+                    ==================================== -->
+
+                    <td class="text-center">
+
+                        <div class="tagging-card-simple">
+
+                            <div
+                                class="tagging-circle mx-auto">
+
+                                <svg
+                                    width="82"
+                                    height="82">
+
+                                    <circle
+                                        cx="41"
+                                        cy="41"
+                                        r="32"
+                                        class="tag-bg">
+                                    </circle>
+
+
+                                    <circle
+                                        cx="41"
+                                        cy="41"
+                                        r="32"
+                                        class="tag-progress"
+                                        stroke-dasharray="201"
+                                        stroke-dashoffset="calc(201 - (201 * {{ land.progress }}) / 100)">
+                                    </circle>
+
+                                </svg>
+
+                            </div>
+
+
+                            <div class="tagging-percent">
+
+                                {{ land.progress }}%
+
+                            </div>
+
+
+                            <div class="small text-muted">
+
+                                {{ land.pending_count }}
+                                Pending
+
+                            </div>
+
+                        </div>
+
+                    </td>
+
+
+                    <!-- ===================================
+                         ADMIN VERIFICATION
+                    ==================================== -->
+
+                    <td class="text-center">
+
+                        {% if land.verification.admin_verified %}
+
+                            <span
+                                class="badge bg-success p-2">
+
+                                <i class="bi bi-check-circle-fill"></i>
+
+                                Verified
+
+                            </span>
+
+                        {% else %}
+
+                            <span
+                                class="badge bg-warning text-dark p-2">
+
+                                <i class="bi bi-clock-history"></i>
+
+                                Pending
+
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <!-- ===================================
+                         SUPER ADMIN
+                    ==================================== -->
+
+                    <td class="text-center">
+
+                        {% if land.verification.super_admin_verified %}
+
+                            <span
+                                class="badge bg-success p-2">
+
+                                <i class="bi bi-check-circle-fill"></i>
+
+                                Verified
+
+                            </span>
+
+                        {% else %}
+
+                            <span
+                                class="badge bg-warning text-dark p-2">
+
+                                <i class="bi bi-clock-history"></i>
+
+                                Pending
+
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <!-- ===================================
+                         DOCUMENTS
+                    ==================================== -->
+
+                    <td class="text-center">
+
+                        <a
+                            href="{% url 'documents:document_list' land.pk %}"
+                            class="action-btn action-document"
+                            title="Add Documents">
+
+                            <i class="bi bi-folder2-open"></i>
+
+                        </a>
+
+                    </td>
+
+
+                    <!-- ===================================
+                         ACTIONS
+                    ==================================== -->
+
+                    <td>
+
+                        <div class="text-center">
+
+
+                            <!-- Verification -->
+
+                            <a
+                                href="{% url 'AnotherLand:another_land_verification' land.pk %}"
+                                class="action-btn action-verify"
+                                title="Verification">
+
+                                <i class="bi bi-shield-check"></i>
+
+                            </a>
+
+
+                            <!-- Edit -->
+
+                            <a
+                                href="{% url 'AnotherLand:another_land_update' land.pk %}"
+                                class="action-btn action-edit"
+                                title="Edit">
+
+                                <i class="bi bi-pencil-square"></i>
+
+                            </a>
+
+
+                            <!-- Delete -->
+
+                            <a
+                                href="{% url 'AnotherLand:another_land_delete' land.pk %}"
+                                class="action-btn action-delete"
+                                title="Delete">
+
+                                <i class="bi bi-trash-fill"></i>
+
+                            </a>
+
+                        </div>
+
+                    </td>
+
+                </tr>
+
+
+                {% empty %}
+
+                <tr>
+
+                    <td
+                        colspan="7"
+                        class="text-center py-5">
+
+                        <i
+                            class="bi bi-database-x"
+                            style="font-size: 3rem;">
+                        </i>
+
+                        <p class="mt-3">
+
+                            No non-industrial estate land
+                            records found.
+
+                        </p>
+
+
+                        <a
+                            href="{% url 'AnotherLand:another_land_create' %}"
+                            class="btn btn-success">
+
+                            <i class="bi bi-plus-circle"></i>
+
+                            Add Land
+
+                        </a>
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
