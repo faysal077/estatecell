@@ -1,24 +1,32 @@
-from django.shortcuts import render
-
-# Create your views here.
 from decimal import Decimal
-
-from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import (
-    Count,
-    Sum,
-    F,
-    Value,
-    DecimalField,
-    IntegerField,
-)
+from django.contrib.auth.decorators import login_required
+from django.db.models import Count, Sum, Value, DecimalField, IntegerField
 from django.db.models.functions import Coalesce
 from django.shortcuts import render, get_object_or_404, redirect
-
 from lands.models import Land
-
+from documents.models import DocumentTagEntry
+from AnotherLand.models import AnotherLand
 from accounts.models import UserRole
+
+
+# ============================================================
+# REQUIRED TAGS
+# ============================================================
+
+REQUIRED_TAGS = [
+    "Gazette",
+    "Deed (Sale Deed / Registry Deed)",
+    "Khatiyan",
+    "Mutation (Namjari)",
+    "Lease Deed",
+    "Land Tax (Khajna / DCR)",
+    "Porcha",
+    "Mouza Map",
+    "Baina / Agreement for Sale",
+    "Land Survey Report",
+    "Building Plan Approval",
+]
 
 
 # ============================================================
@@ -32,11 +40,13 @@ def super_admin_required(view_func):
 
         try:
             profile = request.user.userprofile
+
         except Exception:
             messages.error(
                 request,
                 "User profile not found."
             )
+
             return redirect("lands:land_list")
 
         if profile.role != UserRole.SUPER_ADMIN:
@@ -65,9 +75,7 @@ def estate_summary(queryset):
 
     summary = queryset.aggregate(
 
-        total_estates=Count(
-            "id"
-        ),
+        total_estates=Count("id"),
 
         total_acre=Coalesce(
             Sum("total_area"),
@@ -114,9 +122,7 @@ def rd_office_report(request):
         .values("rd_office")
         .annotate(
 
-            total_estates=Count(
-                "id"
-            ),
+            total_estates=Count("id"),
 
             total_acre=Coalesce(
                 Sum("total_area"),
@@ -178,9 +184,7 @@ def district_report(request, rd_office):
         .values("district")
         .annotate(
 
-            total_estates=Count(
-                "id"
-            ),
+            total_estates=Count("id"),
 
             total_acre=Coalesce(
                 Sum("total_area"),
@@ -276,5 +280,322 @@ def estate_detail(request, pk):
     return render(
         request,
         "reports/estate_detail.html",
+        context
+    )
+
+
+# ============================================================
+# HELPER
+# GET TAG STATUS FOR LAND
+# ============================================================
+
+def get_land_tag_status(land):
+
+    added_tags = set()
+
+    entries = (
+        DocumentTagEntry.objects
+        .filter(document__land=land)
+        .prefetch_related("tags")
+    )
+
+    for entry in entries:
+
+        for tag in entry.tags.all():
+
+            if tag.name in REQUIRED_TAGS:
+                added_tags.add(tag.name)
+
+    # --------------------------------------------------------
+    # Keep the exact REQUIRED_TAGS order
+    # --------------------------------------------------------
+
+    added_tags = [
+        tag
+        for tag in REQUIRED_TAGS
+        if tag in added_tags
+    ]
+
+    pending_tags = [
+        tag
+        for tag in REQUIRED_TAGS
+        if tag not in added_tags
+    ]
+
+    return added_tags, pending_tags
+
+
+# ============================================================
+# INDUSTRIAL LAND REPORT
+# ============================================================
+
+@super_admin_required
+def industrial_land_report(request):
+
+    lands = (
+        Land.objects
+        .all()
+        .order_by("rd_office", "owner_name")
+    )
+
+    rd_offices = (
+        Land.objects
+        .values_list("rd_office", flat=True)
+        .distinct()
+        .order_by("rd_office")
+    )
+
+    estates = (
+        Land.objects
+        .values_list("owner_name", flat=True)
+        .distinct()
+        .order_by("owner_name")
+    )
+
+    # --------------------------------------------------------
+    # GET FILTER VALUES
+    # --------------------------------------------------------
+
+    selected_rd_office = request.GET.get(
+        "rd_office",
+        ""
+    ).strip()
+
+    selected_estate = request.GET.get(
+        "estate",
+        ""
+    ).strip()
+
+    selected_added_tag = request.GET.get(
+        "added_tag",
+        ""
+    ).strip()
+
+    selected_pending_tag = request.GET.get(
+        "pending_tag",
+        ""
+    ).strip()
+
+    # --------------------------------------------------------
+    # DATABASE FILTERS
+    # --------------------------------------------------------
+
+    if selected_rd_office:
+
+        lands = lands.filter(
+            rd_office=selected_rd_office
+        )
+
+    if selected_estate:
+
+        lands = lands.filter(
+            owner_name=selected_estate
+        )
+
+    # --------------------------------------------------------
+    # BUILD REPORT DATA
+    # --------------------------------------------------------
+
+    report_rows = []
+
+    for land in lands:
+
+        added_tags, pending_tags = get_land_tag_status(
+            land
+        )
+
+        # ----------------------------------------------------
+        # Added Tag filter
+        # ----------------------------------------------------
+
+        if selected_added_tag:
+
+            if selected_added_tag not in added_tags:
+                continue
+
+        # ----------------------------------------------------
+        # Pending Tag filter
+        # ----------------------------------------------------
+
+        if selected_pending_tag:
+
+            if selected_pending_tag not in pending_tags:
+                continue
+
+        report_rows.append({
+            "land": land,
+            "rd_office": land.rd_office,
+            "estate": land.owner_name,
+            "added_tags": added_tags,
+            "pending_tags": pending_tags,
+        })
+
+    context = {
+
+        "report_rows": report_rows,
+
+        "rd_offices": rd_offices,
+
+        "estates": estates,
+
+        "required_tags": REQUIRED_TAGS,
+
+        "selected_rd_office": selected_rd_office,
+
+        "selected_estate": selected_estate,
+
+        "selected_added_tag": selected_added_tag,
+
+        "selected_pending_tag": selected_pending_tag,
+
+    }
+
+    return render(
+        request,
+        "reports/industrial_land_report.html",
+        context
+    )
+
+
+# ============================================================
+# NON-INDUSTRIAL LAND REPORT
+# ============================================================
+
+@super_admin_required
+def non_industrial_land_report(request):
+
+    lands = (
+        AnotherLand.objects
+        .all()
+        .order_by("rd_office", "office_name")
+    )
+
+    rd_offices = (
+        AnotherLand.objects
+        .values_list("rd_office", flat=True)
+        .distinct()
+        .order_by("rd_office")
+    )
+
+    offices = (
+        AnotherLand.objects
+        .values_list("office_name", flat=True)
+        .distinct()
+        .order_by("office_name")
+    )
+
+    # --------------------------------------------------------
+    # GET FILTER VALUES
+    # --------------------------------------------------------
+
+    selected_rd_office = request.GET.get(
+        "rd_office",
+        ""
+    ).strip()
+
+    selected_office = request.GET.get(
+        "office",
+        ""
+    ).strip()
+
+    selected_added_tag = request.GET.get(
+        "added_tag",
+        ""
+    ).strip()
+
+    selected_pending_tag = request.GET.get(
+        "pending_tag",
+        ""
+    ).strip()
+
+    # --------------------------------------------------------
+    # DATABASE FILTERS
+    # --------------------------------------------------------
+
+    if selected_rd_office:
+
+        lands = lands.filter(
+            rd_office=selected_rd_office
+        )
+
+    if selected_office:
+
+        lands = lands.filter(
+            office_name=selected_office
+        )
+
+    # --------------------------------------------------------
+    # BUILD REPORT DATA
+    #
+    # IMPORTANT:
+    #
+    # AnotherLand currently does not have a ForeignKey to
+    # Document.
+    #
+    # Therefore tag status cannot yet be connected to
+    # AnotherLand records using the current models.
+    #
+    # For now, all required tags are considered pending.
+    # --------------------------------------------------------
+
+    report_rows = []
+
+    for land in lands:
+
+        added_tags = []
+
+        pending_tags = list(
+            REQUIRED_TAGS
+        )
+
+        # ----------------------------------------------------
+        # Added Tag filter
+        # ----------------------------------------------------
+
+        if selected_added_tag:
+
+            if selected_added_tag not in added_tags:
+                continue
+
+        # ----------------------------------------------------
+        # Pending Tag filter
+        # ----------------------------------------------------
+
+        if selected_pending_tag:
+
+            if selected_pending_tag not in pending_tags:
+                continue
+
+        report_rows.append({
+            "land": land,
+            "rd_office": land.rd_office,
+            "office": land.office_name,
+            "added_tags": added_tags,
+            "pending_tags": pending_tags,
+        })
+
+    context = {
+
+        "report_rows": report_rows,
+
+        "rd_offices": rd_offices,
+
+        "offices": offices,
+
+        "required_tags": REQUIRED_TAGS,
+
+        "selected_rd_office": selected_rd_office,
+
+        "selected_office": selected_office,
+
+        "selected_added_tag": selected_added_tag,
+
+        "selected_pending_tag": selected_pending_tag,
+
+    }
+
+    return render(
+        request,
+        "reports/non_industrial_land_report.html",
         context
     )

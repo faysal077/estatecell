@@ -8,31 +8,54 @@ app_name = "reports"
 
 urlpatterns = [
 
-    # RD Office
+    # ========================================================
+    # DEFAULT REPORT
+    # ========================================================
+
     path(
         "",
         views.rd_office_report,
         name="rd_office_report"
     ),
 
-    # District
+
+    # ========================================================
+    # RD OFFICE / DISTRICT / ESTATE
+    # ========================================================
+
     path(
         "rd-office/<str:rd_office>/",
         views.district_report,
         name="district_report"
     ),
 
-    # Estate
     path(
         "rd-office/<str:rd_office>/district/<str:district>/",
         views.estate_report,
         name="estate_report"
     ),
 
-    # Estate detail
     path(
         "estate/<int:pk>/",
         views.estate_detail,
         name="estate_detail"
     ),
+
+
+    # ========================================================
+    # BSCIC LAND STATUS
+    # ========================================================
+
+    path(
+        "industrial-land/",
+        views.industrial_land_report,
+        name="industrial_land_report"
+    ),
+
+    path(
+        "non-industrial-land/",
+        views.non_industrial_land_report,
+        name="non_industrial_land_report"
+    ),
+
 ]

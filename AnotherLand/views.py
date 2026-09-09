@@ -1,32 +1,3 @@
-# from urllib import request
-
-# from django.shortcuts import render
-# from .forms import AnotherLandForm
-# # Create your views here.
-# from django.contrib import messages
-# from django.contrib.auth.decorators import login_required
-# from django.shortcuts import (
-#     render,
-#     redirect,
-#     get_object_or_404,
-# )
-
-# from django.utils import timezone
-# from django.contrib.auth.models import User
-
-# from accounts.models import UserProfile, UserRole
-
-# from documents.models import DocumentTagEntry
-
-# from lands.models import LandVerification
-
-# from esate_db.districts import (
-#     DISTRICTS,
-#     DIVISION_NAMES,
-# )
-
-# from .models import AnotherLand
-# from .forms import AnotherLandForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -51,7 +22,7 @@ REQUIRED_TAGS = [
     "Gazette",
     "Deed (Sale Deed / Registry Deed)",
     "Khatiyan",
-    "Mutation (Namamari)",
+    "Mutation (Namjari)",
     "Lease Deed",
     "Land Tax (Khajna / DCR)",
     "Porcha",

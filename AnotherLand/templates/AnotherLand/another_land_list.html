@@ -1,210 +1,1143 @@
 {% extends "base.html" %}
 
+{% load static %}
+
 {% block content %}
+
+<!-- =========================================================
+     NON-INDUSTRIAL ESTATE LAND DASHBOARD
+========================================================= -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
 <style>
 
-    .another-dashboard {
-        padding: 10px 0;
+/* =========================================================
+   RESPONSIVE TYPOGRAPHY
+========================================================= */
+
+html {
+    font-size: 16px;
+}
+
+@media (max-width: 1800px) {
+    html {
+        font-size: 15px;
+    }
+}
+
+@media (max-width: 1600px) {
+    html {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 1400px) {
+    html {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 1200px) {
+    html {
+        font-size: 12px;
+    }
+}
+
+/* =========================================================
+   ROOT VARIABLES
+========================================================= */
+
+:root {
+
+    --primary: #0f8b43;
+    --primary-dark: #0a6c33;
+    --primary-light: #edf8f1;
+
+    --orange: #ff9800;
+    --orange-light: #fff4e5;
+
+    --red: #ef4444;
+    --red-light: #feecec;
+
+    --blue: #2563eb;
+    --blue-light: #eff6ff;
+
+    --gray: #f4f6f9;
+    --white: #ffffff;
+
+    --shadow: 0 10px 30px rgba(0,0,0,.08);
+
+    --radius: 1.1rem;
+
+    --transition: .35s ease;
+}
+
+/* =========================================================
+   BODY
+========================================================= */
+
+body {
+
+    font-family: 'Poppins', sans-serif;
+
+    background: #f6f8fb;
+}
+
+/* =========================================================
+   PAGE WRAPPER
+========================================================= */
+
+.another-dashboard {
+
+    width: 100%;
+
+    max-width: 100%;
+
+    padding: 10px 14px;
+
+    margin: 0 auto;
+}
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.land-record-header {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 25px;
+
+    width: 100%;
+
+    margin-bottom: 8px;
+}
+
+.land-record-title {
+
+    flex: 1;
+}
+
+.dashboard-title {
+
+    margin: 0;
+
+    font-size: 2.6rem;
+
+    font-weight: 700;
+
+    color: #0d223f;
+}
+
+.dashboard-subtitle {
+
+    color: #8a8a8a;
+
+    margin-top: 2px;
+
+    margin-bottom: 25px;
+}
+
+/* =========================================================
+   ADD LAND BUTTON
+========================================================= */
+
+.add-land-btn {
+
+    background: linear-gradient(
+        135deg,
+        var(--primary),
+        var(--primary-dark)
+    );
+
+    color: white;
+
+    border: none;
+
+    border-radius: .75rem;
+
+    padding: .9rem 1.6rem;
+
+    font-weight: 600;
+
+    font-size: .95rem;
+
+    text-decoration: none;
+
+    transition: .35s;
+
+    box-shadow: 0 8px 25px rgba(16,122,52,.30);
+}
+
+.add-land-btn:hover {
+
+    transform: translateY(-3px);
+
+    color: white;
+
+    box-shadow: 0 14px 35px rgba(16,122,52,.40);
+}
+
+.add-land-btn i {
+
+    margin-right: .5rem;
+}
+
+/* =========================================================
+   MAIN CARD
+========================================================= */
+
+.dashboard-card {
+
+    background: white;
+
+    border-radius: 1.4rem;
+
+    overflow: hidden;
+
+    box-shadow: var(--shadow);
+}
+
+/* =========================================================
+   TABLE
+========================================================= */
+
+.land-table {
+
+    margin: 0;
+
+    width: 100%;
+}
+
+.land-table thead th {
+
+    text-align: center;
+
+    padding: 1.4rem 1.1rem;
+
+    background: white;
+
+    color: #222;
+
+    font-size: .95rem;
+
+    font-weight: 700;
+
+    border-bottom: 2px solid #ececec;
+
+    white-space: nowrap;
+}
+
+.land-table tbody td {
+
+    vertical-align: middle;
+
+    padding: 1.1rem;
+
+    border-bottom: 1px solid #ededed;
+}
+
+.land-table tbody tr {
+
+    transition: .25s;
+}
+
+.land-table tbody tr:hover {
+
+    background: #fafafa;
+}
+
+/* =========================================================
+   TABLE RESPONSIVE
+========================================================= */
+
+.table-responsive {
+
+    overflow-x: auto;
+}
+
+.table-responsive::-webkit-scrollbar {
+
+    height: .6rem;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+
+    background: #d5d5d5;
+
+    border-radius: 50px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+
+    background: #f3f3f3;
+}
+
+/* =========================================================
+   ROW ANIMATION
+========================================================= */
+
+.land-row {
+
+    transition: .35s ease;
+}
+
+.land-row:hover {
+
+    background: #fbfcfd;
+
+    transform: scale(1.002);
+}
+
+/* =========================================================
+   OFFICE / OWNER CARD
+========================================================= */
+
+.owner-card {
+
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 1.1rem;
+}
+
+.owner-avatar {
+
+    width: 4.4rem;
+
+    height: 4.4rem;
+
+    border-radius: 50%;
+
+    background: linear-gradient(
+        135deg,
+        #dff6e8,
+        #b9ebcb
+    );
+
+    color: #0c7a3d;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    font-size: 1.75rem;
+
+    font-weight: 700;
+
+    flex-shrink: 0;
+
+    box-shadow: 0 8px 20px rgba(0,0,0,.08);
+}
+
+.owner-info {
+
+    flex: 1;
+}
+
+.owner-info h5 {
+
+    margin: 0;
+
+    font-size: 1.125rem;
+
+    font-weight: 700;
+
+    color: #0d223f;
+}
+
+.owner-office {
+
+    margin-top: .25rem;
+
+    color: #666;
+
+    font-size: .875rem;
+
+    font-weight: 500;
+}
+
+/* =========================================================
+   LOCATION
+========================================================= */
+
+.location-item {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: .5rem;
+
+    margin-top: .6rem;
+
+    font-size: .875rem;
+
+    color: #444;
+}
+
+.location-item i {
+
+    color: var(--primary);
+
+    font-size: 1.06rem;
+}
+
+/* =========================================================
+   LAND ID
+========================================================= */
+
+.land-id {
+
+    display: inline-block;
+
+    margin-top: .9rem;
+
+    padding: .375rem .875rem;
+
+    background: #edf3ff;
+
+    color: #2957b4;
+
+    border-radius: 50px;
+
+    font-size: .8125rem;
+
+    font-weight: 600;
+}
+
+/* =========================================================
+   LAND / ESTATE DETAILS
+========================================================= */
+
+.estate-card {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 1.25rem;
+
+    min-width: 250px;
+
+    width: 100%;
+}
+
+/* =========================================================
+   AREA CIRCLE
+========================================================= */
+
+.estate-circle {
+
+    position: relative;
+
+    width: 5.6rem;
+
+    height: 5.6rem;
+
+    flex-shrink: 0;
+}
+
+.estate-circle svg {
+
+    transform: rotate(-90deg);
+}
+
+.circle-bg {
+
+    fill: none;
+
+    stroke: #ececec;
+
+    stroke-width: 8;
+}
+
+.circle-progress {
+
+    fill: none;
+
+    stroke: #17b26a;
+
+    stroke-width: 8;
+
+    stroke-linecap: round;
+
+    transition: stroke-dashoffset 1.2s ease;
+}
+
+.circle-text {
+
+    position: absolute;
+
+    inset: 0;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    font-size: 1rem;
+
+    font-weight: 700;
+
+    color: #0f8b43;
+}
+
+/* =========================================================
+   ESTATE INFORMATION
+========================================================= */
+
+.estate-info {
+
+    flex: 1;
+}
+
+.estate-item {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: .625rem;
+
+    margin-bottom: .625rem;
+
+    font-size: .875rem;
+}
+
+.estate-item i {
+
+    font-size: 1.125rem;
+
+    width: 1.375rem;
+}
+
+.estate-item span {
+
+    flex: 1;
+
+    color: #666;
+}
+
+.estate-item strong {
+
+    font-weight: 700;
+
+    color: #222;
+}
+
+/* =========================================================
+   SIMPLE AREA CARD
+========================================================= */
+
+.land-area-card {
+
+    text-align: center;
+
+    min-width: 160px;
+}
+
+.area-icon {
+
+    width: 4rem;
+
+    height: 4rem;
+
+    border-radius: 50%;
+
+    background: #edf8f1;
+
+    color: #198754;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    margin: 0 auto .7rem;
+
+    box-shadow: 0 8px 20px rgba(0,0,0,.08);
+}
+
+.area-icon i {
+
+    font-size: 1.8rem;
+}
+
+.area-number {
+
+    font-size: 1.6rem;
+
+    font-weight: 700;
+
+    color: #198754;
+}
+
+.area-label {
+
+    color: #777;
+
+    font-size: .8125rem;
+
+    font-weight: 600;
+}
+
+/* =========================================================
+   TAGGING
+========================================================= */
+
+.tagging-card-simple {
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 10px;
+}
+
+.tagging-circle {
+
+    position: relative;
+
+    width: 82px;
+
+    height: 82px;
+}
+
+.tagging-circle svg {
+
+    transform: rotate(-90deg);
+}
+
+.tag-bg {
+
+    fill: none;
+
+    stroke: #ffe8c2;
+
+    stroke-width: 8;
+}
+
+.tag-progress {
+
+    fill: none;
+
+    stroke: #ff9800;
+
+    stroke-width: 8;
+
+    stroke-linecap: round;
+
+    transition: stroke-dashoffset 1s ease;
+}
+
+.tag-count {
+
+    position: absolute;
+
+    inset: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: center;
+
+    align-items: center;
+}
+
+.count-main {
+
+    font-size: 15px;
+
+    font-weight: 700;
+
+    line-height: 1;
+
+    color: #ff9800;
+}
+
+.count-total {
+
+    font-size: 10px;
+
+    color: #444;
+
+    font-weight: 600;
+}
+
+.pending-text {
+
+    color: #ff9800;
+
+    font-size: 15px;
+
+    font-weight: 700;
+}
+
+.completed-text {
+
+    color: #198754;
+
+    font-size: 13px;
+
+    font-weight: 700;
+}
+
+/* =========================================================
+   VERIFICATION PANEL
+========================================================= */
+
+.verification-panel {
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 12px;
+
+    min-width: 165px;
+}
+
+.status-badge {
+
+    width: 135px;
+
+    padding: 10px;
+
+    border-radius: 10px;
+
+    font-size: 15px;
+
+    font-weight: 600;
+}
+
+.status-success {
+
+    background: #e9f8ef;
+
+    color: #0f8b43;
+}
+
+.status-warning {
+
+    background: #fff6df;
+
+    color: #d97706;
+}
+
+.status-danger {
+
+    background: #fdecec;
+
+    color: #dc2626;
+}
+
+.status-disabled {
+
+    background: #ececec;
+
+    color: #666;
+}
+
+.verify-btn {
+
+    width: 135px;
+
+    font-weight: 600;
+}
+
+.verification-panel small {
+
+    font-size: 14px;
+
+    color: #666;
+}
+
+/* =========================================================
+   DOCUMENT CARD
+========================================================= */
+
+.document-card {
+
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 1rem;
+
+    min-width: 190px;
+}
+
+.document-icon {
+
+    width: 4.06rem;
+
+    height: 4.06rem;
+
+    border-radius: 50%;
+
+    background: #f3fff5;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    box-shadow: 0 8px 20px rgba(0,0,0,.08);
+
+    flex-shrink: 0;
+}
+
+.document-icon i {
+
+    font-size: 1.875rem;
+}
+
+.folder-animation {
+
+    animation: folderBounce 2s infinite;
+}
+
+@keyframes folderBounce {
+
+    0% {
+        transform: translateY(0);
     }
 
-    .dashboard-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
+    50% {
+        transform: translateY(-6px);
     }
 
-    .dashboard-title {
-        font-weight: 700;
-        margin-bottom: 3px;
+    100% {
+        transform: translateY(0);
+    }
+}
+
+.document-details {
+
+    width: 100%;
+}
+
+.document-details .badge {
+
+    font-size: .75rem;
+
+    padding: .44rem .75rem;
+
+    border-radius: 30px;
+}
+
+.document-details .btn {
+
+    border-radius: .625rem;
+
+    font-size: .8125rem;
+
+    font-weight: 600;
+}
+
+/* =========================================================
+   ACTION PANEL
+========================================================= */
+
+.action-panel {
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 10px;
+}
+
+.action-row {
+
+    display: flex;
+
+    gap: 10px;
+}
+
+.action-btn {
+
+    width: 2.6rem;
+
+    height: 2.6rem;
+
+    border-radius: 50%;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    color: white;
+
+    text-decoration: none;
+
+    font-size: 1.125rem;
+
+    transition: .35s;
+
+    box-shadow: 0 8px 18px rgba(0,0,0,.12);
+
+    position: relative;
+
+    overflow: hidden;
+}
+
+.action-btn:hover {
+
+    transform: translateY(-6px) scale(1.08);
+
+    color: white;
+}
+
+.action-view {
+
+    background: #0d6efd;
+}
+
+.action-view:hover {
+
+    background: #0b5ed7;
+}
+
+.action-edit {
+
+    background: #198754;
+}
+
+.action-edit:hover {
+
+    background: #157347;
+}
+
+.action-document {
+
+    background: #fd7e14;
+}
+
+.action-document:hover {
+
+    background: #e86d09;
+}
+
+.action-delete {
+
+    background: #dc3545;
+}
+
+.action-delete:hover {
+
+    background: #bb2d3b;
+}
+
+.action-verify {
+
+    background: #6f42c1;
+}
+
+.action-verify:hover {
+
+    background: #59339d;
+}
+
+/* =========================================================
+   RIPPLE
+========================================================= */
+
+.action-btn::after {
+
+    content: "";
+
+    position: absolute;
+
+    width: 0;
+
+    height: 0;
+
+    border-radius: 50%;
+
+    background: rgba(255,255,255,.35);
+
+    transform: translate(-50%,-50%);
+
+    left: 50%;
+
+    top: 50%;
+
+    transition: .45s;
+}
+
+.action-btn:hover::after {
+
+    width: 7.5rem;
+
+    height: 7.5rem;
+}
+
+/* =========================================================
+   PAGINATION FOOTER
+========================================================= */
+
+.dashboard-footer {
+
+    background: #ffffff;
+
+    border-radius: .9rem;
+
+    padding: 1.25rem 1.5rem;
+
+    box-shadow: 0 8px 24px rgba(0,0,0,.08);
+}
+
+.record-info {
+
+    font-weight: 600;
+
+    color: #495057;
+}
+
+.record-info i {
+
+    color: #198754;
+
+    margin-right: .375rem;
+}
+
+.page-status {
+
+    font-weight: 600;
+
+    color: #495057;
+}
+
+.page-status i {
+
+    color: #0d6efd;
+
+    margin-right: .375rem;
+}
+
+.pagination-modern {
+
+    gap: .5rem;
+}
+
+.pagination-modern .page-link {
+
+    border: none;
+
+    width: 2.6rem;
+
+    height: 2.6rem;
+
+    border-radius: .75rem;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    background: #f8f9fa;
+
+    color: #495057;
+
+    font-weight: 600;
+
+    transition: .3s;
+
+    box-shadow: 0 5px 15px rgba(0,0,0,.05);
+}
+
+.pagination-modern .page-link:hover {
+
+    background: #198754;
+
+    color: white;
+
+    transform: translateY(-3px);
+}
+
+.pagination-modern .page-item.active .page-link {
+
+    background: #198754;
+
+    color: white;
+}
+
+.pagination-modern .page-item.disabled .page-link {
+
+    opacity: .4;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 992px) {
+
+    .land-record-header {
+
+        align-items: flex-start;
+
+        flex-direction: column;
+
+        gap: 15px;
     }
 
-    .dashboard-subtitle {
-        color: #6c757d;
+    .land-record-title {
+
+        width: 100%;
     }
 
     .add-land-btn {
-        background: #198754;
-        color: white;
-        border-radius: 8px;
-        padding: 10px 18px;
-        text-decoration: none;
-        font-weight: 600;
-    }
 
-    .add-land-btn:hover {
-        background: #146c43;
-        color: white;
+        align-self: flex-start;
     }
-
-    .dashboard-card {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 4px 18px rgba(0,0,0,.08);
-        overflow: hidden;
-    }
-
-    .land-table {
-        margin-bottom: 0;
-        vertical-align: middle;
-    }
-
-    .land-table th {
-        background: #198754;
-        color: white;
-        font-weight: 600;
-        padding: 14px;
-        text-align: center;
-        white-space: nowrap;
-    }
-
-    .land-table td {
-        padding: 15px;
-    }
-
-    .owner-card {
-        display: flex;
-        gap: 12px;
-        align-items: center;
-    }
-
-    .owner-avatar {
-        width: 45px;
-        height: 45px;
-        border-radius: 50%;
-        background: #198754;
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: 18px;
-        flex-shrink: 0;
-    }
-
-    .owner-info h5 {
-        margin: 0;
-        font-weight: 700;
-    }
-
-    .owner-office {
-        color: #198754;
-        font-size: 13px;
-        font-weight: 600;
-    }
-
-    .location-item {
-        font-size: 13px;
-        color: #6c757d;
-        margin-top: 2px;
-    }
-
-    .land-id {
-        display: inline-block;
-        margin-top: 4px;
-        font-size: 12px;
-        color: #6c757d;
-    }
-
-    .land-details-card {
-        text-align: center;
-        min-width: 150px;
-    }
-
-    .area-number {
-        font-size: 24px;
-        font-weight: 700;
-        color: #198754;
-    }
-
-    .area-label {
-        font-size: 12px;
-        color: #6c757d;
-    }
-
-    .tagging-card-simple {
-        min-width: 120px;
-    }
-
-    .tagging-circle {
-        width: 82px;
-        height: 82px;
-        position: relative;
-    }
-
-    .tagging-circle svg {
-        transform: rotate(-90deg);
-    }
-
-    .tag-bg {
-        fill: none;
-        stroke: #e9ecef;
-        stroke-width: 8;
-    }
-
-    .tag-progress {
-        fill: none;
-        stroke: #198754;
-        stroke-width: 8;
-        stroke-linecap: round;
-    }
-
-    .tagging-percent {
-        font-weight: 700;
-        color: #198754;
-        margin-top: 5px;
-    }
-
-    .action-btn {
-        width: 36px;
-        height: 36px;
-        border-radius: 7px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        text-decoration: none;
-        margin: 2px;
-    }
-
-    .action-view {
-        background: #0d6efd;
-        color: white;
-    }
-
-    .action-edit {
-        background: #ffc107;
-        color: #212529;
-    }
-
-    .action-document {
-        background: #6f42c1;
-        color: white;
-    }
-
-    .action-delete {
-        background: #dc3545;
-        color: white;
-    }
-
-    .action-verify {
-        background: #198754;
-        color: white;
-    }
+}
 
 </style>
 
 
 <div class="another-dashboard">
 
-
-    <!-- ===============================================
+    <!-- =====================================================
          HEADER
-    ================================================ -->
+    ====================================================== -->
 
-    <div class="dashboard-header">
+    <div class="land-record-header">
 
-        <div>
+        <div class="land-record-title">
 
             <h2 class="dashboard-title">
 
@@ -212,31 +1145,39 @@
 
             </h2>
 
-            <div class="dashboard-subtitle">
-
-                শিল্পনগরী ব্যাতিত জমির তথ্য
-
-            </div>
-
         </div>
 
+        <div>
 
-        <a
-            href="{% url 'AnotherLand:another_land_create' %}"
-            class="add-land-btn">
+            <a
+                href="{% url 'AnotherLand:another_land_create' %}"
+                class="add-land-btn">
 
-            <i class="bi bi-plus-lg"></i>
+                <i class="bi bi-plus-lg"></i>
 
-            Add Land
+                Add Land
 
-        </a>
+            </a>
+
+        </div>
 
     </div>
 
 
-    <!-- ===============================================
-         TABLE
-    ================================================ -->
+    <!-- =====================================================
+         SUBTITLE
+    ====================================================== -->
+
+    <div class="dashboard-subtitle">
+
+        শিল্পনগরী ব্যাতিত জমির তথ্য
+
+    </div>
+
+
+    <!-- =====================================================
+         MAIN CARD
+    ====================================================== -->
 
     <div class="dashboard-card">
 
@@ -249,31 +1190,45 @@
                     <tr>
 
                         <th>
+
                             Office & Location
+
                         </th>
 
                         <th>
+
                             Land Details
+
                         </th>
 
                         <th>
+
                             Pending Tagging
+
                         </th>
 
                         <th>
+
                             Admin Verification
+
                         </th>
 
                         <th>
+
                             Super Admin Verification
+
                         </th>
 
                         <th>
+
                             Add Documents
+
                         </th>
 
                         <th>
+
                             Comment & Actions
+
                         </th>
 
                     </tr>
@@ -283,15 +1238,13 @@
 
                 <tbody>
 
-
                 {% for land in lands %}
 
-                <tr>
+                <tr class="land-row">
 
-
-                    <!-- ===================================
+                    <!-- =================================================
                          OFFICE & LOCATION
-                    ==================================== -->
+                    ================================================== -->
 
                     <td>
 
@@ -299,10 +1252,9 @@
 
                             <div class="owner-avatar">
 
-                                {{ land.office_name|slice:":1" }}
+                                {{ land.office_name|slice:":1"|upper }}
 
                             </div>
-
 
                             <div class="owner-info">
 
@@ -312,20 +1264,17 @@
 
                                 </h5>
 
-
                                 <div class="owner-office">
 
                                     {{ land.office_type }}
 
                                 </div>
 
-
                                 <div class="owner-office">
 
                                     {{ land.rd_office }}
 
                                 </div>
-
 
                                 <div class="location-item">
 
@@ -336,7 +1285,6 @@
 
                                 </div>
 
-
                                 <div class="location-item">
 
                                     <i class="bi bi-pin-map-fill"></i>
@@ -344,7 +1292,6 @@
                                     {{ land.upazila }}
 
                                 </div>
-
 
                                 <span class="land-id">
 
@@ -359,18 +1306,19 @@
                     </td>
 
 
-                    <!-- ===================================
+                    <!-- =================================================
                          LAND DETAILS
-                    ==================================== -->
+                    ================================================== -->
 
                     <td>
 
-                        <div class="land-details-card">
+                        <div class="land-area-card">
 
-                            <i
-                                class="bi bi-rulers text-success"
-                                style="font-size: 2rem;">
-                            </i>
+                            <div class="area-icon">
+
+                                <i class="bi bi-rulers"></i>
+
+                            </div>
 
                             <div class="area-number">
 
@@ -389,20 +1337,17 @@
                     </td>
 
 
-                    <!-- ===================================
+                    <!-- =================================================
                          PENDING TAGGING
-                    ==================================== -->
+                    ================================================== -->
 
                     <td class="text-center">
 
                         <div class="tagging-card-simple">
 
-                            <div
-                                class="tagging-circle mx-auto">
+                            <div class="tagging-circle mx-auto">
 
-                                <svg
-                                    width="82"
-                                    height="82">
+                                <svg width="82" height="82">
 
                                     <circle
                                         cx="41"
@@ -411,171 +1356,370 @@
                                         class="tag-bg">
                                     </circle>
 
-
                                     <circle
                                         cx="41"
                                         cy="41"
                                         r="32"
                                         class="tag-progress"
-                                        stroke-dasharray="201"
-                                        stroke-dashoffset="calc(201 - (201 * {{ land.progress }}) / 100)">
+                                        style="
+                                            stroke-dasharray:201;
+                                            stroke-dashoffset:
+                                            calc(
+                                                201 -
+                                                (201 * {{ land.progress }}) / 100
+                                            );
+                                        ">
                                     </circle>
 
                                 </svg>
 
+                                <div class="tag-count">
+
+                                    <div class="count-main">
+
+                                        {{ land.progress }}%
+
+                                    </div>
+
+                                    <div class="count-total">
+
+                                        {{ land.pending_count }} Pending
+
+                                    </div>
+
+                                </div>
+
                             </div>
 
 
-                            <div class="tagging-percent">
+                            <button
+                                type="button"
+                                class="btn btn-outline-success btn-sm mt-3"
+                                data-bs-toggle="modal"
+                                data-bs-target="#pendingModal{{ land.id }}">
 
-                                {{ land.progress }}%
+                                <i class="bi bi-list-task"></i>
 
-                            </div>
+                                View Pending
 
-
-                            <div class="small text-muted">
-
-                                {{ land.pending_count }}
-                                Pending
-
-                            </div>
+                            </button>
 
                         </div>
 
                     </td>
 
 
-                    <!-- ===================================
+                    <!-- =================================================
                          ADMIN VERIFICATION
-                    ==================================== -->
+                    ================================================== -->
 
                     <td class="text-center">
 
-                        {% if land.verification.admin_verified %}
+                        <div class="verification-panel">
 
-                            <span
-                                class="badge bg-success p-2">
+                            {% if land.verification.admin_verified %}
 
-                                <i class="bi bi-check-circle-fill"></i>
+                                <span class="status-badge status-success">
 
-                                Verified
+                                    <i class="bi bi-check-circle"></i>
 
-                            </span>
+                                    Verified
 
-                        {% else %}
+                                </span>
 
-                            <span
-                                class="badge bg-warning text-dark p-2">
+                                <a
+                                    href="{% url 'AnotherLand:another_land_verification' land.pk %}"
+                                    class="verify-btn btn btn-outline-dark">
 
-                                <i class="bi bi-clock-history"></i>
+                                    <i class="bi bi-person-lines-fill"></i>
 
-                                Pending
+                                    View Details
 
-                            </span>
+                                </a>
 
-                        {% endif %}
+                            {% else %}
+
+                                <span class="status-badge status-warning">
+
+                                    <i class="bi bi-clock-history"></i>
+
+                                    Pending
+
+                                </span>
+
+                                <a
+                                    href="{% url 'AnotherLand:another_land_verification' land.pk %}"
+                                    class="verify-btn btn btn-outline-dark">
+
+                                    <i class="bi bi-patch-check-fill"></i>
+
+                                    Verify
+
+                                </a>
+
+                            {% endif %}
+
+                            <small>
+
+                                By Admin
+
+                            </small>
+
+                        </div>
 
                     </td>
 
 
-                    <!-- ===================================
-                         SUPER ADMIN
-                    ==================================== -->
+                    <!-- =================================================
+                         SUPER ADMIN VERIFICATION
+                    ================================================== -->
 
                     <td class="text-center">
 
-                        {% if land.verification.super_admin_verified %}
+                        <div class="verification-panel">
 
-                            <span
-                                class="badge bg-success p-2">
+                            {% if not land.verification.admin_verified %}
 
-                                <i class="bi bi-check-circle-fill"></i>
+                                <span class="status-badge status-disabled">
 
-                                Verified
+                                    <i class="bi bi-clock"></i>
 
-                            </span>
+                                    Waiting
 
-                        {% else %}
+                                </span>
 
-                            <span
-                                class="badge bg-warning text-dark p-2">
+                                <button
+                                    class="verify-btn btn btn-light"
+                                    disabled>
 
-                                <i class="bi bi-clock-history"></i>
+                                    Verify
 
-                                Pending
+                                </button>
 
-                            </span>
+                            {% else %}
 
-                        {% endif %}
+                                {% if land.verification.super_admin_verified %}
+
+                                    <span class="status-badge status-success">
+
+                                        <i class="bi bi-check-circle"></i>
+
+                                        Verified
+
+                                    </span>
+
+                                    <a
+                                        href="{% url 'AnotherLand:another_land_verification' land.pk %}"
+                                        class="verify-btn btn btn-outline-dark">
+
+                                        <i class="bi bi-person-lines-fill"></i>
+
+                                        View Details
+
+                                    </a>
+
+                                {% else %}
+
+                                    <span class="status-badge status-danger">
+
+                                        <i class="bi bi-clock-history"></i>
+
+                                        Pending
+
+                                    </span>
+
+                                    <a
+                                        href="{% url 'AnotherLand:another_land_verification' land.pk %}"
+                                        class="verify-btn btn btn-outline-dark">
+
+                                        <i class="bi bi-patch-check-fill"></i>
+
+                                        Verify
+
+                                    </a>
+
+                                {% endif %}
+
+                            {% endif %}
+
+                            <small>
+
+                                By Super Admin
+
+                            </small>
+
+                        </div>
 
                     </td>
 
 
-                    <!-- ===================================
+                    <!-- =================================================
                          DOCUMENTS
-                    ==================================== -->
-
-                    <td class="text-center">
-
-                        <a
-                            href="{% url 'documents:document_list' land.pk %}"
-                            class="action-btn action-document"
-                            title="Add Documents">
-
-                            <i class="bi bi-folder2-open"></i>
-
-                        </a>
-
-                    </td>
-
-
-                    <!-- ===================================
-                         ACTIONS
-                    ==================================== -->
+                    ================================================== -->
 
                     <td>
 
-                        <div class="text-center">
+                        <div class="document-card">
+
+                            <div class="document-icon">
+
+                                {% if land.documents.count == 0 %}
+
+                                    <i class="bi bi-folder-x text-secondary"></i>
+
+                                {% else %}
+
+                                    <i class="bi bi-folder2-open text-success folder-animation"></i>
+
+                                {% endif %}
+
+                            </div>
 
 
-                            <!-- Verification -->
+                            <div class="document-details">
 
-                            <a
-                                href="{% url 'AnotherLand:another_land_verification' land.pk %}"
-                                class="action-btn action-verify"
-                                title="Verification">
+                                <div class="mb-3">
 
-                                <i class="bi bi-shield-check"></i>
+                                    {% if land.documents.count == 0 %}
 
-                            </a>
+                                        <span class="badge bg-secondary">
+
+                                            Empty
+
+                                        </span>
+
+                                    {% elif land.documents.first.verified %}
+
+                                        <span class="badge bg-success">
+
+                                            Verified
+
+                                        </span>
+
+                                    {% else %}
+
+                                        <span class="badge bg-warning text-dark">
+
+                                            Pending
+
+                                        </span>
+
+                                    {% endif %}
+
+                                </div>
 
 
-                            <!-- Edit -->
+                                <div class="d-grid gap-2">
 
-                            <a
-                                href="{% url 'AnotherLand:another_land_update' land.pk %}"
-                                class="action-btn action-edit"
-                                title="Edit">
+                                    <a
+                                        href="{% url 'documents:document_list' land.pk %}"
+                                        class="btn btn-success btn-sm">
 
-                                <i class="bi bi-pencil-square"></i>
+                                        <i class="bi bi-folder2-open"></i>
 
-                            </a>
+                                        Upload Documents
 
+                                    </a>
 
-                            <!-- Delete -->
+                                </div>
 
-                            <a
-                                href="{% url 'AnotherLand:another_land_delete' land.pk %}"
-                                class="action-btn action-delete"
-                                title="Delete">
-
-                                <i class="bi bi-trash-fill"></i>
-
-                            </a>
+                            </div>
 
                         </div>
 
                     </td>
+
+
+                    <!-- =================================================
+                         ACTIONS
+                    ================================================== -->
+
+                    {% with role=request.user.userprofile.role %}
+
+                    <td class="text-center">
+
+                        <div class="action-panel">
+
+                            <!-- ROW 1 -->
+
+                            <div class="action-row">
+
+                                <!-- VIEW -->
+
+                                {% if role == "DATA_ENTRY" or role == "RD_ADMIN" or role == "SUPER_ADMIN" %}
+
+                                    <a
+                                        href="{% url 'AnotherLand:another_land_update' land.pk %}"
+                                        class="action-btn action-view"
+                                        title="View">
+
+                                        <i class="bi bi-eye-fill"></i>
+
+                                    </a>
+
+                                {% endif %}
+
+
+                                <!-- EDIT -->
+
+                                {% if role == "RD_ADMIN" or role == "SUPER_ADMIN" %}
+
+                                    <a
+                                        href="{% url 'AnotherLand:another_land_update' land.pk %}"
+                                        class="action-btn action-edit"
+                                        title="Edit">
+
+                                        <i class="bi bi-pencil-square"></i>
+
+                                    </a>
+
+                                {% endif %}
+
+                            </div>
+
+
+                            <!-- ROW 2 -->
+
+                            <div class="action-row">
+
+                                <!-- DOCUMENTS -->
+
+                                {% if role == "RD_ADMIN" or role == "SUPER_ADMIN" %}
+
+                                    <a
+                                        href="{% url 'documents:document_list' land.pk %}"
+                                        class="action-btn action-document"
+                                        title="Documents">
+
+                                        <i class="bi bi-folder2-open"></i>
+
+                                    </a>
+
+                                {% endif %}
+
+
+                                <!-- DELETE -->
+
+                                {% if role == "SUPER_ADMIN" %}
+
+                                    <a
+                                        href="{% url 'AnotherLand:another_land_delete' land.pk %}"
+                                        class="action-btn action-delete"
+                                        title="Delete">
+
+                                        <i class="bi bi-trash-fill"></i>
+
+                                    </a>
+
+                                {% endif %}
+
+                            </div>
+
+                        </div>
+
+                    </td>
+
+                    {% endwith %}
 
                 </tr>
 
@@ -584,22 +1728,18 @@
 
                 <tr>
 
-                    <td
-                        colspan="7"
-                        class="text-center py-5">
+                    <td colspan="7" class="text-center py-5">
 
                         <i
                             class="bi bi-database-x"
-                            style="font-size: 3rem;">
+                            style="font-size:3rem;">
                         </i>
 
                         <p class="mt-3">
 
-                            No non-industrial estate land
-                            records found.
+                            No non-industrial estate land records found.
 
                         </p>
-
 
                         <a
                             href="{% url 'AnotherLand:another_land_create' %}"
@@ -620,6 +1760,343 @@
                 </tbody>
 
             </table>
+
+
+            <!-- =========================================================
+                 PENDING TAG MODALS
+            ========================================================== -->
+
+            {% for land in lands %}
+
+            <div
+                class="modal fade"
+                id="pendingModal{{ land.id }}"
+                tabindex="-1"
+                aria-labelledby="pendingModalLabel{{ land.id }}"
+                aria-hidden="true">
+
+                <div class="modal-dialog modal-lg modal-dialog-centered">
+
+                    <div class="modal-content">
+
+                        <div class="modal-header bg-success text-white">
+
+                            <h5
+                                class="modal-title"
+                                id="pendingModalLabel{{ land.id }}">
+
+                                Pending Tags
+
+                            </h5>
+
+                            <button
+                                type="button"
+                                class="btn-close btn-close-white"
+                                data-bs-dismiss="modal">
+                            </button>
+
+                        </div>
+
+
+                        <div class="modal-body">
+
+                            <table class="table table-bordered table-hover">
+
+                                <thead class="table-light">
+
+                                    <tr>
+
+                                        <th>
+
+                                            Required Tag
+
+                                        </th>
+
+                                        <th>
+
+                                            Status
+
+                                        </th>
+
+                                    </tr>
+
+                                </thead>
+
+                                <tbody>
+
+                                    {% for item in land.tag_status %}
+
+                                    <tr>
+
+                                        <td>
+
+                                            {{ item.name }}
+
+                                        </td>
+
+                                        <td class="text-center">
+
+                                            {% if item.completed %}
+
+                                                <span class="badge bg-success">
+
+                                                    <i class="bi bi-check-circle-fill"></i>
+
+                                                    Completed
+
+                                                </span>
+
+                                            {% else %}
+
+                                                <span class="badge bg-warning text-dark">
+
+                                                    <i class="bi bi-clock-fill"></i>
+
+                                                    Pending
+
+                                                </span>
+
+                                            {% endif %}
+
+                                        </td>
+
+                                    </tr>
+
+                                    {% empty %}
+
+                                    <tr>
+
+                                        <td
+                                            colspan="2"
+                                            class="text-center">
+
+                                            No Required Tags Found
+
+                                        </td>
+
+                                    </tr>
+
+                                    {% endfor %}
+
+                                </tbody>
+
+                            </table>
+
+                        </div>
+
+
+                        <div class="modal-footer">
+
+                            <button
+                                class="btn btn-secondary"
+                                data-bs-dismiss="modal">
+
+                                Close
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            {% endfor %}
+
+
+            <!-- =========================================================
+                 PAGINATION FOOTER
+            ========================================================== -->
+
+            {% if page_obj %}
+
+            <div class="dashboard-footer mt-4">
+
+                <div class="row align-items-center">
+
+                    <!-- LEFT -->
+
+                    <div class="col-md-4 mb-3 mb-md-0">
+
+                        <div class="record-info">
+
+                            <i class="bi bi-database-fill"></i>
+
+                            Showing
+
+                            <strong>
+
+                                {{ page_obj.start_index }}
+
+                            </strong>
+
+                            -
+
+                            <strong>
+
+                                {{ page_obj.end_index }}
+
+                            </strong>
+
+                            of
+
+                            <strong>
+
+                                {{ page_obj.paginator.count }}
+
+                            </strong>
+
+                            Land Records
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- CENTER -->
+
+                    <div class="col-md-4 text-center mb-3 mb-md-0">
+
+                        {% if page_obj.has_other_pages %}
+
+                        <nav>
+
+                            <ul class="pagination pagination-modern justify-content-center">
+
+                                {% if page_obj.has_previous %}
+
+                                <li class="page-item">
+
+                                    <a
+                                        class="page-link"
+                                        href="?page={{ page_obj.previous_page_number }}">
+
+                                        <i class="bi bi-chevron-left"></i>
+
+                                    </a>
+
+                                </li>
+
+                                {% else %}
+
+                                <li class="page-item disabled">
+
+                                    <span class="page-link">
+
+                                        <i class="bi bi-chevron-left"></i>
+
+                                    </span>
+
+                                </li>
+
+                                {% endif %}
+
+
+                                {% for num in page_obj.paginator.page_range %}
+
+                                    {% if page_obj.number == num %}
+
+                                    <li class="page-item active">
+
+                                        <span class="page-link">
+
+                                            {{ num }}
+
+                                        </span>
+
+                                    </li>
+
+                                    {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+
+                                    <li class="page-item">
+
+                                        <a
+                                            class="page-link"
+                                            href="?page={{ num }}">
+
+                                            {{ num }}
+
+                                        </a>
+
+                                    </li>
+
+                                    {% endif %}
+
+                                {% endfor %}
+
+
+                                {% if page_obj.has_next %}
+
+                                <li class="page-item">
+
+                                    <a
+                                        class="page-link"
+                                        href="?page={{ page_obj.next_page_number }}">
+
+                                        <i class="bi bi-chevron-right"></i>
+
+                                    </a>
+
+                                </li>
+
+                                {% else %}
+
+                                <li class="page-item disabled">
+
+                                    <span class="page-link">
+
+                                        <i class="bi bi-chevron-right"></i>
+
+                                    </span>
+
+                                </li>
+
+                                {% endif %}
+
+                            </ul>
+
+                        </nav>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <!-- RIGHT -->
+
+                    <div class="col-md-4 text-md-end text-center">
+
+                        <div class="page-status">
+
+                            <i class="bi bi-file-earmark-text-fill"></i>
+
+                            Page
+
+                            <strong>
+
+                                {{ page_obj.number }}
+
+                            </strong>
+
+                            of
+
+                            <strong>
+
+                                {{ page_obj.paginator.num_pages }}
+
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            {% endif %}
 
         </div>
 

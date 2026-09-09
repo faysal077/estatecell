@@ -1,5 +1,6 @@
 
 from django.db import models
+from AnotherLand.models import AnotherLand
 from lands.models import Land
 from django.contrib.auth.models import User
 
@@ -40,6 +41,13 @@ class Document(models.Model):
         Land,
         on_delete=models.CASCADE,
         related_name='documents'
+    )
+    another_land = models.ForeignKey(
+        AnotherLand,
+        on_delete=models.CASCADE,
+        related_name='documents',
+        null=True,
+        blank=True
     )
 
     document_type = models.CharField(

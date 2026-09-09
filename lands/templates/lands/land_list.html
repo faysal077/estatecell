@@ -2090,16 +2090,27 @@ ADMIN VERIFICATION
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {% for item in land.tag_status %} 
-                                            <tr>
-                                                <td>{{ item.name }}</td>
-                                                <td class="text-center"> {% if item.completed %} <span class="badge bg-success"> <i class="bi bi-check-circle-fill"></i> Completed </span> {% else %} <span class="badge bg-warning text-dark"> <i class="bi bi-clock-fill"></i> Pending </span> {% endif %} </td>
-                                            </tr>
-                                            {% empty %} 
-                                            <tr>
-                                                <td colspan="2" class="text-center"> No Required Tags Found </td>
-                                            </tr>
-                                            {% endfor %} 
+                                            {% for item in land.tag_status %}
+                                                <tr>
+                                                    <td>
+                                                        {{ item.name }}
+                                                    </td>
+
+                                                    <td class="text-center">
+                                                        {% if item.completed %}
+                                                            <span class="badge bg-success">
+                                                                <i class="bi bi-check-circle-fill"></i>
+                                                                Completed
+                                                            </span>
+                                                        {% else %}
+                                                            <span class="badge bg-warning text-dark">
+                                                                <i class="bi bi-clock-fill"></i>
+                                                                Pending
+                                                            </span>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                                {% endfor %} 
                                         </tbody>
                                         </table>
                                     </div>

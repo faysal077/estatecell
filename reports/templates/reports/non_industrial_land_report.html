@@ -1,0 +1,541 @@
+{% extends "reports/report_base.html" %}
+
+
+{% block report_content %}
+
+<style>
+
+    .report-page-title {
+        font-weight: 700;
+        color: #17324d;
+    }
+
+    .filter-card {
+
+        background: #ffffff;
+
+        border: 1px solid #dce8e2;
+
+        border-radius: 10px;
+
+        padding: 18px;
+
+        margin-bottom: 18px;
+
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .filter-title {
+
+        font-weight: 700;
+
+        color: #17324d;
+
+        margin-bottom: 12px;
+    }
+
+    .tag-report-table {
+
+        background: #ffffff;
+
+        border-radius: 10px;
+
+        overflow: hidden;
+
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .tag-report-table thead th {
+
+        background: #173f35;
+
+        color: #ffffff;
+
+        font-size: 0.88rem;
+
+        white-space: nowrap;
+
+        vertical-align: middle;
+    }
+
+    .tag-report-table td {
+
+        vertical-align: top;
+
+        font-size: 0.90rem;
+    }
+
+    .tag-list {
+
+        display: flex;
+
+        flex-wrap: wrap;
+
+        gap: 6px;
+
+        min-width: 260px;
+
+        line-height: 1.5;
+    }
+
+    .status-tag {
+
+        display: inline-flex;
+
+        align-items: center;
+
+        padding: 4px 9px;
+
+        border-radius: 20px;
+
+        font-size: 0.76rem;
+
+        font-weight: 600;
+
+        line-height: 1.35;
+
+        white-space: normal;
+
+        word-break: break-word;
+    }
+
+    .added-tag {
+
+        background: #d9f4e5;
+
+        color: #12633c;
+
+        border: 1px solid #a9dfc0;
+    }
+
+    .pending-tag {
+
+        background: #fff0f0;
+
+        color: #a22d2d;
+
+        border: 1px solid #f0b7b7;
+    }
+
+    .empty-tag {
+
+        color: #6c757d;
+
+        font-size: 0.85rem;
+
+        font-style: italic;
+    }
+
+</style>
+
+
+<div>
+
+    <!-- ====================================================
+         HEADER
+         ==================================================== -->
+
+    <div class="mb-4">
+
+        <h2 class="report-page-title mb-1">
+
+            <i class="bi bi-geo-alt me-2"></i>
+
+            শিল্পনগরী বহির্ভূত জমির তথ্য
+
+        </h2>
+
+        <p class="text-muted mb-0">
+
+            বিসিকের জমির হালনাগাদ তথ্য —
+            শিল্পনগরী বহির্ভূত জমির document tagging status
+
+        </p>
+
+    </div>
+
+
+    <!-- ====================================================
+         FILTER
+         ==================================================== -->
+
+    <div class="filter-card">
+
+        <div class="filter-title">
+
+            <i class="bi bi-funnel me-1"></i>
+
+            ফিল্টার করুন
+
+        </div>
+
+
+        <form method="get">
+
+            <div class="row g-3 align-items-end">
+
+                <!-- RD Office -->
+
+                <div class="col-md-3">
+
+                    <label class="form-label">
+                        RD Office নির্বাচন করুন
+                    </label>
+
+                    <select
+                        name="rd_office"
+                        class="form-select"
+                    >
+
+                        <option value="">
+                            All RD Offices
+                        </option>
+
+                        {% for rd_office in rd_offices %}
+
+                            <option
+                                value="{{ rd_office }}"
+                                {% if selected_rd_office == rd_office %}
+                                    selected
+                                {% endif %}
+                            >
+
+                                {{ rd_office }}
+
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+
+                <!-- Office -->
+
+                <div class="col-md-3">
+
+                    <label class="form-label">
+
+                        অফিস নির্বাচন করুন
+
+                    </label>
+
+                    <select
+                        name="office"
+                        class="form-select"
+                    >
+
+                        <option value="">
+                            All Offices
+                        </option>
+
+                        {% for office in offices %}
+
+                            <option
+                                value="{{ office }}"
+                                {% if selected_office == office %}
+                                    selected
+                                {% endif %}
+                            >
+
+                                {{ office }}
+
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+
+                <!-- Added Tag -->
+
+                <div class="col-md-2">
+
+                    <label class="form-label">
+
+                        Added Tag
+
+                    </label>
+
+                    <select
+                        name="added_tag"
+                        class="form-select"
+                    >
+
+                        <option value="">
+                            All Added Tags
+                        </option>
+
+                        {% for tag in required_tags %}
+
+                            <option
+                                value="{{ tag }}"
+                                {% if selected_added_tag == tag %}
+                                    selected
+                                {% endif %}
+                            >
+
+                                {{ tag }}
+
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+
+                <!-- Pending Tag -->
+
+                <div class="col-md-2">
+
+                    <label class="form-label">
+
+                        Pending Tag
+
+                    </label>
+
+                    <select
+                        name="pending_tag"
+                        class="form-select"
+                    >
+
+                        <option value="">
+                            All Pending Tags
+                        </option>
+
+                        {% for tag in required_tags %}
+
+                            <option
+                                value="{{ tag }}"
+                                {% if selected_pending_tag == tag %}
+                                    selected
+                                {% endif %}
+                            >
+
+                                {{ tag }}
+
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+
+                <!-- Buttons -->
+
+                <div class="col-md-2">
+
+                    <div class="d-flex gap-2">
+
+                        <button
+                            type="submit"
+                            class="btn btn-success"
+                        >
+
+                            <i class="bi bi-funnel"></i>
+
+                            Filter
+
+                        </button>
+
+
+                        <a
+                            href="{% url 'reports:non_industrial_land_report' %}"
+                            class="btn btn-outline-secondary"
+                        >
+
+                            <i class="bi bi-arrow-clockwise"></i>
+
+                            Reset
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+
+
+    <!-- ====================================================
+         TABLE
+         ==================================================== -->
+
+    <div class="tag-report-table">
+
+        <div class="table-responsive">
+
+            <table
+                class="table table-bordered table-hover mb-0"
+            >
+
+                <thead>
+
+                    <tr>
+
+                        <th>#</th>
+
+                        <th>
+
+                            RD Office
+
+                        </th>
+
+                        <th>
+
+                            Office
+
+                        </th>
+
+                        <th>
+
+                            Added Tags
+
+                        </th>
+
+                        <th>
+
+                            Pending Tags
+
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for row in report_rows %}
+
+                    <tr>
+
+                        <td>
+
+                            {{ forloop.counter }}
+
+                        </td>
+
+
+                        <td class="fw-semibold">
+
+                            {{ row.rd_office }}
+
+                        </td>
+
+
+                        <td class="fw-semibold">
+
+                            {{ row.office }}
+
+                        </td>
+
+
+                        <!-- Added -->
+
+                        <td>
+
+                            <div class="tag-list">
+
+                                {% for tag in row.added_tags %}
+
+                                    <span
+                                        class="status-tag added-tag"
+                                    >
+
+                                        <i class="bi bi-check-circle me-1"></i>
+
+                                        {{ tag }}
+
+                                    </span>
+
+                                {% empty %}
+
+                                    <span class="empty-tag">
+
+                                        No tags added
+
+                                    </span>
+
+                                {% endfor %}
+
+                            </div>
+
+                        </td>
+
+
+                        <!-- Pending -->
+
+                        <td>
+
+                            <div class="tag-list">
+
+                                {% for tag in row.pending_tags %}
+
+                                    <span
+                                        class="status-tag pending-tag"
+                                    >
+
+                                        <i class="bi bi-clock me-1"></i>
+
+                                        {{ tag }}
+
+                                    </span>
+
+                                {% empty %}
+
+                                    <span class="empty-tag">
+
+                                        No pending tags
+
+                                    </span>
+
+                                {% endfor %}
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+                    {% empty %}
+
+                    <tr>
+
+                        <td
+                            colspan="5"
+                            class="text-center text-muted py-5"
+                        >
+
+                            <i class="bi bi-info-circle me-1"></i>
+
+                            No report data found.
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
