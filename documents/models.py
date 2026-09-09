@@ -3,14 +3,31 @@ from django.db import models
 from AnotherLand.models import AnotherLand
 from lands.models import Land
 from django.contrib.auth.models import User
+from AnotherLand.models import AnotherLand
+def document_path(instance, filename):
+    if instance.land_id:
+        return f"land_{instance.land_id}/documents/{filename}"
+
+    if instance.another_land_id:
+        return f"another_land_{instance.another_land_id}/documents/{filename}"
+
+    return f"documents/{filename}"
+
 
 def separated_pdf_path(instance, filename):
-        return f"land_{instance.document.land.id}/separated/{filename}"
+    document = instance.document
 
+    if document.land_id:
+        return (
+            f"land_{document.land_id}/separated/{filename}"
+        )
 
-def document_path(instance, filename):
-    # Use land_{id} for consistent path structure
-    return f"land_{instance.land.id}/documents/{filename}"
+    if document.another_land_id:
+        return (
+            f"another_land_{document.another_land_id}/separated/{filename}"
+        )
+
+    return f"documents/separated/{filename}"
 
 
 class Document(models.Model):
@@ -40,8 +57,11 @@ class Document(models.Model):
     land = models.ForeignKey(
         Land,
         on_delete=models.CASCADE,
-        related_name='documents'
+        related_name='documents',
+        null=True,
+        blank=True
     )
+
     another_land = models.ForeignKey(
         AnotherLand,
         on_delete=models.CASCADE,

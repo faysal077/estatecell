@@ -47,7 +47,7 @@ from .forms import (
     TagForm,
     DocumentIndexForm,
 )
-
+from AnotherLand.models import AnotherLand
 from lands.models import Land
 from .utils import extract_pages
 
@@ -317,7 +317,56 @@ def document_list(request, land_id):
         context
     )
 
+@login_required
+def another_land_document_list(request, another_land_id):
 
+    another_land = get_object_or_404(
+        AnotherLand,
+        pk=another_land_id
+    )
+
+    documents = (
+        Document.objects
+        .filter(another_land=another_land)
+        .prefetch_related(
+            'pages',
+            'index_entries',
+            'tag_entries__tags'
+        )
+        .select_related(
+            'another_land',
+            'issued_by'
+        )
+        .order_by('-created_at')
+    )
+
+    profile, _ = UserProfile.objects.get_or_create(
+        user=request.user
+    )
+
+    context = {
+        'documents': documents,
+        'another_land': another_land,
+        'profile': profile,
+
+        'is_data_entry': (
+            profile.role == UserRole.DATA_ENTRY
+        ),
+
+        'is_rd_admin': (
+            profile.role == UserRole.RD_ADMIN
+        ),
+
+        'is_super_admin': (
+            profile.role == UserRole.SUPER_ADMIN
+        ),
+    }
+
+    return render(
+        request,
+        "documents/document_list.html",
+        context
+    )
 
 @login_required
 def upload_document(request, land_id):
@@ -347,7 +396,44 @@ def upload_document(request, land_id):
         })
 
     return JsonResponse({'success': False})
+@login_required
+def another_land_upload_document(request, another_land_id):
 
+    another_land = get_object_or_404(
+        AnotherLand,
+        pk=another_land_id
+    )
+
+    if request.method == 'POST':
+
+        uploaded_file = request.FILES.get('pdf_file')
+
+        if not uploaded_file:
+            return JsonResponse({
+                'success': False,
+                'error': 'No PDF file uploaded.'
+            })
+
+        doc = Document.objects.create(
+            another_land=another_land,
+            document_type='Uncategorized',
+            issued_by=request.user,
+            scanned_copy=uploaded_file,
+            file_name=uploaded_file.name,
+            file_type='pdf'
+        )
+
+        return JsonResponse({
+            'success': True,
+            'document_id': doc.id,
+            'document_number': doc.document_number,
+            'file_name': doc.file_name
+        })
+
+    return JsonResponse({
+        'success': False,
+        'error': 'Invalid request method.'
+    })
 
 @login_required
 def update_document(request, pk):

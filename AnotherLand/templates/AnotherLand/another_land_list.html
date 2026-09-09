@@ -1612,7 +1612,7 @@ body {
                                 <div class="d-grid gap-2">
 
                                     <a
-                                        href="{% url 'documents:document_list' land.pk %}"
+                                        href="{% url 'documents:another_land_document_list' land.pk %}"
                                         class="btn btn-success btn-sm">
 
                                         <i class="bi bi-folder2-open"></i>
@@ -1687,7 +1687,7 @@ body {
                                 {% if role == "RD_ADMIN" or role == "SUPER_ADMIN" %}
 
                                     <a
-                                        href="{% url 'documents:document_list' land.pk %}"
+                                        href="{% url 'documents:another_land_document_list' land.pk %}"
                                         class="action-btn action-document"
                                         title="Documents">
 

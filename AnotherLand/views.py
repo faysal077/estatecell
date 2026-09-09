@@ -123,7 +123,17 @@ def another_land_list(request):
         # AnotherLand has its own verification fields.
         # --------------------------------------------------
 
-        uploaded_types = set()
+        uploaded_types = set(
+            DocumentTagEntry.objects
+            .filter(
+                document__another_land=land
+            )
+            .values_list(
+                "document_type",
+                flat=True
+            )
+            .distinct()
+        )
 
         land.tag_status = []
 
