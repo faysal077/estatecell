@@ -457,22 +457,90 @@ View PDF
 
                 <div class="alert alert-success">
 
-                    <strong>
-                        <i class="bi bi-check-circle-fill"></i>
-                        Verified
-                    </strong>
+                    <div class="d-flex align-items-center mb-3">
 
-                    <br>
+                        <i class="bi bi-check-circle-fill fs-4 me-2"></i>
 
-                    Verified By:
-                    <strong>
-                        {{ verification.admin_verified_by }}
-                    </strong>
+                        <strong class="fs-5">
+                            Admin Verified
+                        </strong>
 
-                    <br>
+                    </div>
 
-                    Date:
-                    {{ verification.admin_verified_date|date:"d M Y H:i" }}
+                    <div class="row">
+
+                        <div class="col-md-6 mb-2">
+
+                            <strong>
+                                <i class="bi bi-person-fill"></i>
+                                Verified By:
+                            </strong>
+
+                            {% if verification.admin_verified_by %}
+
+                                {% if verification.admin_verified_by.get_full_name %}
+
+                                    {{ verification.admin_verified_by.get_full_name }}
+
+                                {% else %}
+
+                                    {{ verification.admin_verified_by.username }}
+
+                                {% endif %}
+
+                            {% else %}
+
+                                <span class="text-danger">
+                                    Not Available
+                                </span>
+
+                            {% endif %}
+
+                        </div>
+
+
+                        <div class="col-md-6 mb-2">
+
+                            <strong>
+                                <i class="bi bi-calendar-event"></i>
+                                Date:
+                            </strong>
+
+                            {% if verification.admin_verified_date %}
+
+                                {{ verification.admin_verified_date|date:"d M Y H:i" }}
+
+                            {% else %}
+
+                                <span class="text-danger">
+                                    Not Available
+                                </span>
+
+                            {% endif %}
+
+                        </div>
+
+                    </div>
+
+
+                    {% if verification.admin_verification_comment %}
+
+                        <div class="mt-3">
+
+                            <strong>
+                                <i class="bi bi-chat-left-text"></i>
+                                Verification Comment:
+                            </strong>
+
+                            <div class="bg-white border rounded p-3 mt-2">
+
+                                {{ verification.admin_verification_comment }}
+
+                            </div>
+
+                        </div>
+
+                    {% endif %}
 
                 </div>
 
@@ -493,11 +561,41 @@ View PDF
                     <input
                         type="hidden"
                         name="action"
-                        value="admin">
+                        value="admin"
+                    >
+
+                    <!-- ADMIN VERIFICATION COMMENT -->
+
+                    <div class="mb-3">
+
+                        <label
+                            for="admin_verification_comment"
+                            class="form-label fw-semibold"
+                        >
+
+                            Verification Comment
+
+                            <span class="text-danger">
+                                *
+                            </span>
+
+                        </label>
+
+                        <textarea
+                            id="admin_verification_comment"
+                            name="admin_verification_comment"
+                            class="form-control"
+                            rows="4"
+                            placeholder="Enter Admin verification comment..."
+                            required
+                        ></textarea>
+
+                    </div>
 
                     <button
                         type="submit"
-                        class="btn btn-success">
+                        class="btn btn-success"
+                    >
 
                         <i class="bi bi-patch-check-fill"></i>
 
@@ -547,29 +645,93 @@ View PDF
 
                 <div class="alert alert-success">
 
-                    <strong>
+                    <div class="d-flex align-items-center mb-3">
 
-                        <i class="bi bi-check-circle-fill"></i>
+                        <i class="bi bi-shield-check fs-4 me-2"></i>
 
-                        Verified
+                        <strong class="fs-5">
+                            Super Admin Verified
+                        </strong>
 
-                    </strong>
+                    </div>
 
-                    <br>
+                    <div class="row">
 
-                    Verified By:
+                        <div class="col-md-6 mb-2">
 
-                    <strong>
-                        {{ verification.super_admin_verified_by }}
-                    </strong>
+                            <strong>
+                                <i class="bi bi-person-fill"></i>
+                                Verified By:
+                            </strong>
 
-                    <br>
+                            {% if verification.super_admin_verified_by %}
 
-                    Date:
+                                {% if verification.super_admin_verified_by.get_full_name %}
 
-                    {{ verification.super_admin_verified_date|date:"d M Y H:i" }}
+                                    {{ verification.super_admin_verified_by.get_full_name }}
+
+                                {% else %}
+
+                                    {{ verification.super_admin_verified_by.username }}
+
+                                {% endif %}
+
+                            {% else %}
+
+                                <span class="text-danger">
+                                    Not Available
+                                </span>
+
+                            {% endif %}
+
+                        </div>
+
+
+                        <div class="col-md-6 mb-2">
+
+                            <strong>
+                                <i class="bi bi-calendar-event"></i>
+                                Date:
+                            </strong>
+
+                            {% if verification.super_admin_verified_date %}
+
+                                {{ verification.super_admin_verified_date|date:"d M Y H:i" }}
+
+                            {% else %}
+
+                                <span class="text-danger">
+                                    Not Available
+                                </span>
+
+                            {% endif %}
+
+                        </div>
+
+                    </div>
+
+
+                    {% if verification.super_admin_verification_comment %}
+
+                        <div class="mt-3">
+
+                            <strong>
+                                <i class="bi bi-chat-left-text"></i>
+                                Verification Comment:
+                            </strong>
+
+                            <div class="bg-white border rounded p-3 mt-2">
+
+                                {{ verification.super_admin_verification_comment }}
+
+                            </div>
+
+                        </div>
+
+                    {% endif %}
 
                 </div>
+
 
             {% elif is_super_admin %}
 
@@ -590,11 +752,41 @@ View PDF
                         <input
                             type="hidden"
                             name="action"
-                            value="super">
+                            value="super"
+                        >
+
+                        <!-- SUPER ADMIN VERIFICATION COMMENT -->
+
+                        <div class="mb-3">
+
+                            <label
+                                for="super_admin_verification_comment"
+                                class="form-label fw-semibold"
+                            >
+
+                                Final Verification Comment
+
+                                <span class="text-danger">
+                                    *
+                                </span>
+
+                            </label>
+
+                            <textarea
+                                id="super_admin_verification_comment"
+                                name="super_admin_verification_comment"
+                                class="form-control"
+                                rows="4"
+                                placeholder="Enter Super Admin verification comment..."
+                                required
+                            ></textarea>
+
+                        </div>
 
                         <button
                             type="submit"
-                            class="btn btn-danger">
+                            class="btn btn-danger"
+                        >
 
                             <i class="bi bi-shield-check"></i>
 

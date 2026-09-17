@@ -518,17 +518,13 @@
                         <div class="alert alert-success">
 
                             <strong>
-
                                 <i class="bi bi-check-circle-fill"></i>
-
                                 Verified
-
                             </strong>
 
                             <br>
 
                             Verified By:
-
                             <strong>
                                 {{ verification.admin_verified_by }}
                             </strong>
@@ -536,8 +532,22 @@
                             <br>
 
                             Date:
-
                             {{ verification.admin_verified_date|date:"d M Y H:i" }}
+
+                            {% if verification.admin_verification_comment %}
+
+                                <hr>
+
+                                <strong>
+                                    <i class="bi bi-chat-left-text"></i>
+                                    Admin Comment:
+                                </strong>
+
+                                <div class="mt-2">
+                                    {{ verification.admin_verification_comment|linebreaksbr }}
+                                </div>
+
+                            {% endif %}
 
                         </div>
 
@@ -562,6 +572,31 @@
                                 name="action"
                                 value="admin">
 
+                            <div class="mb-3">
+
+                                <label
+                                    for="admin_verification_comment"
+                                    class="form-label fw-bold">
+
+                                    <i class="bi bi-chat-left-text"></i>
+                                    Verification Comment
+                                    <span class="text-danger">*</span>
+
+                                </label>
+
+                                <textarea
+                                    id="admin_verification_comment"
+                                    name="admin_verification_comment"
+                                    class="form-control"
+                                    rows="4"
+                                    placeholder="Write your verification comment..."
+                                    required></textarea>
+
+                                <div class="form-text">
+                                    Comment is required before Admin verification.
+                                </div>
+
+                            </div>
 
                             <button
                                 type="submit"
@@ -622,17 +657,13 @@
                         <div class="alert alert-success">
 
                             <strong>
-
                                 <i class="bi bi-check-circle-fill"></i>
-
                                 Verified
-
                             </strong>
 
                             <br>
 
                             Verified By:
-
                             <strong>
                                 {{ verification.super_admin_verified_by }}
                             </strong>
@@ -640,8 +671,22 @@
                             <br>
 
                             Date:
-
                             {{ verification.super_admin_verified_date|date:"d M Y H:i" }}
+
+                            {% if verification.super_admin_verification_comment %}
+
+                                <hr>
+
+                                <strong>
+                                    <i class="bi bi-chat-left-text"></i>
+                                    Super Admin Comment:
+                                </strong>
+
+                                <div class="mt-2">
+                                    {{ verification.super_admin_verification_comment|linebreaksbr }}
+                                </div>
+
+                            {% endif %}
 
                         </div>
 
@@ -662,12 +707,36 @@
                             <form method="post">
 
                                 {% csrf_token %}
-
                                 <input
                                     type="hidden"
                                     name="action"
                                     value="super">
 
+                                <div class="mb-3">
+
+                                    <label
+                                        for="super_admin_verification_comment"
+                                        class="form-label fw-bold">
+
+                                        <i class="bi bi-chat-left-text"></i>
+                                        Final Verification Comment
+                                        <span class="text-danger">*</span>
+
+                                    </label>
+
+                                    <textarea
+                                        id="super_admin_verification_comment"
+                                        name="super_admin_verification_comment"
+                                        class="form-control"
+                                        rows="4"
+                                        placeholder="Write your final verification comment..."
+                                        required></textarea>
+
+                                    <div class="form-text">
+                                        Comment is required before Super Admin verification.
+                                    </div>
+
+                                </div>
 
                                 <button
                                     type="submit"

@@ -1353,7 +1353,7 @@ ADMIN VERIFICATION
                         <div class="filter-group">
 
                             <label for="estate">
-                                Estate
+                                District
                             </label>
 
                             <select
@@ -1367,17 +1367,14 @@ ADMIN VERIFICATION
                                 </option>
 
                                 {% for user in estate_users %}
-
                                     <option
                                         value="{{ user.id }}"
                                         {% if selected_estate|stringformat:"s" == user.id|stringformat:"s" %}
                                             selected
-                                        {% endif %}>
-
-                                        {{ user.username }}
-
+                                        {% endif %}
+                                    >
+                                        {{ user.username|cut:"Estate_" }}
                                     </option>
-
                                 {% endfor %}
 
                             </select>
@@ -1785,7 +1782,7 @@ ADMIN VERIFICATION
 
                                 {% else %}
 
-                                    {% if land.is_admin_verified %}
+                                    {% if land.admin_verified_current %}
 
                                         <span class="status-badge status-success">
 
@@ -1847,7 +1844,7 @@ ADMIN VERIFICATION
 
                             <div class="verification-panel">
 
-                                {% if not land.is_admin_verified %}
+                                {% if not land.admin_verified_current %}
 
                                     <span class="status-badge status-disabled">
 

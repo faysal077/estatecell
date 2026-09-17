@@ -8,7 +8,14 @@ from lands.models import Land
 from documents.models import DocumentTagEntry
 from AnotherLand.models import AnotherLand
 from accounts.models import UserRole
-
+from django.db.models import (
+    Count,
+    Sum,
+    Value,
+    DecimalField,
+    IntegerField,
+    Q,
+)
 
 # ============================================================
 # REQUIRED TAGS
@@ -167,6 +174,196 @@ def rd_office_report(request):
         context
     )
 
+# ============================================================
+# ADMIN VERIFICATION STATUS REPORT
+# ============================================================
+
+@super_admin_required
+def admin_verification_status(request):
+
+    # --------------------------------------------------------
+    # Get all Land records
+    # --------------------------------------------------------
+
+    lands = (
+        Land.objects
+        .select_related(
+            "verification",
+            "verification__admin_verified_by",
+        )
+        .order_by(
+            "rd_office",
+            "owner_name"
+        )
+    )
+
+    # --------------------------------------------------------
+    # Get RD Offices
+    # --------------------------------------------------------
+
+    rd_offices = (
+        Land.objects
+        .values_list(
+            "rd_office",
+            flat=True
+        )
+        .distinct()
+        .order_by("rd_office")
+    )
+
+    # --------------------------------------------------------
+    # Build report
+    # --------------------------------------------------------
+
+    report_rows = []
+
+    for rd_office in rd_offices:
+
+        rd_lands = lands.filter(
+            rd_office=rd_office
+        )
+
+        total_lands = rd_lands.count()
+
+        # ----------------------------------------------------
+        # Verified lands
+        #
+        # IMPORTANT:
+        # Only admin_verified=True is considered verified.
+        # ----------------------------------------------------
+
+        verified_lands = rd_lands.filter(
+            verification__admin_verified=True
+        )
+
+        verified_count = verified_lands.count()
+
+        # ----------------------------------------------------
+        # Pending lands
+        #
+        # This includes:
+        # - no LandVerification record
+        # - LandVerification exists but admin_verified=False
+        # ----------------------------------------------------
+
+        pending_lands = rd_lands.filter(
+            Q(verification__isnull=True) |
+            Q(verification__admin_verified=False)
+        )
+
+        pending_count = pending_lands.count()
+
+        # ----------------------------------------------------
+        # Prepare verified land data
+        # ----------------------------------------------------
+
+        verified_land_list = []
+
+        for land in verified_lands:
+
+            verified_land_list.append({
+                "id": land.id,
+                "name": land.owner_name,
+                "status": "Verified",
+                "url": (
+                    f"/lands/verification/{land.id}/"
+                ),
+            })
+
+        # ----------------------------------------------------
+        # Prepare pending land data
+        # ----------------------------------------------------
+
+        pending_land_list = []
+
+        for land in pending_lands:
+
+            pending_land_list.append({
+                "id": land.id,
+                "name": land.owner_name,
+                "status": "Pending",
+                "url": (
+                    f"/lands/verification/{land.id}/"
+                ),
+            })
+
+        # ----------------------------------------------------
+        # Verification percentage
+        # ----------------------------------------------------
+
+        verification_percentage = (
+            round(
+                (verified_count / total_lands) * 100,
+                2
+            )
+            if total_lands
+            else 0
+        )
+
+        report_rows.append({
+
+            "rd_office": rd_office,
+
+            "total_lands": total_lands,
+
+            "verified_count": verified_count,
+
+            "pending_count": pending_count,
+
+            "verification_percentage":
+                verification_percentage,
+
+            "verified_lands":
+                verified_land_list,
+
+            "pending_lands":
+                pending_land_list,
+
+        })
+
+    # --------------------------------------------------------
+    # Overall totals
+    # --------------------------------------------------------
+
+    total_lands = lands.count()
+
+    total_verified = lands.filter(
+        verification__admin_verified=True
+    ).count()
+
+    total_pending = lands.filter(
+        Q(verification__isnull=True) |
+        Q(verification__admin_verified=False)
+    ).count()
+
+    total_percentage = (
+        round(
+            (total_verified / total_lands) * 100,
+            2
+        )
+        if total_lands
+        else 0
+    )
+
+    context = {
+
+        "report_rows": report_rows,
+
+        "total_lands": total_lands,
+
+        "total_verified": total_verified,
+
+        "total_pending": total_pending,
+
+        "total_percentage": total_percentage,
+
+    }
+
+    return render(
+        request,
+        "reports/admin_verification_status.html",
+        context
+    )
 
 # ============================================================
 # DISTRICT REPORT
@@ -289,37 +486,77 @@ def estate_detail(request, pk):
 # GET TAG STATUS FOR LAND
 # ============================================================
 
+# def get_land_tag_status(land):
+
+#     added_tags = set()
+
+#     entries = (
+#         DocumentTagEntry.objects
+#         .filter(document__land=land)
+#         .prefetch_related("tags")
+#     )
+
+#     for entry in entries:
+
+#         for tag in entry.tags.all():
+
+#             if tag.name in REQUIRED_TAGS:
+#                 added_tags.add(tag.name)
+
+#     # --------------------------------------------------------
+#     # Keep the exact REQUIRED_TAGS order
+#     # --------------------------------------------------------
+
+#     added_tags = [
+#         tag
+#         for tag in REQUIRED_TAGS
+#         if tag in added_tags
+#     ]
+
+#     pending_tags = [
+#         tag
+#         for tag in REQUIRED_TAGS
+#         if tag not in added_tags
+#     ]
+
+#     return added_tags, pending_tags
+
+# ============================================================
+# HELPER
+# GET TAG STATUS FOR LAND
+# ============================================================
+
 def get_land_tag_status(land):
 
-    added_tags = set()
+    # --------------------------------------------------------
+    # Get all document types already added for this land
+    # --------------------------------------------------------
 
-    entries = (
+    added_tag_set = set(
         DocumentTagEntry.objects
         .filter(document__land=land)
-        .prefetch_related("tags")
+        .values_list("document_type", flat=True)
+        .distinct()
     )
 
-    for entry in entries:
-
-        for tag in entry.tags.all():
-
-            if tag.name in REQUIRED_TAGS:
-                added_tags.add(tag.name)
-
     # --------------------------------------------------------
-    # Keep the exact REQUIRED_TAGS order
+    # Keep ONLY the 11 required tags
     # --------------------------------------------------------
 
     added_tags = [
         tag
         for tag in REQUIRED_TAGS
-        if tag in added_tags
+        if tag in added_tag_set
     ]
+
+    # --------------------------------------------------------
+    # Anything not added = Pending
+    # --------------------------------------------------------
 
     pending_tags = [
         tag
         for tag in REQUIRED_TAGS
-        if tag not in added_tags
+        if tag not in added_tag_set
     ]
 
     return added_tags, pending_tags

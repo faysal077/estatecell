@@ -57,5 +57,10 @@ urlpatterns = [
         views.non_industrial_land_report,
         name="non_industrial_land_report"
     ),
+    path(
+        "admin-verification-status/",
+        views.admin_verification_status,
+        name="admin_verification_status"
+    ),
 
 ]

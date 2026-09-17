@@ -152,168 +152,6 @@ class Land(models.Model):
         return f"{self.owner_name} - {self.district}"
 
 
-# class LandVerification(models.Model):
-
-#     land = models.OneToOneField(
-#         Land,
-#         on_delete=models.CASCADE,
-#         related_name="verification"
-#     )
-
-#     # Admin Verification
-#     admin_verified = models.BooleanField(default=False)
-
-#     admin_verified_by = models.ForeignKey(
-#         settings.AUTH_USER_MODEL,
-#         on_delete=models.SET_NULL,
-#         null=True,
-#         blank=True,
-#         related_name="admin_verified_lands"
-#     )
-
-#     admin_verified_date = models.DateTimeField(
-#         null=True,
-#         blank=True
-#     )
-
-#     # Super Admin Verification
-#     super_admin_verified = models.BooleanField(default=False)
-
-#     super_admin_verified_by = models.ForeignKey(
-#         settings.AUTH_USER_MODEL,
-#         on_delete=models.SET_NULL,
-#         null=True,
-#         blank=True,
-#         related_name="super_admin_verified_lands"
-#     )
-
-#     super_admin_verified_date = models.DateTimeField(
-#         null=True,
-#         blank=True
-#     )
-
-#     def __str__(self):
-#         return f"Verification - {self.land.owner_name}"
-
-# class LandVerification(models.Model):
-
-#     land = models.OneToOneField(
-#         Land,
-#         on_delete=models.CASCADE,
-#         related_name="verification"
-#     )
-
-#     admin_verified = models.BooleanField(
-#         default=False
-#     )
-
-#     admin_verified_by = models.ForeignKey(
-#         User,
-#         on_delete=models.SET_NULL,
-#         null=True,
-#         blank=True,
-#         related_name="admin_land_verifications"
-#     )
-
-#     admin_verified_date = models.DateTimeField(
-#         null=True,
-#         blank=True
-#     )
-
-#     super_admin_verified = models.BooleanField(
-#         default=False
-#     )
-
-#     super_admin_verified_by = models.ForeignKey(
-#         User,
-#         on_delete=models.SET_NULL,
-#         null=True,
-#         blank=True,
-#         related_name="super_admin_land_verifications"
-#     )
-
-#     super_admin_verified_date = models.DateTimeField(
-#         null=True,
-#         blank=True
-#     )
-
-#     def latest_tagged_entry(self):
-#         """
-#         Return the most recently tagged document entry.
-#         """
-
-#         return (
-#             DocumentTagEntry.objects
-#             .filter(document__land=self.land)
-#             .order_by("-created_at")
-#             .first()
-#         )
-
-#     def latest_tagged_date(self):
-#         """
-#         Return latest document tagging date.
-#         """
-
-#         entry = self.latest_tagged_entry()
-
-#         if entry:
-#             return entry.created_at
-
-#         return None
-
-#     def is_admin_currently_verified(self):
-#         """
-#         Admin verification is valid only if it happened
-#         after the latest document/tag entry.
-#         """
-
-#         latest_tagged = self.latest_tagged_date()
-
-#         if not latest_tagged:
-#             return False
-
-#         if not self.admin_verified:
-#             return False
-
-#         if not self.admin_verified_date:
-#             return False
-
-#         return self.admin_verified_date >= latest_tagged
-
-#     def is_super_admin_currently_verified(self):
-#         """
-#         Super Admin verification is valid only if:
-#         1. Admin has verified the latest version.
-#         2. Super Admin verified after that Admin verification.
-#         """
-
-#         latest_tagged = self.latest_tagged_date()
-
-#         if not latest_tagged:
-#             return False
-
-#         if not self.admin_verified:
-#             return False
-
-#         if not self.admin_verified_date:
-#             return False
-
-#         if not self.super_admin_verified:
-#             return False
-
-#         if not self.super_admin_verified_date:
-#             return False
-
-#         # New document/tag after Super Admin verification
-#         if self.super_admin_verified_date < latest_tagged:
-#             return False
-
-#         # New Admin verification cycle after Super Admin verification
-#         if self.super_admin_verified_date < self.admin_verified_date:
-#             return False
-
-#         return True
-
 class LandVerification(models.Model):
 
     land = models.OneToOneField(
@@ -321,6 +159,10 @@ class LandVerification(models.Model):
         on_delete=models.CASCADE,
         related_name="verification"
     )
+
+    # ==========================================================
+    # ADMIN VERIFICATION
+    # ==========================================================
 
     admin_verified = models.BooleanField(default=False)
 
@@ -337,6 +179,16 @@ class LandVerification(models.Model):
         blank=True
     )
 
+    admin_verification_comment = models.TextField(
+        null=True,
+        blank=True,
+        verbose_name="Admin Verification Comment"
+    )
+
+    # ==========================================================
+    # SUPER ADMIN VERIFICATION
+    # ==========================================================
+
     super_admin_verified = models.BooleanField(default=False)
 
     super_admin_verified_by = models.ForeignKey(
@@ -350,6 +202,12 @@ class LandVerification(models.Model):
     super_admin_verified_date = models.DateTimeField(
         null=True,
         blank=True
+    )
+
+    super_admin_verification_comment = models.TextField(
+        null=True,
+        blank=True,
+        verbose_name="Super Admin Verification Comment"
     )
 
     def latest_tagged_entry(self):
@@ -414,3 +272,33 @@ class LandVerification(models.Model):
 
     def __str__(self):
         return f"Verification - {self.land.owner_name}"
+class LandVerificationComment(models.Model):
+
+    land = models.ForeignKey(
+        Land,
+        on_delete=models.CASCADE,
+        related_name="verification_comments"
+    )
+
+    verification_level = models.CharField(
+        max_length=20,
+        choices=[
+            ("admin", "Admin"),
+            ("super_admin", "Super Admin"),
+        ]
+    )
+
+    comment = models.TextField()
+
+    commented_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    def __str__(self):
+        return f"{self.verification_level} - {self.land}"

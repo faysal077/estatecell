@@ -4,6 +4,7 @@ from AnotherLand.models import AnotherLand
 from lands.models import Land
 from django.contrib.auth.models import User
 from AnotherLand.models import AnotherLand
+
 def document_path(instance, filename):
     if instance.land_id:
         return f"land_{instance.land_id}/documents/{filename}"

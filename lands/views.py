@@ -314,10 +314,35 @@ def land_list(request):
 
     # =================================================
     # Calculate document/tag progress
+    # AND CURRENT VERIFICATION STATUS
     # =================================================
 
     for land in lands:
 
+        # -------------------------------------------------
+        # Get verification record
+        # -------------------------------------------------
+        verification, _ = LandVerification.objects.get_or_create(
+            land=land
+        )
+
+        # -------------------------------------------------
+        # CURRENT VERIFICATION STATUS
+        #
+        # These methods compare verification date with
+        # the latest tagged document/tag entry.
+        # -------------------------------------------------
+        land.admin_verified_current = (
+            verification.is_admin_currently_verified()
+        )
+
+        land.super_admin_verified_current = (
+            verification.is_super_admin_currently_verified()
+        )
+
+        # -------------------------------------------------
+        # Uploaded document types
+        # -------------------------------------------------
         uploaded_types = set(
             DocumentTagEntry.objects
             .filter(
@@ -330,6 +355,9 @@ def land_list(request):
             .distinct()
         )
 
+        # -------------------------------------------------
+        # Tag status
+        # -------------------------------------------------
         land.tag_status = []
 
         completed_count = 0
@@ -346,6 +374,9 @@ def land_list(request):
                 "completed": is_completed,
             })
 
+        # -------------------------------------------------
+        # Progress
+        # -------------------------------------------------
         land.completed_count = completed_count
 
         land.pending_count = (
@@ -506,132 +537,30 @@ def verify_land_super_admin(request, pk):
 
     return redirect("lands:land_list")
 
-# ------------------------------
-#      Admin and SuperAdmin Verification
-# ------------------------------
-# @login_required
-# def land_verification(request, pk):
 
-#     land = get_object_or_404(Land, pk=pk)
-
-#     verification, created = LandVerification.objects.get_or_create(
-#         land=land
-#     )
-
-#     entries = (
-#         DocumentTagEntry.objects
-#         .filter(document__land=land)
-#         .prefetch_related("tags")
-#         .select_related(
-#             "document",
-#             "created_by"
-#         )
-#         .order_by("-created_at")
-#     )
-
-#     profile = request.user.userprofile
-    
-
-#     if request.method == "POST":
-
-#         action = request.POST.get("action")
-
-#         ###################################
-#         # ADMIN VERIFY
-#         ###################################
-
-#         if action == "admin":
-
-#             if profile.role != UserRole.RD_ADMIN:
-
-#                 messages.error(
-#                     request,
-#                     "Only Admin can verify."
-#                 )
-
-#             else:
-
-#                 verification.admin_verified = True
-
-#                 verification.admin_verified_by = request.user
-
-#                 verification.admin_verified_date = timezone.now()
-
-#                 verification.save()
-
-#                 messages.success(
-#                     request,
-#                     "Successfully verified."
-#                 )
-
-#         ###################################
-#         # SUPER ADMIN VERIFY
-#         ###################################
-
-#         elif action == "super":
-
-#             if profile.role != UserRole.SUPER_ADMIN:
-
-#                 messages.error(
-#                     request,
-#                     "Only Super Admin can verify."
-#                 )
-
-#             elif not verification.admin_verified:
-
-#                 messages.error(
-#                     request,
-#                     "Admin verification required."
-#                 )
-
-#             else:
-
-#                 verification.super_admin_verified = True
-
-#                 verification.super_admin_verified_by = request.user
-
-#                 verification.super_admin_verified_date = timezone.now()
-
-#                 verification.save()
-
-#                 messages.success(
-#                     request,
-#                     "Super Admin verification completed."
-#                 )
-
-#         return redirect(
-#             "lands:land_verification",
-#             pk=pk
-#         )
-
-#     context = {
-#         "land": land,
-#         "verification": verification,
-#         "entries": entries,
-#         "profile": profile,
-
-#         "is_admin": profile.role == UserRole.RD_ADMIN,
-#         "is_super_admin": profile.role == UserRole.SUPER_ADMIN,
-        
-#     }
-#     # print("Verification context:", context)  # Debugging line
-
-#     return render(
-#         request,
-#         "lands/admin_verification.html",
-#         context
-#     )
 @login_required
 def land_verification(request, pk):
+
+    # =====================================================
+    # GET LAND
+    # =====================================================
 
     land = get_object_or_404(
         Land,
         pk=pk
     )
 
+    # =====================================================
+    # GET OR CREATE VERIFICATION RECORD
+    # =====================================================
+
     verification, created = LandVerification.objects.get_or_create(
         land=land
     )
+
+    # =====================================================
+    # GET DOCUMENT TAG ENTRIES
+    # =====================================================
 
     entries = (
         DocumentTagEntry.objects
@@ -646,8 +575,25 @@ def land_verification(request, pk):
         .order_by("-created_at")
     )
 
-    profile, _ = UserProfile.objects.get_or_create(
+    # =====================================================
+    # USER PROFILE
+    # =====================================================
+
+    profile = get_object_or_404(
+        UserProfile,
         user=request.user
+    )
+
+    # =====================================================
+    # USER ROLE FLAGS
+    # =====================================================
+
+    is_admin = (
+        profile.role == UserRole.RD_ADMIN
+    )
+
+    is_super_admin = (
+        profile.role == UserRole.SUPER_ADMIN
     )
 
     # =====================================================
@@ -666,9 +612,7 @@ def land_verification(request, pk):
     # LATEST TAGGED DOCUMENT
     # =====================================================
 
-    latest_entry = (
-        entries.first()
-    )
+    latest_entry = entries.first()
 
     latest_tagged_date = (
         latest_entry.created_at
@@ -690,12 +634,15 @@ def land_verification(request, pk):
 
         if action == "admin":
 
-            # Only RD Admin
+            # ---------------------------------------------
+            # ONLY RD ADMIN
+            # ---------------------------------------------
+
             if profile.role != UserRole.RD_ADMIN:
 
                 messages.error(
                     request,
-                    "Only RD Admin can verify documents."
+                    "Only Regional Admin can verify documents."
                 )
 
                 return redirect(
@@ -703,7 +650,10 @@ def land_verification(request, pk):
                     pk=pk
                 )
 
-            # No tagged document
+            # ---------------------------------------------
+            # CHECK TAGGED DOCUMENT
+            # ---------------------------------------------
+
             if not latest_entry:
 
                 messages.error(
@@ -716,16 +666,43 @@ def land_verification(request, pk):
                     pk=pk
                 )
 
-            # Verify current document/tagging cycle
+            # ---------------------------------------------
+            # REQUIRED ADMIN COMMENT
+            # ---------------------------------------------
+
+            comment = request.POST.get(
+                "admin_verification_comment",
+                ""
+            ).strip()
+
+            if not comment:
+
+                messages.error(
+                    request,
+                    "Admin verification comment is required."
+                )
+
+                return redirect(
+                    "lands:land_verification",
+                    pk=pk
+                )
+
+            # ---------------------------------------------
+            # ADMIN VERIFICATION
+            # ---------------------------------------------
+
             verification.admin_verified = True
 
             verification.admin_verified_by = request.user
 
             verification.admin_verified_date = timezone.now()
 
-            # IMPORTANT:
-            # A new Admin verification creates a new
-            # verification cycle for Super Admin.
+            verification.admin_verification_comment = comment
+
+            # ---------------------------------------------
+            # NEW ADMIN VERIFICATION CREATES A NEW
+            # SUPER ADMIN VERIFICATION CYCLE
+            # ---------------------------------------------
 
             verification.super_admin_verified = False
 
@@ -733,11 +710,33 @@ def land_verification(request, pk):
 
             verification.super_admin_verified_date = None
 
-            verification.save()
+            verification.super_admin_verification_comment = ""
+
+            # ---------------------------------------------
+            # SAVE
+            # ---------------------------------------------
+
+            verification.save(
+                update_fields=[
+                    "admin_verified",
+                    "admin_verified_by",
+                    "admin_verified_date",
+                    "admin_verification_comment",
+                    "super_admin_verified",
+                    "super_admin_verified_by",
+                    "super_admin_verified_date",
+                    "super_admin_verification_comment",
+                ]
+            )
 
             messages.success(
                 request,
-                "Documents successfully verified by RD Admin."
+                "Documents successfully verified by Regional Admin."
+            )
+
+            return redirect(
+                "lands:land_verification",
+                pk=pk
             )
 
         # =================================================
@@ -746,7 +745,10 @@ def land_verification(request, pk):
 
         elif action == "super":
 
-            # Only Super Admin
+            # ---------------------------------------------
+            # ONLY SUPER ADMIN
+            # ---------------------------------------------
+
             if profile.role != UserRole.SUPER_ADMIN:
 
                 messages.error(
@@ -759,12 +761,15 @@ def land_verification(request, pk):
                     pk=pk
                 )
 
-            # Admin must have verified CURRENT documents
+            # ---------------------------------------------
+            # ADMIN MUST VERIFY CURRENT DOCUMENTS FIRST
+            # ---------------------------------------------
+
             if not verification.is_admin_currently_verified():
 
                 messages.error(
                     request,
-                    "Current documents must be verified by RD Admin first."
+                    "Current documents must be verified by Regional Admin first."
                 )
 
                 return redirect(
@@ -772,19 +777,65 @@ def land_verification(request, pk):
                     pk=pk
                 )
 
-            # Final verification
+            # ---------------------------------------------
+            # REQUIRED SUPER ADMIN COMMENT
+            # ---------------------------------------------
+
+            comment = request.POST.get(
+                "super_admin_verification_comment",
+                ""
+            ).strip()
+
+            if not comment:
+
+                messages.error(
+                    request,
+                    "Super Admin verification comment is required."
+                )
+
+                return redirect(
+                    "lands:land_verification",
+                    pk=pk
+                )
+
+            # ---------------------------------------------
+            # SUPER ADMIN VERIFICATION
+            # ---------------------------------------------
+
             verification.super_admin_verified = True
 
             verification.super_admin_verified_by = request.user
 
             verification.super_admin_verified_date = timezone.now()
 
-            verification.save()
+            verification.super_admin_verification_comment = comment
+
+            # ---------------------------------------------
+            # SAVE
+            # ---------------------------------------------
+
+            verification.save(
+                update_fields=[
+                    "super_admin_verified",
+                    "super_admin_verified_by",
+                    "super_admin_verified_date",
+                    "super_admin_verification_comment",
+                ]
+            )
 
             messages.success(
                 request,
                 "Super Admin final verification completed."
             )
+
+            return redirect(
+                "lands:land_verification",
+                pk=pk
+            )
+
+        # =================================================
+        # INVALID ACTION
+        # =================================================
 
         else:
 
@@ -793,10 +844,10 @@ def land_verification(request, pk):
                 "Invalid verification action."
             )
 
-        return redirect(
-            "lands:land_verification",
-            pk=pk
-        )
+            return redirect(
+                "lands:land_verification",
+                pk=pk
+            )
 
     # =====================================================
     # TAGGING PROGRESS
@@ -806,7 +857,7 @@ def land_verification(request, pk):
         "Gazette",
         "Deed (Sale Deed / Registry Deed)",
         "Khatiyan",
-        "Mutation (Nammari)",
+        "Mutation (Namamari)",
         "Lease Deed",
         "Land Tax (Khajna / DCR)",
         "Porcha",
@@ -851,6 +902,18 @@ def land_verification(request, pk):
     )
 
     # =====================================================
+    # REFRESH VERIFICATION STATUS
+    # =====================================================
+
+    admin_verified_current = (
+        verification.is_admin_currently_verified()
+    )
+
+    super_admin_verified_current = (
+        verification.is_super_admin_currently_verified()
+    )
+
+    # =====================================================
     # CONTEXT
     # =====================================================
 
@@ -864,15 +927,18 @@ def land_verification(request, pk):
 
         "profile": profile,
 
-        "is_admin": (
-            profile.role == UserRole.RD_ADMIN
-        ),
+        # ---------------------------------------------
+        # ROLE FLAGS REQUIRED BY TEMPLATE
+        # ---------------------------------------------
 
-        "is_super_admin": (
-            profile.role == UserRole.SUPER_ADMIN
-        ),
+        "is_admin": is_admin,
 
-        # Dynamic verification status
+        "is_super_admin": is_super_admin,
+
+        # ---------------------------------------------
+        # VERIFICATION STATUS
+        # ---------------------------------------------
+
         "admin_verified_current": (
             admin_verified_current
         ),
@@ -881,11 +947,18 @@ def land_verification(request, pk):
             super_admin_verified_current
         ),
 
+        # ---------------------------------------------
+        # LATEST TAG
+        # ---------------------------------------------
+
         "latest_entry": latest_entry,
 
         "latest_tagged_date": latest_tagged_date,
 
-        # Tagging statistics
+        # ---------------------------------------------
+        # TAGGING STATISTICS
+        # ---------------------------------------------
+
         "completed_tags": completed_tags,
 
         "pending_tags": pending_tags,
@@ -894,6 +967,10 @@ def land_verification(request, pk):
 
         "tagging_percentage": tagging_percentage,
     }
+
+    # =====================================================
+    # RENDER
+    # =====================================================
 
     return render(
         request,

@@ -262,6 +262,11 @@
 <script>
     // Django role → JavaScript boolean
     const isDataEntry = {{ is_data_entry|yesno:"true,false" }};
+    {% if another_land %}
+        const uploadUrl = "{% url 'documents:another_land_upload_document' another_land.id %}";
+    {% else %}
+        const uploadUrl = "{% url 'documents:upload_document' land.id %}";
+    {% endif %}
 
     let currentDocId = null;
     let currentFileName = '';
@@ -297,43 +302,145 @@
     }
 
     function uploadPdfFile() {
+
         const fileInput = document.getElementById('pdfFile');
         const file = fileInput.files[0];
         const statusDiv = document.getElementById('uploadStatus');
         const documentType = document.getElementById('documentType').value;
 
-        if (!file) { alert('Please select a PDF file first.'); return; }
-        if (file.type !== 'application/pdf') { alert('Please select a valid PDF file.'); return; }
+        if (!file) {
+            alert('Please select a PDF file first.');
+            return;
+        }
 
-        statusDiv.innerHTML = '<span class="text-info">Uploading...</span>';
+        if (file.type !== 'application/pdf') {
+            alert('Please select a valid PDF file.');
+            return;
+        }
+
+        statusDiv.innerHTML =
+            '<span class="text-info">Uploading...</span>';
 
         const formData = new FormData();
+
         formData.append('pdf_file', file);
         formData.append('document_type', documentType);
-        formData.append('survey_type', document.getElementById('surveyType').value || '');
-        formData.append('from_page', document.getElementById('fromPage').value || '');
-        formData.append('to_page', document.getElementById('toPage').value || '');
-        formData.append('tags', document.getElementById('tags').value || '');
 
-        fetch('/documents/{{ land.id }}/upload/', {
+        formData.append(
+            'survey_type',
+            document.getElementById('surveyType').value || ''
+        );
+
+        formData.append(
+            'from_page',
+            document.getElementById('fromPage').value || ''
+        );
+
+        formData.append(
+            'to_page',
+            document.getElementById('toPage').value || ''
+        );
+
+        formData.append(
+            'tags',
+            document.getElementById('tags').value || ''
+        );
+
+        fetch(uploadUrl, {
             method: 'POST',
             body: formData,
-            headers: { 'X-CSRFToken': getCSRFToken() }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                statusDiv.innerHTML = '<span class="text-success">Uploaded! Doc No: ' + data.document_number + '</span>';
-                addDocumentToList(data.document_id, data.document_number, data.file_name);
-                selectDocument(data.document_id);
-                document.getElementById('pdfFile').value = '';
-            } else {
-                statusDiv.innerHTML = '<span class="text-danger">Error: ' + (data.error || 'Unknown error') + '</span>';
+
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'X-Requested-With': 'XMLHttpRequest'
             }
         })
+
+        .then(async response => {
+
+            const contentType =
+                response.headers.get('content-type') || '';
+
+            /*
+            * Django returned HTML instead of JSON.
+            * This helps us identify 404 / 403 / 500 errors.
+            */
+            if (!contentType.includes('application/json')) {
+
+                const text = await response.text();
+
+                console.error(
+                    'Server returned non-JSON response:',
+                    text
+                );
+
+                throw new Error(
+                    'Server returned HTTP ' +
+                    response.status +
+                    ' instead of JSON.'
+                );
+            }
+
+            const data = await response.json();
+
+            if (!response.ok) {
+
+                throw new Error(
+                    data.error ||
+                    'Upload request failed.'
+                );
+            }
+
+            return data;
+        })
+
+        .then(data => {
+
+            if (data.success) {
+
+                statusDiv.innerHTML =
+                    '<span class="text-success">' +
+                    'Uploaded! Doc No: ' +
+                    data.document_number +
+                    '</span>';
+
+                addDocumentToList(
+                    data.document_id,
+                    data.document_number,
+                    data.file_name
+                );
+
+                selectDocument(data.document_id);
+
+                document.getElementById('pdfFile').value = '';
+
+            } else {
+
+                statusDiv.innerHTML =
+                    '<span class="text-danger">' +
+                    'Error: ' +
+                    (data.error || 'Unknown error') +
+                    '</span>';
+            }
+        })
+
         .catch(error => {
-            statusDiv.innerHTML = '<span class="text-danger">Upload failed</span>';
-            alert('Error uploading document: ' + error.message);
+
+            console.error(
+                'Upload error:',
+                error
+            );
+
+            statusDiv.innerHTML =
+                '<span class="text-danger">' +
+                'Upload failed: ' +
+                error.message +
+                '</span>';
+
+            alert(
+                'Error uploading document: ' +
+                error.message
+            );
         });
     }
 

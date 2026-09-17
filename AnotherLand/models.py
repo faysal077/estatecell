@@ -141,6 +141,11 @@ class AnotherLand(models.Model):
         blank=True,
         related_name="another_land_admin_verified"
     )
+    admin_verification_comment = models.TextField(
+        null=True,
+        blank=True,
+        verbose_name="Admin Verification Comment"
+    )
 
     super_admin_verified = models.BooleanField(
         default=False
@@ -157,6 +162,11 @@ class AnotherLand(models.Model):
         null=True,
         blank=True,
         related_name="another_land_super_admin_verified"
+    )
+    super_admin_verification_comment = models.TextField(
+        null=True,
+        blank=True,
+        verbose_name="Super Admin Verification Comment"
     )
 
     class Meta:

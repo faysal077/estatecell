@@ -1,0 +1,854 @@
+{% extends "reports/report_base.html" %}
+
+{% block report_content %}
+
+<style>
+
+/* =========================================================
+   PAGE HEADER
+   ========================================================= */
+
+.verification-report-header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    margin-bottom: 20px;
+
+}
+
+.verification-report-title {
+
+    font-size: 1.35rem;
+
+    font-weight: 700;
+
+    color: #173f2f;
+
+    margin: 0;
+
+}
+
+
+/* =========================================================
+   SUMMARY CARDS
+   ========================================================= */
+
+.verification-summary {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, minmax(150px, 1fr));
+
+    gap: 14px;
+
+    margin-bottom: 20px;
+
+}
+
+.verification-card {
+
+    background: #ffffff;
+
+    border: 1px solid #e4e8e5;
+
+    border-radius: 10px;
+
+    padding: 15px 18px;
+
+    box-shadow:
+        0 3px 10px rgba(0,0,0,0.05);
+
+}
+
+.verification-card-label {
+
+    color: #6c757d;
+
+    font-size: 0.82rem;
+
+    margin-bottom: 5px;
+
+}
+
+.verification-card-value {
+
+    font-size: 1.45rem;
+
+    font-weight: 700;
+
+    color: #173f2f;
+
+}
+
+
+/* =========================================================
+   TABLE CONTAINER
+   ========================================================= */
+
+.verification-table-box {
+
+    background: #ffffff;
+
+    border-radius: 10px;
+
+    border: 1px solid #e1e5e2;
+
+    box-shadow:
+        0 3px 12px rgba(0,0,0,0.05);
+
+    overflow: hidden;
+
+}
+
+
+/* =========================================================
+   TABLE
+   ========================================================= */
+
+.verification-table {
+
+    width: 100%;
+
+    border-collapse: collapse;
+
+    margin: 0;
+
+}
+
+.verification-table thead th {
+
+    background: #0b4d39;
+
+    color: #ffffff;
+
+    padding: 12px 10px;
+
+    font-size: 0.85rem;
+
+    font-weight: 600;
+
+    text-align: center;
+
+    white-space: nowrap;
+
+}
+
+.verification-table tbody td {
+
+    padding: 11px 10px;
+
+    border-bottom: 1px solid #edf0ee;
+
+    font-size: 0.87rem;
+
+    vertical-align: middle;
+
+}
+
+.verification-table tbody tr:hover {
+
+    background: #f7faf8;
+
+}
+
+
+/* =========================================================
+   RD OFFICE
+   ========================================================= */
+
+.rd-office-name {
+
+    font-weight: 600;
+
+    color: #173f2f;
+
+}
+
+
+/* =========================================================
+   NUMBER + VIEW BUTTON
+   ========================================================= */
+
+.count-view {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 7px;
+
+}
+
+.count-number {
+
+    font-weight: 700;
+
+}
+
+
+/* =========================================================
+   VIEW BUTTON
+   ========================================================= */
+
+.btn-view-land {
+
+    border: none;
+
+    background: #0b4d39;
+
+    color: #ffffff;
+
+    padding: 4px 9px;
+
+    border-radius: 5px;
+
+    font-size: 0.75rem;
+
+    cursor: pointer;
+
+    transition: 0.2s;
+
+}
+
+.btn-view-land:hover {
+
+    background: #073b2b;
+
+    color: #ffffff;
+
+}
+
+
+/* =========================================================
+   STATUS BADGE
+   ========================================================= */
+
+.status-badge {
+
+    display: inline-block;
+
+    padding: 4px 9px;
+
+    border-radius: 20px;
+
+    font-size: 0.74rem;
+
+    font-weight: 600;
+
+}
+
+.status-verified {
+
+    background: #dff5e8;
+
+    color: #146c43;
+
+}
+
+.status-pending {
+
+    background: #fff0d6;
+
+    color: #9a6700;
+
+}
+
+
+/* =========================================================
+   MODAL
+   ========================================================= */
+
+.verification-modal .modal-header {
+
+    background: #0b4d39;
+
+    color: #ffffff;
+
+}
+
+.verification-modal .modal-title {
+
+    font-size: 1rem;
+
+    font-weight: 600;
+
+}
+
+.verification-modal .btn-close {
+
+    filter: brightness(0) invert(1);
+
+}
+
+
+/* =========================================================
+   MODAL TABLE
+   ========================================================= */
+
+.modal-land-table {
+
+    width: 100%;
+
+    border-collapse: collapse;
+
+}
+
+.modal-land-table th {
+
+    background: #f0f4f1;
+
+    color: #173f2f;
+
+    font-size: 0.82rem;
+
+    padding: 10px 8px;
+
+    border-bottom: 1px solid #dfe5e1;
+
+    text-align: center;
+
+}
+
+.modal-land-table td {
+
+    padding: 9px 8px;
+
+    border-bottom: 1px solid #edf0ee;
+
+    font-size: 0.82rem;
+
+    vertical-align: middle;
+
+}
+
+.modal-land-table td:nth-child(2) {
+
+    text-align: left;
+
+}
+
+.modal-land-table td:not(:nth-child(2)) {
+
+    text-align: center;
+
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 900px) {
+
+    .verification-summary {
+
+        grid-template-columns:
+            repeat(2, 1fr);
+
+    }
+
+}
+
+@media (max-width: 600px) {
+
+    .verification-summary {
+
+        grid-template-columns: 1fr;
+
+    }
+
+    .verification-table-box {
+
+        overflow-x: auto;
+
+    }
+
+}
+
+</style>
+
+
+<!-- =========================================================
+     HEADER
+     ========================================================= -->
+
+<div class="verification-report-header">
+
+    <h2 class="verification-report-title">
+
+        Admin Verification Status
+
+    </h2>
+
+</div>
+
+
+<!-- =========================================================
+     SUMMARY
+     ========================================================= -->
+
+<div class="verification-summary">
+
+    <div class="verification-card">
+
+        <div class="verification-card-label">
+            Total Lands
+        </div>
+
+        <div class="verification-card-value">
+            {{ total_lands }}
+        </div>
+
+    </div>
+
+
+    <div class="verification-card">
+
+        <div class="verification-card-label">
+            Verified Lands
+        </div>
+
+        <div class="verification-card-value">
+            {{ total_verified }}
+        </div>
+
+    </div>
+
+
+    <div class="verification-card">
+
+        <div class="verification-card-label">
+            Pending Lands
+        </div>
+
+        <div class="verification-card-value">
+            {{ total_pending }}
+        </div>
+
+    </div>
+
+
+    <div class="verification-card">
+
+        <div class="verification-card-label">
+            Verification Progress
+        </div>
+
+        <div class="verification-card-value">
+            {{ total_percentage }}%
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     RD TABLE
+     ========================================================= -->
+
+<div class="verification-table-box">
+
+    <div class="table-responsive">
+
+        <table class="verification-table">
+
+            <thead>
+
+                <tr>
+
+                    <th style="width: 60px;">
+                        Ser
+                    </th>
+
+                    <th>
+                        RD Office
+                    </th>
+
+                    <th>
+                        Total Lands
+                    </th>
+
+                    <th>
+                        Verified Lands
+                    </th>
+
+                    <th>
+                        Pending Lands
+                    </th>
+
+                    <th>
+                        Verification %
+                    </th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for row in report_rows %}
+
+                <tr>
+
+                    <td class="text-center">
+                        {{ forloop.counter }}
+                    </td>
+
+
+                    <td class="rd-office-name">
+
+                        {{ row.rd_office }}
+
+                    </td>
+
+
+                    <td class="text-center">
+
+                        {{ row.total_lands }}
+
+                    </td>
+
+
+                    <!-- VERIFIED -->
+
+                    <td class="text-center">
+
+                        <div class="count-view">
+
+                            <span class="count-number">
+                                {{ row.verified_count }}
+                            </span>
+
+                            {% if row.verified_count > 0 %}
+
+                            <button
+                                type="button"
+                                class="btn-view-land"
+                                onclick="showLandList(
+                                    'Verified Lands - {{ row.rd_office|escapejs }}',
+                                    'verified',
+                                    {{ forloop.counter0 }}
+                                )"
+                            >
+                                <i class="bi bi-eye"></i>
+                                View
+                            </button>
+
+                            {% endif %}
+
+                        </div>
+
+                    </td>
+
+
+                    <!-- PENDING -->
+
+                    <td class="text-center">
+
+                        <div class="count-view">
+
+                            <span class="count-number">
+                                {{ row.pending_count }}
+                            </span>
+
+                            {% if row.pending_count > 0 %}
+
+                            <button
+                                type="button"
+                                class="btn-view-land"
+                                onclick="showLandList(
+                                    'Pending Lands - {{ row.rd_office|escapejs }}',
+                                    'pending',
+                                    {{ forloop.counter0 }}
+                                )"
+                            >
+                                <i class="bi bi-eye"></i>
+                                View
+                            </button>
+
+                            {% endif %}
+
+                        </div>
+
+                    </td>
+
+
+                    <!-- PERCENTAGE -->
+
+                    <td class="text-center">
+
+                        <strong>
+                            {{ row.verification_percentage }}%
+                        </strong>
+
+                    </td>
+
+                </tr>
+
+                {% empty %}
+
+                <tr>
+
+                    <td
+                        colspan="6"
+                        class="text-center text-muted py-4"
+                    >
+                        No land records found.
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     LAND LIST MODAL
+     ========================================================= -->
+
+<div
+    class="modal fade verification-modal"
+    id="landListModal"
+    tabindex="-1"
+    aria-hidden="true"
+>
+
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h5
+                    class="modal-title"
+                    id="landListModalTitle"
+                >
+                </h5>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                >
+                </button>
+
+            </div>
+
+
+            <div class="modal-body">
+
+                <div class="table-responsive">
+
+                    <table class="modal-land-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th style="width: 60px;">
+                                    Ser
+                                </th>
+
+                                <th>
+                                    Land Name
+                                </th>
+
+                                <th style="width: 120px;">
+                                    Status
+                                </th>
+
+                                <th style="width: 100px;">
+                                    View
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody id="modalLandTableBody">
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     LAND DATA
+     ========================================================= -->
+
+{{ report_rows|json_script:"verificationReportData" }}
+
+
+<script>
+
+const verificationReportData =
+    JSON.parse(
+        document.getElementById(
+            "verificationReportData"
+        ).textContent
+    );
+
+
+function showLandList(
+    title,
+    status,
+    rowIndex
+) {
+
+    const row =
+        verificationReportData[rowIndex];
+
+    const lands =
+        status === "verified"
+            ? row.verified_lands
+            : row.pending_lands;
+
+
+    document.getElementById(
+        "landListModalTitle"
+    ).textContent = title;
+
+
+    const tbody =
+        document.getElementById(
+            "modalLandTableBody"
+        );
+
+    tbody.innerHTML = "";
+
+
+    if (!lands || lands.length === 0) {
+
+        tbody.innerHTML = `
+
+            <tr>
+
+                <td
+                    colspan="4"
+                    class="text-center text-muted py-4"
+                >
+                    No lands found.
+                </td>
+
+            </tr>
+
+        `;
+
+    } else {
+
+        lands.forEach(
+            (land, index) => {
+
+                const statusClass =
+                    status === "verified"
+                        ? "status-verified"
+                        : "status-pending";
+
+
+                const rowHtml = `
+
+                    <tr>
+
+                        <td>
+                            ${index + 1}
+                        </td>
+
+                        <td>
+                            ${escapeHtml(land.name)}
+                        </td>
+
+                        <td>
+
+                            <span
+                                class="status-badge ${statusClass}"
+                            >
+                                ${land.status}
+                            </span>
+
+                        </td>
+
+                        <td>
+
+                            <a
+                                href="${land.url}"
+                                class="btn btn-sm btn-outline-success"
+                            >
+                                <i class="bi bi-eye"></i>
+                                View
+                            </a>
+
+                        </td>
+
+                    </tr>
+
+                `;
+
+                tbody.insertAdjacentHTML(
+                    "beforeend",
+                    rowHtml
+                );
+
+            }
+        );
+
+    }
+
+
+    const modalElement =
+        document.getElementById(
+            "landListModal"
+        );
+
+    const modal =
+        bootstrap.Modal.getOrCreateInstance(
+            modalElement
+        );
+
+    modal.show();
+
+}
+
+
+function escapeHtml(value) {
+
+    const div =
+        document.createElement("div");
+
+    div.textContent =
+        value || "";
+
+    return div.innerHTML;
+
+}
+
+</script>
+
+{% endblock %}

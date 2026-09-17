@@ -6,7 +6,7 @@ from django.utils import timezone
 
 from accounts.models import UserProfile, UserRole
 from documents.models import DocumentTagEntry
-from lands.models import LandVerification
+# from lands.models import LandVerification
 
 from esate_db.districts import DISTRICTS
 
@@ -37,6 +37,145 @@ REQUIRED_TAGS = [
 # ANOTHER LAND LIST
 # ==========================================================
 
+# @login_required
+# def another_land_list(request):
+
+#     profile, _ = UserProfile.objects.get_or_create(
+#         user=request.user
+#     )
+
+#     # ======================================================
+#     # SUPER ADMIN
+#     # ======================================================
+
+#     if profile.role == UserRole.SUPER_ADMIN:
+
+#         another_lands = (
+#             AnotherLand.objects
+#             .select_related(
+#                 "created_by",
+#                 "admin_verified_by",
+#                 "super_admin_verified_by",
+#             )
+#             .order_by("-created_at")
+#         )
+
+#     # ======================================================
+#     # RD ADMIN
+#     # ======================================================
+
+#     elif profile.role == UserRole.RD_ADMIN:
+
+#         data_entry_users = User.objects.filter(
+#             userprofile__role=UserRole.DATA_ENTRY,
+#             userprofile__rd_admin=profile
+#         )
+
+#         another_lands = (
+#             AnotherLand.objects
+#             .filter(
+#                 created_by__in=data_entry_users
+#             )
+#             .select_related(
+#                 "created_by",
+#                 "admin_verified_by",
+#                 "super_admin_verified_by",
+#             )
+#             .order_by("-created_at")
+#         )
+
+#     # ======================================================
+#     # DATA ENTRY
+#     # ======================================================
+
+#     elif profile.role == UserRole.DATA_ENTRY:
+
+#         another_lands = (
+#             AnotherLand.objects
+#             .filter(
+#                 created_by=request.user
+#             )
+#             .select_related(
+#                 "created_by",
+#                 "admin_verified_by",
+#                 "super_admin_verified_by",
+#             )
+#             .order_by("-created_at")
+#         )
+
+#     # ======================================================
+#     # OTHER USERS
+#     # ======================================================
+
+#     else:
+
+#         another_lands = AnotherLand.objects.none()
+
+#     # ======================================================
+#     # TAGGING STATUS
+#     # ======================================================
+
+#     for land in another_lands:
+
+#         # --------------------------------------------------
+#         # IMPORTANT:
+#         # Do NOT use LandVerification here.
+#         # AnotherLand has its own verification fields.
+#         # --------------------------------------------------
+
+#         uploaded_types = set(
+#             DocumentTagEntry.objects
+#             .filter(
+#                 document__another_land=land
+#             )
+#             .values_list(
+#                 "document_type",
+#                 flat=True
+#             )
+#             .distinct()
+#         )
+
+#         land.tag_status = []
+
+#         completed_count = 0
+
+#         for tag in REQUIRED_TAGS:
+
+#             completed = tag in uploaded_types
+
+#             if completed:
+#                 completed_count += 1
+
+#             land.tag_status.append({
+#                 "name": tag,
+#                 "completed": completed,
+#             })
+
+#         land.completed_count = completed_count
+
+#         land.pending_count = (
+#             len(REQUIRED_TAGS) - completed_count
+#         )
+
+#         land.progress = round(
+#             completed_count * 100 / len(REQUIRED_TAGS),
+#             1
+#         )
+
+#     # ======================================================
+#     # IMPORTANT:
+#     # RETURN MUST BE OUTSIDE THE FOR LOOP
+#     # ======================================================
+
+#     return render(
+#         request,
+#         "AnotherLand/another_land_list.html",
+#         {
+#             "lands": another_lands,
+#             "required_tags": REQUIRED_TAGS,
+#         }
+#     )
+
 @login_required
 def another_land_list(request):
 
@@ -50,6 +189,24 @@ def another_land_list(request):
 
     if profile.role == UserRole.SUPER_ADMIN:
 
+        # --------------------------------------------------
+        # Selected filters
+        # --------------------------------------------------
+
+        selected_rd = request.GET.get(
+            "rd_admin",
+            ""
+        )
+
+        selected_estate = request.GET.get(
+            "estate",
+            ""
+        )
+
+        # --------------------------------------------------
+        # Base queryset
+        # --------------------------------------------------
+
         another_lands = (
             AnotherLand.objects
             .select_related(
@@ -60,15 +217,166 @@ def another_land_list(request):
             .order_by("-created_at")
         )
 
+        # --------------------------------------------------
+        # REGIONAL ADMIN DROPDOWN
+        # --------------------------------------------------
+
+        rd_admins = (
+            UserProfile.objects
+            .filter(
+                role=UserRole.RD_ADMIN
+            )
+            .select_related("user")
+            .order_by("user__username")
+        )
+
+        # --------------------------------------------------
+        # ESTATE / DATA ENTRY DROPDOWN
+        #
+        # Default:
+        # Show all Data Entry users
+        # --------------------------------------------------
+
+        estate_users = (
+            User.objects
+            .filter(
+                userprofile__role=UserRole.DATA_ENTRY
+            )
+            .select_related("userprofile")
+            .order_by("username")
+        )
+
+        # --------------------------------------------------
+        # Selected Regional Office
+        # --------------------------------------------------
+
+        selected_rd_profile = None
+
+        if selected_rd:
+
+            selected_rd_profile = (
+                UserProfile.objects
+                .filter(
+                    id=selected_rd,
+                    role=UserRole.RD_ADMIN
+                )
+                .select_related("user")
+                .first()
+            )
+
+            if selected_rd_profile:
+
+                # ------------------------------------------
+                # Show only Estates/Data Entry users
+                # under selected Regional Office
+                # ------------------------------------------
+
+                estate_users = (
+                    User.objects
+                    .filter(
+                        userprofile__role=UserRole.DATA_ENTRY,
+                        userprofile__rd_admin=selected_rd_profile
+                    )
+                    .select_related("userprofile")
+                    .order_by("username")
+                )
+
+                # ------------------------------------------
+                # Show AnotherLand records created by
+                # those Estate/Data Entry users
+                # ------------------------------------------
+
+                another_lands = another_lands.filter(
+                    created_by__in=estate_users
+                )
+
+        # --------------------------------------------------
+        # Selected Estate
+        # --------------------------------------------------
+
+        if selected_estate:
+
+            estate_user = (
+                User.objects
+                .filter(
+                    id=selected_estate,
+                    userprofile__role=UserRole.DATA_ENTRY
+                )
+                .select_related("userprofile")
+                .first()
+            )
+
+            if estate_user:
+
+                # ------------------------------------------
+                # If Regional Office is also selected,
+                # make sure Estate belongs to that RD
+                # ------------------------------------------
+
+                if selected_rd_profile:
+
+                    if (
+                        estate_user.userprofile.rd_admin_id
+                        != selected_rd_profile.id
+                    ):
+
+                        # Invalid combination
+                        another_lands = (
+                            AnotherLand.objects.none()
+                        )
+
+                    else:
+
+                        another_lands = (
+                            another_lands.filter(
+                                created_by=estate_user
+                            )
+                        )
+
+                else:
+
+                    # No Regional Office selected
+                    another_lands = (
+                        another_lands.filter(
+                            created_by=estate_user
+                        )
+                    )
+
+        # --------------------------------------------------
+        # SUPER ADMIN CONTEXT
+        # --------------------------------------------------
+
+        context = {
+
+            "lands": another_lands,
+
+            "rd_admins": rd_admins,
+
+            "estate_users": estate_users,
+
+            "selected_rd": selected_rd,
+
+            "selected_estate": selected_estate,
+
+            "selected_rd_profile": selected_rd_profile,
+
+            "is_superadmin": True,
+
+            "required_tags": REQUIRED_TAGS,
+        }
+
     # ======================================================
     # RD ADMIN
     # ======================================================
 
     elif profile.role == UserRole.RD_ADMIN:
 
-        data_entry_users = User.objects.filter(
-            userprofile__role=UserRole.DATA_ENTRY,
-            userprofile__rd_admin=profile
+        data_entry_users = (
+            User.objects
+            .filter(
+                userprofile__role=UserRole.DATA_ENTRY,
+                userprofile__rd_admin=profile
+            )
         )
 
         another_lands = (
@@ -83,6 +391,25 @@ def another_land_list(request):
             )
             .order_by("-created_at")
         )
+
+        context = {
+
+            "lands": another_lands,
+
+            "rd_admins": [],
+
+            "estate_users": [],
+
+            "selected_rd": "",
+
+            "selected_estate": "",
+
+            "selected_rd_profile": profile,
+
+            "is_superadmin": False,
+
+            "required_tags": REQUIRED_TAGS,
+        }
 
     # ======================================================
     # DATA ENTRY
@@ -103,6 +430,25 @@ def another_land_list(request):
             .order_by("-created_at")
         )
 
+        context = {
+
+            "lands": another_lands,
+
+            "rd_admins": [],
+
+            "estate_users": [],
+
+            "selected_rd": "",
+
+            "selected_estate": "",
+
+            "selected_rd_profile": profile,
+
+            "is_superadmin": False,
+
+            "required_tags": REQUIRED_TAGS,
+        }
+
     # ======================================================
     # OTHER USERS
     # ======================================================
@@ -111,17 +457,30 @@ def another_land_list(request):
 
         another_lands = AnotherLand.objects.none()
 
+        context = {
+
+            "lands": another_lands,
+
+            "rd_admins": [],
+
+            "estate_users": [],
+
+            "selected_rd": "",
+
+            "selected_estate": "",
+
+            "selected_rd_profile": None,
+
+            "is_superadmin": False,
+
+            "required_tags": REQUIRED_TAGS,
+        }
+
     # ======================================================
     # TAGGING STATUS
     # ======================================================
 
     for land in another_lands:
-
-        # --------------------------------------------------
-        # IMPORTANT:
-        # Do NOT use LandVerification here.
-        # AnotherLand has its own verification fields.
-        # --------------------------------------------------
 
         uploaded_types = set(
             DocumentTagEntry.objects
@@ -141,7 +500,9 @@ def another_land_list(request):
 
         for tag in REQUIRED_TAGS:
 
-            completed = tag in uploaded_types
+            completed = (
+                tag in uploaded_types
+            )
 
             if completed:
                 completed_count += 1
@@ -151,29 +512,30 @@ def another_land_list(request):
                 "completed": completed,
             })
 
-        land.completed_count = completed_count
+        land.completed_count = (
+            completed_count
+        )
 
         land.pending_count = (
-            len(REQUIRED_TAGS) - completed_count
+            len(REQUIRED_TAGS)
+            - completed_count
         )
 
         land.progress = round(
-            completed_count * 100 / len(REQUIRED_TAGS),
+            completed_count
+            * 100
+            / len(REQUIRED_TAGS),
             1
         )
 
     # ======================================================
-    # IMPORTANT:
-    # RETURN MUST BE OUTSIDE THE FOR LOOP
+    # RENDER
     # ======================================================
 
     return render(
         request,
         "AnotherLand/another_land_list.html",
-        {
-            "lands": another_lands,
-            "required_tags": REQUIRED_TAGS,
-        }
+        context
     )
 
 # ==========================================================
@@ -412,23 +774,21 @@ def another_land_delete(request, pk):
 @login_required
 def another_land_verification(request, pk):
 
-    land = get_object_or_404(
+    another_land = get_object_or_404(
         AnotherLand,
         pk=pk
     )
 
-    # Important:
-    # LandVerification is connected to the parent Land.
-    verification, created = (
-        LandVerification.objects.get_or_create(
-            land=land
-        )
-    )
+    # ======================================================
+    # DOCUMENT TAG ENTRIES
+    # IMPORTANT:
+    # These documents belong to AnotherLand
+    # ======================================================
 
     entries = (
         DocumentTagEntry.objects
         .filter(
-            document__land=land
+            document__another_land=another_land
         )
         .prefetch_related("tags")
         .select_related(
@@ -442,13 +802,21 @@ def another_land_verification(request, pk):
         user=request.user
     )
 
+    # ======================================================
+    # POST - VERIFICATION
+    # ======================================================
+
     if request.method == "POST":
 
         action = request.POST.get("action")
 
-        # ---------------------------------------------
-        # ADMIN
-        # ---------------------------------------------
+        # ==================================================
+        # RD ADMIN VERIFICATION
+        # ==================================================
+
+        # ==========================================================
+        # ADMIN VERIFICATION
+        # ==========================================================
 
         if action == "admin":
 
@@ -461,19 +829,48 @@ def another_land_verification(request, pk):
 
             else:
 
-                verification.admin_verified = True
-                verification.admin_verified_by = request.user
-                verification.admin_verified_date = timezone.now()
-                verification.save()
+                # ==============================================
+                # REQUIRED ADMIN VERIFICATION COMMENT
+                # ==============================================
 
-                messages.success(
-                    request,
-                    "Successfully verified."
-                )
+                comment = request.POST.get(
+                    "admin_verification_comment",
+                    ""
+                ).strip()
 
-        # ---------------------------------------------
-        # SUPER ADMIN
-        # ---------------------------------------------
+                if not comment:
+
+                    messages.error(
+                        request,
+                        "Admin verification comment is required."
+                    )
+
+                else:
+
+                    another_land.admin_verified = True
+                    another_land.admin_verified_by = request.user
+                    another_land.admin_verified_at = timezone.now()
+                    another_land.admin_verification_comment = comment
+
+                    another_land.save(
+                        update_fields=[
+                            "admin_verified",
+                            "admin_verified_by",
+                            "admin_verified_at",
+                            "admin_verification_comment",
+                            "updated_at",
+                        ]
+                    )
+
+                    messages.success(
+                        request,
+                        "Successfully verified by Admin."
+                    )
+
+
+        # ==========================================================
+        # SUPER ADMIN VERIFICATION
+        # ==========================================================
 
         elif action == "super":
 
@@ -484,36 +881,68 @@ def another_land_verification(request, pk):
                     "Only Super Admin can verify."
                 )
 
-            elif not verification.admin_verified:
+            elif not another_land.admin_verified:
 
                 messages.error(
                     request,
-                    "Admin verification required."
+                    "Admin verification is required before Super Admin verification."
                 )
 
             else:
 
-                verification.super_admin_verified = True
-                verification.super_admin_verified_by = request.user
-                verification.super_admin_verified_date = timezone.now()
-                verification.save()
+                # ==============================================
+                # REQUIRED SUPER ADMIN VERIFICATION COMMENT
+                # ==============================================
 
-                messages.success(
-                    request,
-                    "Super Admin verification completed."
-                )
+                comment = request.POST.get(
+                    "super_admin_verification_comment",
+                    ""
+                ).strip()
+
+                if not comment:
+
+                    messages.error(
+                        request,
+                        "Super Admin verification comment is required."
+                    )
+
+                else:
+
+                    another_land.super_admin_verified = True
+                    another_land.super_admin_verified_by = request.user
+                    another_land.super_admin_verified_at = timezone.now()
+                    another_land.super_admin_verification_comment = comment
+
+                    another_land.save(
+                        update_fields=[
+                            "super_admin_verified",
+                            "super_admin_verified_by",
+                            "super_admin_verified_at",
+                            "super_admin_verification_comment",
+                            "updated_at",
+                        ]
+                    )
+
+                    messages.success(
+                        request,
+                        "Successfully verified by Super Admin."
+                    )
 
         return redirect(
             "AnotherLand:another_land_verification",
             pk=pk
         )
 
+    # ======================================================
+    # GET
+    # ======================================================
+
     return render(
         request,
         "AnotherLand/admin_verification.html",
         {
-            "land": land,
-            "verification": verification,
+            "land": another_land,
+            "verification": another_land,
             "entries": entries,
             "profile": profile,
             "required_tags": REQUIRED_TAGS,
@@ -527,11 +956,11 @@ def another_land_verification(request, pk):
             ),
 
             "admin_verified_current": (
-                verification.admin_verified
+                another_land.admin_verified
             ),
 
             "super_admin_verified_current": (
-                verification.super_admin_verified
+                another_land.super_admin_verified
             ),
         }
     )

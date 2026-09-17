@@ -35,7 +35,7 @@
 
     <div
         class="report-menu-group
-        {% if request.resolver_match.url_name == 'industrial_land_report' or request.resolver_match.url_name == 'non_industrial_land_report' %}
+        {% if request.resolver_match.url_name == 'industrial_land_report' or request.resolver_match.url_name == 'non_industrial_land_report' or request.resolver_match.url_name == 'admin_verification_status' %}
             open
         {% endif %}"
     >
@@ -92,6 +92,21 @@
 
                 <span>
                     শিল্পনগরী বহির্ভূত জমির তথ্য
+                </span>
+
+            </a>
+            <!-- Admin Verification Status -->
+
+            <a
+                href="{% url 'reports:admin_verification_status' %}"
+                class="report-submenu-item
+                {% if request.resolver_match.url_name == 'admin_verification_status' %}active{% endif %}"
+            >
+
+                <i class="bi bi-patch-check"></i>
+
+                <span>
+                    Admin verification status
                 </span>
 
             </a>

@@ -1125,7 +1125,98 @@ body {
         align-self: flex-start;
     }
 }
+.land-filter-box {
+    background: #ffffff;
+    padding: 1rem 1.25rem;
+    border-radius: 1rem;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, .08);
+    border: 1px solid #edf0f2;
 
+    /* Increase overall size */
+    min-width: 440px;
+}
+
+.land-filter-form {
+    display: flex;
+    align-items: flex-end;
+    gap: 1.25rem;
+}
+
+.filter-group {
+    min-width: 200px;
+    flex: 1;
+}
+
+.filter-group label {
+    display: block;
+    margin-bottom: .45rem;
+    font-size: .8rem;
+    font-weight: 600;
+    color: #555;
+}
+
+.filter-group .form-select {
+    width: 100%;
+    min-width: 200px;
+
+    border-radius: .7rem;
+    border: 1px solid #dfe3e7;
+
+    font-size: .88rem;
+
+    /* Increase height */
+    padding: .7rem .9rem;
+    min-height: 44px;
+}
+
+.filter-group .form-select:focus {
+    border-color: #198754;
+    box-shadow: 0 0 0 .15rem rgba(25, 135, 84, .12);
+}
+
+
+/* Larger screens */
+@media (min-width: 1400px) {
+
+    .land-filter-box {
+        min-width: 500px;
+    }
+
+    .filter-group {
+        min-width: 220px;
+    }
+
+    .filter-group .form-select {
+        min-width: 220px;
+        min-height: 46px;
+    }
+}
+
+
+/* Tablet / smaller screens */
+@media (max-width: 1200px) {
+
+    .land-filter-box {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .land-filter-form {
+        flex-direction: column;
+        align-items: stretch;
+        gap: .9rem;
+    }
+
+    .filter-group {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .filter-group .form-select {
+        width: 100%;
+        min-width: 0;
+    }
+}
 </style>
 
 
@@ -1147,17 +1238,129 @@ body {
 
         </div>
 
-        <div>
+        <!-- RIGHT SIDE -->
+        <div class="d-flex align-items-center gap-3">
 
-            <a
-                href="{% url 'AnotherLand:another_land_create' %}"
-                class="add-land-btn">
+            <!-- ADD LAND: DATA ENTRY ONLY -->
+            {% if request.user.userprofile.role == "DATA_ENTRY" %}
 
-                <i class="bi bi-plus-lg"></i>
+                <a
+                    href="{% url 'AnotherLand:another_land_create' %}"
+                    class="btn add-land-btn">
 
-                Add Land
+                    <i class="bi bi-plus-lg"></i>
 
-            </a>
+                    Add Land
+
+                </a>
+
+            {% endif %}
+
+
+            <!-- SUPER ADMIN FILTER -->
+            {% if is_superadmin %}
+
+                <div class="land-filter-box">
+
+                    <form
+                        method="GET"
+                        class="land-filter-form"
+                    >
+
+                        <!-- ==============================
+                            REGIONAL OFFICE
+                        =============================== -->
+
+                        <div class="filter-group">
+
+                            <label for="rd_admin">
+
+                                Regional Office
+
+                            </label>
+
+                            <select
+                                id="rd_admin"
+                                name="rd_admin"
+                                class="form-select"
+                                onchange="this.form.submit()"
+                            >
+
+                                <option value="">
+
+                                    All Regional Offices
+
+                                </option>
+
+                                {% for rd in rd_admins %}
+
+                                    <option
+                                        value="{{ rd.id }}"
+                                        {% if selected_rd|stringformat:"s" == rd.id|stringformat:"s" %}
+                                            selected
+                                        {% endif %}
+                                    >
+
+                                        {{ rd.user.username }}
+
+                                    </option>
+
+                                {% endfor %}
+
+                            </select>
+
+                        </div>
+
+
+                        <!-- ==============================
+                            ESTATE / DATA ENTRY
+                        =============================== -->
+
+                        <div class="filter-group">
+
+                            <label for="estate">
+
+                                District
+
+                            </label>
+
+                            <select
+                                id="estate"
+                                name="estate"
+                                class="form-select"
+                                onchange="this.form.submit()"
+                            >
+
+                                <option value="">
+
+                                    All Estates
+
+                                </option>
+
+                                {% for user in estate_users %}
+
+                                    <option
+                                        value="{{ user.id }}"
+                                        {% if selected_estate|stringformat:"s" == user.id|stringformat:"s" %}
+                                            selected
+                                        {% endif %}
+                                    >
+
+                                        {{ user.username|cut:"Estate_" }}
+
+                                    </option>
+
+                                {% endfor %}
+
+                            </select>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+            {% endif %}
 
         </div>
 
@@ -1417,7 +1620,7 @@ body {
 
                         <div class="verification-panel">
 
-                            {% if land.verification.admin_verified %}
+                            {% if land.admin_verified %}
 
                                 <span class="status-badge status-success">
 
@@ -1478,7 +1681,7 @@ body {
 
                         <div class="verification-panel">
 
-                            {% if not land.verification.admin_verified %}
+                            {% if not land.admin_verified %}
 
                                 <span class="status-badge status-disabled">
 
@@ -1498,7 +1701,7 @@ body {
 
                             {% else %}
 
-                                {% if land.verification.super_admin_verified %}
+                                {% if land.super_admin_verified %}
 
                                     <span class="status-badge status-success">
 
