@@ -34,20 +34,20 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 SECRET_KEY = 'django-insecure-k9o1j5a2sa1#)qjy$7b0+!&i)6__5wu6sb*e#@vr$z!@hzgai6'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
     'estate.bscic.gov.bd',
-    'e365-103-85-159-178.ngrok-free.app'
+    # 'e365-103-85-159-178.ngrok-free.app'
 ]
 # ALLOWED_HOSTS = ['estate.bscic.gov.bd',]
 
 # ALLOWED_HOSTS = ['*']
 CSRF_TRUSTED_ORIGINS = [
         
-        'https://e365-103-85-159-178.ngrok-free.app',
+        # 'https://e365-103-85-159-178.ngrok-free.app',
         
 ]
 
