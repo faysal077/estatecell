@@ -693,7 +693,42 @@ def industrial_land_report(request):
         context
     )
 
+def get_another_land_tag_status(land):
 
+    # --------------------------------------------------------
+    # Get all document types already added for this
+    # non-industrial land record
+    # --------------------------------------------------------
+
+    added_tag_set = set(
+        DocumentTagEntry.objects
+        .filter(document__another_land=land)
+        .values_list("document_type", flat=True)
+        .distinct()
+    )
+
+    # --------------------------------------------------------
+    # Keep ONLY the required tags
+    # and preserve REQUIRED_TAGS order
+    # --------------------------------------------------------
+
+    added_tags = [
+        tag
+        for tag in REQUIRED_TAGS
+        if tag in added_tag_set
+    ]
+
+    # --------------------------------------------------------
+    # Anything not added = Pending
+    # --------------------------------------------------------
+
+    pending_tags = [
+        tag
+        for tag in REQUIRED_TAGS
+        if tag not in added_tag_set
+    ]
+
+    return added_tags, pending_tags
 # ============================================================
 # NON-INDUSTRIAL LAND REPORT
 # ============================================================
@@ -763,26 +798,18 @@ def non_industrial_land_report(request):
 
     # --------------------------------------------------------
     # BUILD REPORT DATA
-    #
-    # IMPORTANT:
-    #
-    # AnotherLand currently does not have a ForeignKey to
-    # Document.
-    #
-    # Therefore tag status cannot yet be connected to
-    # AnotherLand records using the current models.
-    #
-    # For now, all required tags are considered pending.
     # --------------------------------------------------------
 
     report_rows = []
 
     for land in lands:
 
-        added_tags = []
+        # ----------------------------------------------------
+        # Get actual tags for this AnotherLand record
+        # ----------------------------------------------------
 
-        pending_tags = list(
-            REQUIRED_TAGS
+        added_tags, pending_tags = get_another_land_tag_status(
+            land
         )
 
         # ----------------------------------------------------
@@ -803,13 +830,27 @@ def non_industrial_land_report(request):
             if selected_pending_tag not in pending_tags:
                 continue
 
+        # ----------------------------------------------------
+        # Add row
+        # ----------------------------------------------------
+
         report_rows.append({
+
             "land": land,
+
             "rd_office": land.rd_office,
+
             "office": land.office_name,
+
             "added_tags": added_tags,
+
             "pending_tags": pending_tags,
+
         })
+
+    # --------------------------------------------------------
+    # CONTEXT
+    # --------------------------------------------------------
 
     context = {
 
