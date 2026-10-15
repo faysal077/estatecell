@@ -1,0 +1,107 @@
+
+{% extends "industrial_estate/base.html" %}
+
+{% block content %}
+<div class="container-fluid py-3">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+    <div>
+      <h4>{{ estate.name }}</h4>
+      <p class="text-muted mb-0">শিল্পনগরীর বিস্তারিত তথ্য</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'industrial_estate:estate_update' estate.pk %}"
+         class="btn btn-outline-primary">
+        <i class="bi bi-pencil"></i> সম্পাদনা
+      </a>
+      <a href="{% url 'industrial_estate:plot_list' estate.pk %}"
+         class="btn btn-success">
+        <i class="bi bi-grid"></i> প্লটসমূহ
+      </a>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="text-muted small">মোট প্লট</div>
+          <h3>{{ estate.total_plot_count }}</h3>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="text-muted small">বরাদ্দকৃত প্লট</div>
+          <h3>{{ estate.allocated_plot_count }}</h3>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="text-muted small">খালি প্লট</div>
+          <h3>{{ estate.vacant_plot_count }}</h3>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="text-muted small">মোট জমি (একর)</div>
+          <h3>{{ estate.total_land_acre|default_if_none:"—" }}</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-white fw-semibold">সাধারণ পরিচিতি</div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-6"><strong>আঞ্চলিক কার্যালয়:</strong> {{ estate.regional_office }}</div>
+        <div class="col-md-6"><strong>জেলা:</strong> {{ estate.district }}</div>
+        <div class="col-md-6"><strong>উপজেলা:</strong> {{ estate.upazila|default_if_none:"—" }}</div>
+        <div class="col-md-6"><strong>প্রতিষ্ঠার বছর:</strong> {{ estate.established_year|default_if_none:"—" }}</div>
+        <div class="col-md-6"><strong>দায়িত্বপ্রাপ্ত কর্মকর্তা:</strong> {{ estate.officer_name|default_if_none:"—" }}</div>
+        <div class="col-md-6"><strong>পদবি:</strong> {{ estate.officer_designation|default_if_none:"—" }}</div>
+        <div class="col-md-6"><strong>মোবাইল:</strong> {{ estate.officer_mobile|default_if_none:"—" }}</div>
+        <div class="col-md-6"><strong>বরাদ্দযোগ্য জমি:</strong> {{ estate.allocatable_land_acre|default_if_none:"—" }} একর</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-white fw-semibold">লেআউট ও অনুমোদন</div>
+    <div class="card-body">
+      <p><strong>লেআউট অনুমোদিত:</strong> {% if estate.layout_approved %}হ্যাঁ{% else %}না{% endif %}</p>
+      <p><strong>অনুমোদনের তারিখ:</strong> {{ estate.layout_approval_date|default_if_none:"—" }}</p>
+      {% if estate.layout_file %}
+        <a href="{{ estate.layout_file.url }}" target="_blank" rel="noopener">লেআউট ফাইল দেখুন</a>
+      {% endif %}
+      <hr>
+      <p><strong>লেআউট সংশোধিত:</strong> {% if estate.layout_revised %}হ্যাঁ{% else %}না{% endif %}</p>
+      <p><strong>সংশোধনের তারিখ:</strong> {{ estate.layout_revision_date|default_if_none:"—" }}</p>
+      <p><strong>প্রতিষ্ঠার উদ্দেশ্য:</strong> {{ estate.establishment_purpose|default_if_none:"—" }}</p>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+      <strong>লেআউট সংশোধনের নথি</strong>
+      <a href="{% url 'industrial_estate:layout_revision_add' estate.pk %}"
+         class="btn btn-sm btn-outline-primary">নথি যোগ করুন</a>
+    </div>
+    <div class="card-body">
+      {% for document in estate.layout_revisions.all %}
+        <div class="d-flex justify-content-between border-bottom py-2">
+          <span>{{ document.title }}</span>
+          <a href="{{ document.file.url }}" target="_blank" rel="noopener">ফাইল দেখুন</a>
+        </div>
+      {% empty %}
+        <p class="text-muted mb-0">কোনো সংশোধনী নথি যোগ করা হয়নি।</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

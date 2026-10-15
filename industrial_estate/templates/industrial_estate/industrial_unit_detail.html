@@ -1,0 +1,62 @@
+
+{% extends "industrial_estate/base.html" %}
+
+{% block content %}
+<div class="container-fluid py-3">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+    <div><h4>{{ unit.name }}</h4><p class="text-muted mb-0">ইউনিট কোড: {{ unit.unit_code }}</p></div>
+    <a href="{% url 'industrial_estate:industrial_unit_update' unit.pk %}" class="btn btn-primary"><i class="bi bi-pencil"></i> সম্পাদনা</a>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-md-3"><div class="card border-0 shadow-sm h-100"><div class="card-body"><small class="text-muted">শিল্পনগরী</small><h5>{{ unit.estate.name }}</h5></div></div></div>
+    <div class="col-md-3"><div class="card border-0 shadow-sm h-100"><div class="card-body"><small class="text-muted">কার্যক্রমের অবস্থা</small><h5>{{ unit.get_operational_status_display }}</h5></div></div></div>
+    <div class="col-md-3"><div class="card border-0 shadow-sm h-100"><div class="card-body"><small class="text-muted">মোট কর্মসংস্থান</small><h5>{{ unit.total_employment }}</h5></div></div></div>
+    <div class="col-md-3"><div class="card border-0 shadow-sm h-100"><div class="card-body"><small class="text-muted">বরাদ্দকৃত আয়তন (বর্গফুট)</small><h5>{{ unit.total_allocated_area_sqft }}</h5></div></div></div>
+  </div>
+
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-white fw-semibold">সাধারণ পরিচিতি</div>
+    <div class="card-body"><div class="row g-3">
+      <div class="col-md-6"><strong>মালিক:</strong> {{ unit.owner_name|default_if_none:"—" }}</div>
+      <div class="col-md-6"><strong>মালিকের মোবাইল:</strong> {{ unit.owner_phone|default_if_none:"—" }}</div>
+      <div class="col-md-6"><strong>প্রতিনিধি:</strong> {{ unit.representative_name|default_if_none:"—" }}</div>
+      <div class="col-md-6"><strong>প্রতিনিধির মোবাইল:</strong> {{ unit.representative_phone|default_if_none:"—" }}</div>
+      <div class="col-md-6"><strong>মালিকানার ধরন:</strong> {{ unit.get_ownership_type_display }}</div>
+      <div class="col-md-6"><strong>শিল্পের আকার:</strong> {{ unit.get_industry_size_display }}</div>
+      <div class="col-md-6"><strong>উৎপাদন খাত:</strong> {{ unit.production_sector }}</div>
+      <div class="col-md-6"><strong>উপখাত:</strong> {{ unit.subsector|default_if_none:"—" }}</div>
+      <div class="col-md-6"><strong>উৎপাদন শুরুর তারিখ:</strong> {{ unit.production_start_date|default_if_none:"—" }}</div>
+      <div class="col-md-6"><strong>কারখানার নকশা অনুমোদনের তারিখ:</strong> {{ unit.factory_layout_approval_date|default_if_none:"—" }}</div>
+    </div>
+    {% if unit.factory_layout_file %}<a href="{{ unit.factory_layout_file.url }}" target="_blank" rel="noopener">কারখানার নকশা দেখুন</a>{% endif %}
+  </div>
+
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-white fw-semibold">ফ্লোর স্পেস ভাড়া</div>
+    <div class="card-body">
+      <p><strong>ভাড়া দেওয়া হয়:</strong> {% if unit.has_floor_rental %}হ্যাঁ{% else %}না{% endif %}</p>
+      {% if unit.has_floor_rental %}
+      <p><strong>ভাড়াটিয়ার নাম:</strong> {{ unit.tenant_name|default_if_none:"—" }}</p>
+      <p><strong>ভাড়ার মেয়াদ:</strong> {{ unit.rental_start_date|default_if_none:"—" }} থেকে {{ unit.rental_end_date|default_if_none:"—" }}</p>
+      <p><strong>বার্ষিক ভাড়া:</strong> {{ unit.annual_rent_received|default_if_none:"—" }}</p>
+      {% if unit.rental_agreement_file %}<a href="{{ unit.rental_agreement_file.url }}" target="_blank" rel="noopener">ভাড়ার চুক্তি দেখুন</a>{% endif %}
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-white fw-semibold">সংশ্লিষ্ট তথ্য ব্যবস্থাপনা</div>
+    <div class="card-body d-flex flex-wrap gap-2">
+      <a class="btn btn-outline-primary" href="{% url 'industrial_estate:allocation_list' %}">প্লট বরাদ্দ</a>
+      <a class="btn btn-outline-primary" href="{% url 'industrial_estate:product_list' %}">উৎপাদিত পণ্য</a>
+      <a class="btn btn-outline-primary" href="{% url 'industrial_estate:employment_list' %}">কর্মসংস্থান</a>
+      <a class="btn btn-outline-primary" href="{% url 'industrial_estate:receivable_list' %}">মাসিক পাওনা</a>
+      <a class="btn btn-outline-primary" href="{% url 'industrial_estate:bank_loan_list' %}">ব্যাংক ঋণ</a>
+      <a class="btn btn-outline-primary" href="{% url 'industrial_estate:transfer_list' %}">মালিকানা/ইউনিট স্থানান্তর</a>
+      <a class="btn btn-outline-primary" href="{% url 'industrial_estate:export_product_list' %}">রপ্তানি পণ্য</a>
+      <a class="btn btn-outline-primary" href="{% url 'industrial_estate:environment_create' %}">পরিবেশ ও ইউটিলিটি তথ্য</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

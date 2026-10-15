@@ -16,7 +16,12 @@ from django.db.models import (
     IntegerField,
     Q,
 )
+from functools import wraps
 
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import redirect
+from accounts.models import UserProfile, UserRole
 # ============================================================
 # REQUIRED TAGS
 # ============================================================
@@ -41,37 +46,29 @@ REQUIRED_TAGS = [
 # ============================================================
 
 def super_admin_required(view_func):
-
+    @wraps(view_func)
     @login_required
     def wrapper(request, *args, **kwargs):
-
         try:
             profile = request.user.userprofile
-
-        except Exception:
-            messages.error(
-                request,
-                "User profile not found."
-            )
-
+        except UserProfile.DoesNotExist:
+            messages.error(request, "User profile not found.")
             return redirect("lands:land_list")
 
-        if profile.role != UserRole.SUPER_ADMIN:
-
+        if (
+            not request.user.is_active
+            or profile.role != UserRole.SUPER_ADMIN
+        ):
             messages.error(
                 request,
                 "Only Super Admin can access Reports."
             )
-
             return redirect("lands:land_list")
 
-        return view_func(
-            request,
-            *args,
-            **kwargs
-        )
+        return view_func(request, *args, **kwargs)
 
     return wrapper
+
 
 
 # ============================================================

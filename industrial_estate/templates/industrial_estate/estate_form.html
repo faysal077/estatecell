@@ -1,0 +1,92 @@
+
+{% extends "industrial_estate/record_form.html" %}
+
+{% block page_title %}
+  {% if form.instance.pk %}
+    শিল্পনগরীর তথ্য সম্পাদনা
+  {% else %}
+    শিল্পনগরীর তথ্য যুক্তকরণ
+  {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const divisionSelect = document.getElementById("id_division");
+    const districtSelect = document.getElementById("id_district");
+    const upazilaSelect = document.getElementById("id_upazila");
+
+    if (!divisionSelect || !districtSelect || !upazilaSelect) {
+        console.error(
+            "Location fields missing. Check IndustrialEstateForm and record_form.html."
+        );
+        return;
+    }
+
+    const districtPlaceholder =
+        "--------- জেলা নির্বাচন করুন ---------";
+    const upazilaPlaceholder =
+        "--------- উপজেলা নির্বাচন করুন ---------";
+
+    async function loadOptions(url, select, placeholder) {
+        select.replaceChildren(new Option(placeholder, ""));
+        select.disabled = true;
+
+        try {
+            const response = await fetch(url);
+
+            if (!response.ok) {
+                throw new Error("HTTP " + response.status);
+            }
+
+            const items = await response.json();
+
+            items.forEach(function (item) {
+                select.add(
+                    new Option(item.label || item.name, item.id)
+                );
+            });
+        } catch (error) {
+            console.error("Dropdown loading error:", error);
+        } finally {
+            select.disabled = false;
+        }
+    }
+
+    // Division -> District
+    divisionSelect.addEventListener("change", function () {
+        districtSelect.replaceChildren(
+            new Option(districtPlaceholder, "")
+        );
+        upazilaSelect.replaceChildren(
+            new Option(upazilaPlaceholder, "")
+        );
+
+        if (!this.value) return;
+
+        loadOptions(
+            "{% url 'industrial_estate:districts_by_division' %}?division="
+                + encodeURIComponent(this.value),
+            districtSelect,
+            districtPlaceholder
+        );
+    });
+
+    // District -> Upazila
+    districtSelect.addEventListener("change", function () {
+        upazilaSelect.replaceChildren(
+            new Option(upazilaPlaceholder, "")
+        );
+
+        if (!this.value) return;
+
+        loadOptions(
+            "{% url 'industrial_estate:upazilas_by_district' %}?district_id="
+                + encodeURIComponent(this.value),
+            upazilaSelect,
+            upazilaPlaceholder
+        );
+    });
+});
+</script>
+{% endblock %}

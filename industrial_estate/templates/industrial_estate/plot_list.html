@@ -1,0 +1,48 @@
+
+{% extends "industrial_estate/base.html" %}
+
+{% block content %}
+<div class="container-fluid py-3">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <div>
+      <h4>প্লটের তালিকা</h4>
+      <p class="text-muted mb-0">{{ estate.name }}</p>
+    </div>
+    <a href="{% url 'industrial_estate:plot_create' %}" class="btn btn-primary">
+      <i class="bi bi-plus-circle"></i> নতুন প্লট
+    </a>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-md-4"><div class="card border-0 shadow-sm"><div class="card-body">মোট প্লট <h4>{{ plots|length }}</h4></div></div></div>
+    <div class="col-md-4"><div class="card border-0 shadow-sm"><div class="card-body">শিল্পনগরী <h5>{{ estate.name }}</h5></div></div></div>
+    <div class="col-md-4"><div class="card border-0 shadow-sm"><div class="card-body">মোট জমি (বর্গফুট) <h5>{{ estate.total_plot_area_sqft }}</h5></div></div></div>
+  </div>
+
+  <div class="card border-0 shadow-sm"><div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-light"><tr>
+          <th>ক্রমিক</th><th>প্লট নম্বর</th><th>আয়তন (বর্গফুট)</th>
+          <th>ধরন</th><th>অবস্থা</th><th>বরাদ্দের তারিখ</th><th>কার্যক্রম</th>
+        </tr></thead>
+        <tbody>
+          {% for plot in plots %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td class="fw-semibold">{{ plot.plot_number }}</td>
+            <td>{{ plot.area_sqft|default_if_none:plot.area_acre|default_if_none:"—" }}</td>
+            <td>{{ plot.get_plot_type_display }}</td>
+            <td><span class="badge {% if plot.status == 'allocated' %}text-bg-success{% elif plot.status == 'cancelled' %}text-bg-danger{% else %}text-bg-secondary{% endif %}">{{ plot.get_status_display }}</span></td>
+            <td>{{ plot.allocation_date|default_if_none:"—" }}</td>
+            <td><a class="btn btn-sm btn-outline-primary" href="{% url 'industrial_estate:plot_update' plot.pk %}"><i class="bi bi-pencil"></i> সম্পাদনা</a></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="text-center text-muted py-4">কোনো প্লট পাওয়া যায়নি।</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div></div>
+</div>
+{% endblock %}

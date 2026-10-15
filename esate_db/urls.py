@@ -392,6 +392,10 @@ urlpatterns = [
         'another-land/',
         include('AnotherLand.urls')
     ),
+    path(
+        "industrial-estate/",
+        include("industrial_estate.urls"),
+    ),
 ]
 
 

@@ -34,7 +34,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 SECRET_KEY = 'django-insecure-k9o1j5a2sa1#)qjy$7b0+!&i)6__5wu6sb*e#@vr$z!@hzgai6'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = [
     'localhost',
@@ -64,6 +64,8 @@ INSTALLED_APPS = [
     'documents',
     'reports',
     'AnotherLand',
+    'industrial_estate',
+    
 ]
 
 MIDDLEWARE = [
@@ -140,11 +142,11 @@ USE_I18N = True
 
 USE_TZ = True
 
-# Maximum request body size: 80 MB
-DATA_UPLOAD_MAX_MEMORY_SIZE = 80 * 1024 * 1024
+# Maximum request body size: 8 MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 8 * 1024 * 1024
 
-# Maximum size of an uploaded file kept in memory: 80 MB
-FILE_UPLOAD_MAX_MEMORY_SIZE = 80 * 1024 * 1024
+# Maximum size of an uploaded file kept in memory: 8 MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 8 * 1024 * 1024
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/

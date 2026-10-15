@@ -1,0 +1,115 @@
+from django.urls import path
+from . import views
+
+app_name = "industrial_estate"
+
+urlpatterns = [
+    # -----------------------------------------------------
+    # Industrial estates — preserve old URL names
+    # -----------------------------------------------------
+    path("", views.estate_list, name="estate-list"),
+    path("add/", views.EstateCreateView.as_view(), name="estate-create"),
+    path("<int:pk>/", views.estate_detail, name="estate-detail"),
+    path("<int:pk>/edit/", views.EstateUpdateView.as_view(), name="estate-update"),
+    path(
+        "<int:pk>/layout-revisions/add/",
+        views.layout_revision_add,
+        name="layout-revision-upload",
+    ),
+    path(
+        "api/location-options/",
+        views.location_options,
+        name="location_options",
+    ),
+    path(
+        "api/districts/",
+        views.districts_by_division,
+        name="districts_by_division",
+    ),
+    path(
+        "api/upazilas/",
+        views.upazilas_by_district,
+        name="upazilas_by_district",
+    ),
+
+    # -----------------------------------------------------
+    # Plots
+    # -----------------------------------------------------
+    path("<int:estate_pk>/plots/", views.plot_list, name="plot-list"),
+    path("plots/add/", views.PlotCreateView.as_view(), name="plot_create"),
+    path("plots/<int:pk>/edit/", views.PlotUpdateView.as_view(), name="plot_update"),
+
+    # -----------------------------------------------------
+    # Industrial units
+    # -----------------------------------------------------
+    path("units/", views.IndustrialUnitListView.as_view(), name="industrial_unit_list"),
+    path("units/add/", views.IndustrialUnitCreateView.as_view(), name="industrial_unit_create"),
+    path("units/<int:pk>/", views.IndustrialUnitDetailView.as_view(), name="industrial_unit_detail"),
+    path("units/<int:pk>/edit/", views.IndustrialUnitUpdateView.as_view(), name="industrial_unit_update"),
+
+    # -----------------------------------------------------
+    # Plot allocations
+    # -----------------------------------------------------
+    path("allocations/", views.AllocationListView.as_view(), name="allocation_list"),
+    path("allocations/add/", views.AllocationCreateView.as_view(), name="allocation_create"),
+    path("allocations/<int:pk>/edit/", views.AllocationUpdateView.as_view(), name="allocation_update"),
+
+    # -----------------------------------------------------
+    # Products
+    # -----------------------------------------------------
+    path("products/", views.ProductListView.as_view(), name="product_list"),
+    path("products/add/", views.ProductCreateView.as_view(), name="product_create"),
+    path("products/<int:pk>/edit/", views.ProductUpdateView.as_view(), name="product_update"),
+
+    # -----------------------------------------------------
+    # Employment history
+    # -----------------------------------------------------
+    path("employment/", views.EmploymentListView.as_view(), name="employment_list"),
+    path("employment/add/", views.EmploymentCreateView.as_view(), name="employment_create"),
+    path("employment/<int:pk>/edit/", views.EmploymentUpdateView.as_view(), name="employment_update"),
+
+    # -----------------------------------------------------
+    # Monthly receivables and payments
+    # -----------------------------------------------------
+    path("receivables/", views.ReceivableListView.as_view(), name="receivable_list"),
+    path("receivables/add/", views.ReceivableCreateView.as_view(), name="receivable_create"),
+    path("receivables/<int:pk>/edit/", views.ReceivableUpdateView.as_view(), name="receivable_update"),
+    path("payments/add/", views.PaymentCreateView.as_view(), name="payment_create"),
+    path("payments/<int:pk>/edit/", views.PaymentUpdateView.as_view(), name="payment_update"),
+
+    # -----------------------------------------------------
+    # Bank loans and documents
+    # -----------------------------------------------------
+    path("bank-loans/", views.BankLoanListView.as_view(), name="bank_loan_list"),
+    path("bank-loans/add/", views.BankLoanCreateView.as_view(), name="bank_loan_create"),
+    path("bank-loans/<int:pk>/edit/", views.BankLoanUpdateView.as_view(), name="bank_loan_update"),
+    path("bank-loan-documents/add/", views.BankLoanDocumentCreateView.as_view(), name="bank_loan_document_create"),
+
+    # -----------------------------------------------------
+    # Transfers
+    # -----------------------------------------------------
+    path("transfers/", views.TransferListView.as_view(), name="transfer_list"),
+    path("transfers/add/", views.TransferCreateView.as_view(), name="transfer_create"),
+    path("transfers/<int:pk>/edit/", views.TransferUpdateView.as_view(), name="transfer_update"),
+
+    # -----------------------------------------------------
+    # Plot cancellation and appeals
+    # -----------------------------------------------------
+    path("appeals/add/", views.AppealCreateView.as_view(), name="appeal_create"),
+    path("appeals/<int:pk>/edit/", views.AppealUpdateView.as_view(), name="appeal_update"),
+
+    # -----------------------------------------------------
+    # Export products
+    # -----------------------------------------------------
+    path("export-products/", views.ExportProductListView.as_view(), name="export_product_list"),
+    path("export-products/add/", views.ExportProductCreateView.as_view(), name="export_product_create"),
+    path("export-products/<int:pk>/edit/", views.ExportProductUpdateView.as_view(), name="export_product_update"),
+
+    # -----------------------------------------------------
+    # Environmental data and utility usage
+    # -----------------------------------------------------
+    path("environment/add/", views.EnvironmentalDataCreateView.as_view(), name="environment_create"),
+    path("environment/<int:pk>/edit/", views.EnvironmentalDataUpdateView.as_view(), name="environment_update"),
+    path("utility-usage/add/", views.UtilityUsageCreateView.as_view(), name="utility_usage_create"),
+    path("utility-usage/<int:pk>/edit/", views.UtilityUsageUpdateView.as_view(), name="utility_usage_update"),
+]

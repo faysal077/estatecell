@@ -1,0 +1,47 @@
+
+{% extends "industrial_estate/base.html" %}
+
+{% block content %}
+<div class="container-fluid py-3">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <div>
+      <h4>শিল্প ইউনিটের তালিকা</h4>
+      <p class="text-muted mb-0">শিল্প ইউনিটের নিবন্ধন ও কার্যক্রম ব্যবস্থাপনা</p>
+    </div>
+    <a href="{% url 'industrial_estate:industrial_unit_create' %}" class="btn btn-primary">
+      <i class="bi bi-plus-circle"></i> নতুন শিল্প ইউনিট
+    </a>
+  </div>
+
+  <div class="card border-0 shadow-sm"><div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-light"><tr>
+          <th>ক্রমিক</th><th>ইউনিট কোড</th><th>শিল্প ইউনিটের নাম</th>
+          <th>শিল্পনগরী</th><th>মালিক</th><th>শিল্পের আকার</th>
+          <th>অবস্থা</th><th>কার্যক্রম</th>
+        </tr></thead>
+        <tbody>
+          {% for unit in object_list %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ unit.unit_code }}</td>
+            <td class="fw-semibold">{{ unit.name }}</td>
+            <td>{{ unit.estate.name }}</td>
+            <td>{{ unit.owner_name|default_if_none:"—" }}</td>
+            <td>{{ unit.get_industry_size_display }}</td>
+            <td>{{ unit.get_operational_status_display }}</td>
+            <td class="text-nowrap">
+              <a href="{% url 'industrial_estate:industrial_unit_detail' unit.pk %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a>
+              <a href="{% url 'industrial_estate:industrial_unit_update' unit.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="8" class="text-center text-muted py-4">কোনো শিল্প ইউনিট পাওয়া যায়নি।</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div></div>
+</div>
+{% endblock %}
