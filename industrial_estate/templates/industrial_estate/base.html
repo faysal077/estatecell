@@ -14,7 +14,7 @@
 <body>
 <div class="app-shell">
     <aside class="sidebar">
-        <a class="brand" href="{% url 'industrial_estate:estate-list' %}">
+        <a class="brand" href="{% url 'industrial_estate:estate_list' %}">
             <i class="bi bi-grid-1x2-fill"></i>
             <span>
                 <b>বিসিক</b>
@@ -30,13 +30,39 @@
             <a href="#"><i class="bi bi-buildings"></i> শিল্পপ্রতিষ্ঠান</a> 
             -->
 
-            <a class="active" href="{% url 'industrial_estate:estate-list' %}">
+            <a class="active" href="{% url 'industrial_estate:estate_list' %}">
                 <i class="bi bi-buildings-fill"></i> শিল্পনগরীর তথ্য
             </a>
 
-            <div class="side-sub">
-                <a class="active" href="{% url 'industrial_estate:estate-list' %}">শিল্পনগরী পরিচিত</a>
-                <a href="#">প্লটের তথ্য</a>
+                <div class="side-sub">
+                    <a class="active" href="{% url 'industrial_estate:estate_list' %}">শিল্পনগরী পরিচিত</a>
+                    <div class="side-sub">
+
+                    <a href="{% url 'industrial_estate:estate_list' %}"
+                    class="{% if request.resolver_match.url_name == 'estate_list' %}active{% endif %}">
+                        শিল্পনগরী পরিচিতি
+                    </a>
+
+                    <a href="{% url 'industrial_estate:plot_list_all' %}">
+                        <i class="bi bi-grid"></i> প্লটের তথ্য
+                    </a>
+
+                    <a href="{% url 'industrial_estate:industrial_unit_list' %}"
+                    class="{% if request.resolver_match.url_name == 'industrial_unit_list' %}active{% endif %}">
+                        শিল্প ইউনিট
+                    </a>
+                    <div class="side-sub">
+                        <a href="{% url 'industrial_estate:employment_list' %}"
+                        class="{% if request.resolver_match.url_name == 'employment_list' %}active{% endif %}">
+                            কর্মসংস্থান
+                        </a>
+
+                        <a href="{% url 'industrial_estate:receivable_list' %}"
+                        class="{% if request.resolver_match.url_name == 'receivable_list' %}active{% endif %}">
+                            পাওনা আদায় সংক্রান্ত
+                        </a>
+                    </div>
+                <!-- <a href="#">প্লটের তথ্য</a>
                 <a href="#">কর্মসংস্থান</a>
                 <a href="#">শিল্প ইউনিট</a>
                 <a href="#">মামলার তথ্য</a>
@@ -46,7 +72,7 @@
                 <a href="#">Utility সংক্রান্ত</a>
                 <a href="#">পুকুর সংক্রান্ত</a>
                 <a href="#">পাওনা আদায় সংক্রান্ত</a>
-                <a href="#">শিল্পনগরী স্থাপনের উদ্দেশ্য</a>
+                <a href="#">শিল্পনগরী স্থাপনের উদ্দেশ্য</a> -->
             </div>
 
             <a href="#"><i class="bi bi-database"></i> হিসাব ও অর্থ</a>

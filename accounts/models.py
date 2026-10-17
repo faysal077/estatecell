@@ -1,8 +1,6 @@
+from django.conf import settings
 from django.db import models
-from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-
-
 class UserRole(models.TextChoices):
     SUPER_ADMIN = "SUPER_ADMIN", "Super Admin"
     RD_ADMIN = "RD_ADMIN", "Regional Admin"
@@ -33,7 +31,7 @@ class UserProfile(models.Model):
     """
 
     user = models.OneToOneField(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="userprofile",
     )
@@ -43,7 +41,36 @@ class UserProfile(models.Model):
         choices=UserRole.choices,
         default=UserRole.DATA_ENTRY,
     )
+    # assigned_estate = models.ForeignKey(
+    #     "industrial_estate.IndustrialEstate",
+    #     on_delete=models.PROTECT,
+    #     null=True,
+    #     blank=True,
+    #     related_name="assigned_officer_profiles",
+    #     help_text="এই Estate Officer-এর দায়িত্বপ্রাপ্ত শিল্পনগরী।",
+    # )
+    # RD_ADMIN-এর দায়িত্বপ্রাপ্ত Regional Office
+    assigned_regional_office = models.ForeignKey(
+        "industrial_estate.RegionalOffice",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="admin_profiles",
+    )
 
+    assigned_estates = models.ManyToManyField(
+        "industrial_estate.IndustrialEstate",
+        blank=True,
+        related_name="assigned_data_entry_profiles",
+    )
+
+    assigned_estate = models.ForeignKey(
+        "industrial_estate.IndustrialEstate",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="assigned_officer_profiles",
+    )
     # Regional Admin responsible for this Data Entry user.
     rd_admin = models.ForeignKey(
         "self",
@@ -220,7 +247,7 @@ class UserProfile(models.Model):
 
 class PasswordChangeLog(models.Model):
     user = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="password_change_logs",
     )
@@ -228,7 +255,7 @@ class PasswordChangeLog(models.Model):
     changed_at = models.DateTimeField(auto_now_add=True)
 
     changed_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -255,7 +282,7 @@ class AuditLog(models.Model):
     """
 
     user = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

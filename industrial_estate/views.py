@@ -1,232 +1,3 @@
-# from django.shortcuts import render
-
-# # Create your views here.
-# from django.contrib import messages
-# from django.contrib.auth.decorators import login_required
-# from django.db.models import Count, Q
-# from django.shortcuts import get_object_or_404, redirect, render
-# from django.views.decorators.http import require_POST
-
-# from .forms import (
-#     IndustrialEstateForm,
-#     EstateLayoutRevisionDocumentForm,
-# )
-# from .models import IndustrialEstate, Plot
-
-
-# @login_required
-# def estate_list(request):
-#     estates = IndustrialEstate.objects.select_related(
-#         "rd_office",
-#         "district",
-#         "upazila",
-#     ).annotate(
-#         total_plots=Count("plots", distinct=True),
-#         allocated_plots=Count(
-#             "plots",
-#             filter=Q(plots__current_status="allocated"),
-#             distinct=True,
-#         ),
-#         allocatable_plots=Count(
-#             "plots",
-#             filter=Q(plots__current_status="allocatable"),
-#             distinct=True,
-#         ),
-#     )
-
-#     query = request.GET.get("q", "").strip()
-
-#     if query:
-#         estates = estates.filter(
-#             Q(name__icontains=query)
-#             | Q(district__name__icontains=query)
-#             | Q(rd_office__name__icontains=query)
-#         )
-
-#     context = {
-#         "estates": estates,
-#         "q": query,
-#     }
-
-#     return render(
-#         request,
-#         "industrial_estate/estate_list.html",
-#         context,
-#     )
-
-
-# @login_required
-# def estate_detail(request, pk):
-#     estate = get_object_or_404(
-#         IndustrialEstate.objects.select_related(
-#             "rd_office",
-#             "district",
-#             "upazila",
-#         ),
-#         pk=pk,
-#     )
-
-#     plots = estate.plots.all()
-
-#     context = {
-#         "estate": estate,
-#         "total_plots": plots.count(),
-#         "allocated_plots": plots.filter(
-#             current_status="allocated"
-#         ).count(),
-#         "allocatable_plots": plots.filter(
-#             current_status="allocatable"
-#         ).count(),
-#         "layout_revisions": estate.layout_revision_documents.all(),
-#         "revision_form": EstateLayoutRevisionDocumentForm(),
-#     }
-
-#     return render(
-#         request,
-#         "industrial_estate/estate_detail.html",
-#         context,
-#     )
-
-
-# @login_required
-# def estate_create(request):
-#     if request.method == "POST":
-#         form = IndustrialEstateForm(
-#             request.POST,
-#             request.FILES,
-#         )
-
-#         if form.is_valid():
-#             estate = form.save(commit=False)
-#             estate.created_by = request.user
-#             estate.save()
-
-#             messages.success(
-#                 request,
-#                 "শিল্পনগরীর তথ্য সফলভাবে সংরক্ষণ করা হয়েছে।",
-#             )
-
-#             return redirect(
-#                 "industrial_estate:estate-detail",
-#                 pk=estate.pk,
-#             )
-#     else:
-#         form = IndustrialEstateForm()
-
-#     return render(
-#         request,
-#         "industrial_estate/estate_form.html",
-#         {
-#             "form": form,
-#             "page_title": "নতুন শিল্পনগরীর তথ্য",
-#         },
-#     )
-
-
-# @login_required
-# def estate_update(request, pk):
-#     estate = get_object_or_404(
-#         IndustrialEstate,
-#         pk=pk,
-#     )
-
-#     if request.method == "POST":
-#         form = IndustrialEstateForm(
-#             request.POST,
-#             request.FILES,
-#             instance=estate,
-#         )
-
-#         if form.is_valid():
-#             form.save()
-
-#             messages.success(
-#                 request,
-#                 "শিল্পনগরীর তথ্য হালনাগাদ করা হয়েছে।",
-#             )
-
-#             return redirect(
-#                 "industrial_estate:estate-detail",
-#                 pk=estate.pk,
-#             )
-#     else:
-#         form = IndustrialEstateForm(instance=estate)
-
-#     return render(
-#         request,
-#         "industrial_estate/estate_form.html",
-#         {
-#             "form": form,
-#             "page_title": "শিল্পনগরীর তথ্য সম্পাদনা",
-#             "estate": estate,
-#         },
-#     )
-
-
-# @login_required
-# @require_POST
-# def layout_revision_upload(request, pk):
-#     estate = get_object_or_404(
-#         IndustrialEstate,
-#         pk=pk,
-#     )
-
-#     form = EstateLayoutRevisionDocumentForm(
-#         request.POST,
-#         request.FILES,
-#     )
-
-#     if form.is_valid():
-#         revision = form.save(commit=False)
-#         revision.estate = estate
-#         revision.save()
-
-#         estate.layout_revised = True
-
-#         if revision.approval_date:
-#             estate.layout_revision_date = revision.approval_date
-
-#         estate.save(
-#             update_fields=[
-#                 "layout_revised",
-#                 "layout_revision_date",
-#                 "updated_at",
-#             ]
-#         )
-
-#         messages.success(
-#             request,
-#             "সংশোধিত লে-আউট প্ল্যান যুক্ত করা হয়েছে।",
-#         )
-#     else:
-#         messages.error(
-#             request,
-#             "ফাইল যুক্ত করা যায়নি। PDF ফাইল ও প্রয়োজনীয় তথ্য যাচাই করুন।",
-#         )
-
-#     return redirect(
-#         "industrial_estate:estate-detail",
-#         pk=estate.pk,
-#     )
-
-
-# @login_required
-# def plot_list(request, estate_pk):
-#     estate = get_object_or_404(
-#         IndustrialEstate,
-#         pk=estate_pk,
-#     )
-
-#     plots = estate.plots.all()
-
-#     return render(
-#         request,
-#         "industrial_estate/plot_list.html",
-#         {
-#             "estate": estate,
-#             "plots": plots,
-#         },
-#     )
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -240,6 +11,10 @@ from django.views.generic import (
     DetailView,
     UpdateView,
 )
+from django.db.models import Count, Sum, Q
+from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
+from django.shortcuts import get_object_or_404
+from .models import IndustrialEstate
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 from django.http import JsonResponse
@@ -269,7 +44,8 @@ from .models import (
     EnvironmentalData,
     UtilityUsage,
 )
-
+from django.shortcuts import render
+from .models import Plot
 from .forms import (
     IndustrialEstateForm,
     EstateLayoutRevisionDocumentForm,
@@ -288,6 +64,125 @@ from .forms import (
     EnvironmentalDataForm,
     UtilityUsageForm,
 )
+from django.core.exceptions import PermissionDenied
+from django.shortcuts import get_object_or_404
+from accounts.models import UserRole
+from .models import IndustrialEstate, Plot
+from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
+
+
+def get_user_profile(user):
+    if not user.is_authenticated:
+        raise PermissionDenied
+
+    try:
+        return user.userprofile
+    except ObjectDoesNotExist:
+        raise PermissionDenied(
+            "আপনার UserProfile পাওয়া যায়নি।"
+        )
+
+# def get_user_profile(user):
+#     if not user.is_authenticated:
+#         raise PermissionDenied
+
+#     try:
+#         return user.userprofile
+#     except ObjectDoesNotExist:
+#         raise PermissionDenied(
+#             "Your user profile has not been configured."
+#         )
+
+
+def get_accessible_estates(user):
+    profile = get_user_profile(user)
+
+    # Super Admin: সব Estate
+    if profile.role == UserRole.SUPER_ADMIN:
+        return IndustrialEstate.objects.all()
+
+    # RD Admin: নিজের Regional Office-এর সব Estate
+    if profile.role == UserRole.RD_ADMIN:
+        if not profile.assigned_regional_office_id:
+            return IndustrialEstate.objects.none()
+
+        return IndustrialEstate.objects.filter(
+            regional_office_id=profile.assigned_regional_office_id
+        )
+
+    # Data Entry:
+    # নিজের তৈরি Estate + নিজের অধীনস্থ Estate Officer-দের তৈরি Estate
+    if profile.role == UserRole.DATA_ENTRY:
+        return IndustrialEstate.objects.filter(
+            Q(created_by=user)
+            | Q(
+                created_by__userprofile__managed_by_data_entry=profile
+            )
+        ).distinct()
+
+    # Estate Officer: শুধু নিজের তৈরি Estate
+    if profile.role == UserRole.ESTATE_OFFICER:
+        return IndustrialEstate.objects.filter(
+            created_by=user
+        )
+
+    # Viewer: তার জন্য নির্ধারিত Estate শুধু দেখতে পারবে
+    if profile.role == UserRole.VIEWER:
+        return profile.assigned_estates.all()
+
+    return IndustrialEstate.objects.none()
+
+def get_user_role(user):
+    return get_user_profile(user).role
+
+
+def get_assigned_estate(user):
+    """Return the estate assigned to an Estate Officer."""
+    profile = get_user_profile(user)
+
+    if profile.role != UserRole.ESTATE_OFFICER:
+        raise PermissionDenied("এই কাজটি শুধু Estate Officer-এর জন্য।")
+
+    if profile.assigned_estate_id is None:
+        raise PermissionDenied(
+            "আপনার জন্য কোনো শিল্পনগরী বরাদ্দ করা হয়নি।"
+        )
+
+    return profile.assigned_estate
+
+
+# def get_accessible_estates(user):
+#     """Return the estates visible to the current user."""
+#     profile = get_user_profile(user)
+
+#     if profile.role == UserRole.SUPER_ADMIN:
+#         return IndustrialEstate.objects.all()
+
+#     if profile.role == UserRole.ESTATE_OFFICER:
+#         if profile.assigned_estate_id is None:
+#             return IndustrialEstate.objects.none()
+
+#         return IndustrialEstate.objects.filter(
+#             pk=profile.assigned_estate_id
+#         )
+
+#     # RD_ADMIN, DATA_ENTRY এবং VIEWER-এর scope
+#     # তাদের reporting/assignment policy অনুযায়ী নির্ধারণ করতে হবে।
+#     return IndustrialEstate.objects.none()
+
+
+def get_accessible_estate_or_404(user, estate_pk):
+    return get_object_or_404(
+        get_accessible_estates(user),
+        pk=estate_pk,
+    )
+def is_read_only_user(user):
+    return get_user_profile(user).role == UserRole.VIEWER
+
+
+def require_write_access(user):
+    if is_read_only_user(user):
+        raise PermissionDenied("আপনার শুধু তথ্য দেখার অনুমতি রয়েছে।")
 # =========================================================
 # Division -> District -> Upazilla
 # =========================================================
@@ -381,11 +276,17 @@ class ProtectedUpdateView(LoginRequiredMixin, UpdateView):
 
 @login_required
 def estate_list(request):
-    estates = IndustrialEstate.objects.select_related(
-        "regional_office", "district", "upazila"
-    ).annotate(
-        plot_count=Count("plots", distinct=True),
-        unit_count=Count("industrial_units", distinct=True),
+    estates = (
+        get_accessible_estates(request.user)
+        .select_related(
+            "regional_office",
+            "district",
+            "upazila",
+        )
+        .annotate(
+            plot_count=Count("plots", distinct=True),
+            unit_count=Count("industrial_units", distinct=True),
+        )
     )
 
     return render(
@@ -397,14 +298,20 @@ def estate_list(request):
 
 @login_required
 def estate_detail(request, pk):
-    estate = get_object_or_404(
-        IndustrialEstate.objects.select_related(
-            "regional_office", "district", "upazila"
-        ),
-        pk=pk,
+    estate = get_accessible_estate_or_404(
+        request.user,
+        pk,
     )
 
-    plots = estate.plots.all()
+    plots = Plot.objects.filter(estate=estate)
+    # estate = get_object_or_404(
+    #     IndustrialEstate.objects.select_related(
+    #         "regional_office", "district", "upazila"
+    #     ),
+    #     pk=pk,
+    # )
+
+    # plots = estate.plots.all()
     units = estate.industrial_units.all()
 
     context = {
@@ -434,11 +341,34 @@ class EstateCreateView(LoginRequiredMixin, CreateView):
     template_name = "industrial_estate/estate_form.html"
     success_url = reverse_lazy("industrial_estate:estate_list")
 
+    def dispatch(self, request, *args, **kwargs):
+        profile = get_user_profile(request.user)
+
+        allowed_roles = {
+            UserRole.SUPER_ADMIN,
+            UserRole.RD_ADMIN,
+            UserRole.DATA_ENTRY,
+            UserRole.ESTATE_OFFICER,
+        }
+
+        if profile.role not in allowed_roles:
+            raise PermissionDenied(
+                "আপনার নতুন শিল্পনগরী তৈরির অনুমতি নেই।"
+            )
+
+        return super().dispatch(request, *args, **kwargs)
+
     def form_valid(self, form):
-        if hasattr(self.request.user, "is_authenticated"):
-            form.instance.created_by = self.request.user
-        messages.success(self.request, "শিল্পনগরীর তথ্য সংরক্ষণ করা হয়েছে।")
-        return super().form_valid(form)
+        form.instance.created_by = self.request.user
+
+        response = super().form_valid(form)
+
+        messages.success(
+            self.request,
+            "শিল্পনগরীর তথ্য সফলভাবে সংরক্ষণ করা হয়েছে।"
+        )
+
+        return response
 
 
 class EstateUpdateView(LoginRequiredMixin, UpdateView):
@@ -447,8 +377,14 @@ class EstateUpdateView(LoginRequiredMixin, UpdateView):
     template_name = "industrial_estate/estate_form.html"
     success_url = reverse_lazy("industrial_estate:estate_list")
 
+    def get_queryset(self):
+        return get_accessible_estates(self.request.user)
+
     def form_valid(self, form):
-        messages.success(self.request, "শিল্পনগরীর তথ্য হালনাগাদ হয়েছে।")
+        messages.success(
+            self.request,
+            "শিল্পনগরীর তথ্য হালনাগাদ হয়েছে।",
+        )
         return super().form_valid(form)
 
 
@@ -488,14 +424,16 @@ def layout_revision_add(request, pk):
         },
     )
 
-
 # =========================================================
 # Plot pages
 # =========================================================
 
 @login_required
 def plot_list(request, estate_pk):
-    estate = get_object_or_404(IndustrialEstate, pk=estate_pk)
+    estate = get_accessible_estate_or_404(
+        request.user,
+        estate_pk,
+    )
 
     plots = estate.plots.all().order_by("plot_number")
 
@@ -509,17 +447,64 @@ def plot_list(request, estate_pk):
     )
 
 
+@login_required
+def plot_list_all(request):
+    accessible_estates = get_accessible_estates(request.user)
+
+    plots = (
+        Plot.objects
+        .filter(estate__in=accessible_estates)
+        .select_related("estate")
+        .order_by("estate__name", "plot_number")
+    )
+
+    return render(
+        request,
+        "industrial_estate/plot_list.html",
+        {
+            "plots": plots,
+            "estate": None,
+        },
+    )
+
+
 class PlotCreateView(LoginRequiredMixin, CreateView):
     model = Plot
     form_class = PlotForm
     template_name = "industrial_estate/record_form.html"
 
-    def get_initial(self):
-        initial = super().get_initial()
-        estate_pk = self.request.GET.get("estate")
-        if estate_pk:
-            initial["estate"] = estate_pk
-        return initial
+    def get_estate_queryset(self):
+        return get_accessible_estates(self.request.user)
+
+    def get_fixed_estate_id(self):
+        profile = get_user_profile(self.request.user)
+
+        # Estate Officer: শুধু নিজের তৈরি Estate
+        if profile.role == UserRole.ESTATE_OFFICER:
+            estate_qs = IndustrialEstate.objects.filter(
+                created_by=self.request.user
+            )
+
+            requested_id = self.request.GET.get("estate")
+
+            if requested_id:
+                estate = get_object_or_404(
+                    estate_qs,
+                    pk=requested_id,
+                )
+                return estate.pk
+
+            # মাত্র একটি Estate থাকলে সেটি স্বয়ংক্রিয়ভাবে নির্বাচন
+            if estate_qs.count() == 1:
+                return estate_qs.values_list("pk", flat=True).first()
+
+        return None
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["estate_queryset"] = self.get_estate_queryset()
+        kwargs["fixed_estate_id"] = self.get_fixed_estate_id()
+        return kwargs
 
     def get_success_url(self):
         return reverse(
@@ -532,6 +517,21 @@ class PlotUpdateView(LoginRequiredMixin, UpdateView):
     model = Plot
     form_class = PlotForm
     template_name = "industrial_estate/record_form.html"
+
+    def get_queryset(self):
+        return Plot.objects.filter(
+            estate__in=get_accessible_estates(self.request.user)
+        ).select_related("estate")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["estate_queryset"] = get_accessible_estates(
+            self.request.user
+        )
+
+        # Plot-কে অন্য Estate-এ স্থানান্তর করতে দেওয়া হবে না
+        kwargs["fixed_estate_id"] = self.object.estate_id
+        return kwargs
 
     def get_success_url(self):
         return reverse(
@@ -914,13 +914,10 @@ class UtilityUsageCreateView(LoginRequiredMixin, CreateView):
                 "pk": self.object.environmental_data.industrial_unit_id
             },
         )
-
-
 class UtilityUsageUpdateView(LoginRequiredMixin, UpdateView):
     model = UtilityUsage
     form_class = UtilityUsageForm
     template_name = "industrial_estate/record_form.html"
-
     def get_success_url(self):
         return reverse(
             "industrial_estate:industrial_unit_detail",

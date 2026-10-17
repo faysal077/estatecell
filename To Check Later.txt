@@ -1,0 +1,3 @@
+৫. একটি গুরুত্বপূর্ণ পরবর্তী কাজ
+এই পরিবর্তন শুধু Estate তালিকা ও Estate-এর মূল তথ্যের অ্যাক্সেস ঠিক করবে। আপনার Plot, IndustrialUnit, UnitProduct এবং অন্যান্য related record-এর অনেক view-তে এখনো সরাসরি objects.all() ব্যবহার করা হচ্ছে। সেগুলোতেও একই Estate-ভিত্তিক permission প্রয়োগ করতে হবে, যাতে একজন Estate Officer URL পরিবর্তন করে অন্য Estate-এর শিল্প ইউনিট বা সংশ্লিষ্ট তথ্য দেখতে কিংবা পরিবর্তন করতে না পারেন।
+আরেকটি নীতিগত বিষয়: আপনার RD Admin-এর জন্য আমি বর্তমানে assigned_regional_office-এর সব Estate রাখছি। অর্থাৎ Data Entry-এর মতো শুধু নিজের তৈরি Estate নয়; তাঁর Regional Office-এর অধীন সব Estate দেখা ও হালনাগাদ করতে পারবেন। এটি আপনার আগে নির্ধারিত Regional Office-ভিত্তিক নিয়মের সঙ্গে সামঞ্জস্যপূর্ণ।

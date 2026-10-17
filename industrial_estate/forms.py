@@ -174,6 +174,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django import forms
 from esate_db.districts import DISTRICT_CHOICES_WITH_BN
+
 from .models import District, Upazila
 from esate_db.districts import (
     DISTRICT_CHOICES_WITH_BN,
@@ -191,6 +192,17 @@ from esate_db.districts import (
     DIVISION_CHOICES_WITH_BN,
     DIVISION_DISTRICT_MAP,
     get_division_by_district,
+)
+from django.core.exceptions import PermissionDenied
+
+from accounts.models import UserRole
+from .models import (
+    IndustrialEstate,
+    IndustrialUnit,
+    Plot,
+    MonthlyReceivable,
+    BankLoan,
+    EnvironmentalData,
 )
 from .models import (
     RegionalOffice,
@@ -232,6 +244,92 @@ RD_OFFICE_CHOICES = [
         "বিসিক আঞ্চলিক কার্যালয়, রাজশাহী",
     ),
 ]
+
+
+class EstateScopedFormMixin:
+    """
+    Restrict related model choices to the current user's estate scope.
+    Set self.user before calling this mixin's __init__.
+    """
+
+    def __init__(self, *args, user=None, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+
+        if self.user is None:
+            return
+
+        estates = IndustrialEstate.objects.filter(
+            pk__in=get_accessible_estates(self.user).values("pk")
+        )
+
+        profile = self.user.userprofile
+        role = profile.role
+
+        # Estate Officer must not select a different estate.
+        if "estate" in self.fields:
+            self.fields["estate"].queryset = estates
+
+            if role == UserRole.ESTATE_OFFICER:
+                if not profile.assigned_estate_id:
+                    self.fields["estate"].queryset = (
+                        IndustrialEstate.objects.none()
+                    )
+                else:
+                    self.fields["estate"].initial = (
+                        profile.assigned_estate_id
+                    )
+
+        # Industrial units are scoped through their estate.
+        if "industrial_unit" in self.fields:
+            self.fields["industrial_unit"].queryset = (
+                IndustrialUnit.objects.filter(estate__in=estates)
+            )
+
+        if "plot" in self.fields:
+            self.fields["plot"].queryset = Plot.objects.filter(
+                estate__in=estates
+            )
+
+        if "account" in self.fields:
+            self.fields["account"].queryset = (
+                MonthlyReceivable.objects.filter(
+                    industrial_unit__estate__in=estates
+                )
+            )
+
+        if "loan" in self.fields:
+            self.fields["loan"].queryset = BankLoan.objects.filter(
+                industrial_unit__estate__in=estates
+            )
+
+        if "environmental_data" in self.fields:
+            self.fields["environmental_data"].queryset = (
+                EnvironmentalData.objects.filter(
+                    industrial_unit__estate__in=estates
+                )
+            )
+
+        # Regional Office selection is restricted for RD_ADMIN.
+        office_field = (
+            "regional_office"
+            if "regional_office" in self.fields
+            else "rd_office"
+            if "rd_office" in self.fields
+            else None
+        )
+
+        if office_field and role == UserRole.RD_ADMIN:
+            if profile.assigned_regional_office_id:
+                self.fields[office_field].queryset = (
+                    self.fields[office_field].queryset.filter(
+                        pk=profile.assigned_regional_office_id
+                    )
+                )
+            else:
+                self.fields[office_field].queryset = (
+                    self.fields[office_field].queryset.none()
+                )
 class BootstrapModelForm(forms.ModelForm):
     """Apply Bootstrap styling to model forms."""
 
@@ -488,9 +586,6 @@ class IndustrialEstateForm(forms.ModelForm):
             )
 
         return cleaned_data
-
-
-
 class EstateLayoutRevisionDocumentForm(
     BootstrapModelForm, PDFValidationMixin
 ):
@@ -546,7 +641,21 @@ class PlotForm(BootstrapModelForm, PDFValidationMixin):
             "appeal_details": forms.Textarea(attrs={"rows": 3}),
             "comments": forms.Textarea(attrs={"rows": 2}),
         }
+    def __init__(
+        self,
+        *args,
+        estate_queryset=None,
+        fixed_estate_id=None,
+        **kwargs,
+    ):
+        super().__init__(*args, **kwargs)
 
+        if estate_queryset is not None:
+            self.fields["estate"].queryset = estate_queryset
+
+        if fixed_estate_id is not None:
+            self.fields["estate"].initial = fixed_estate_id
+            self.fields["estate"].disabled = True
 
 class IndustrialUnitForm(BootstrapModelForm, PDFValidationMixin):
     pdf_fields = ("factory_layout_plan", "rental_agreement")

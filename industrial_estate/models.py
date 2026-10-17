@@ -69,6 +69,34 @@ class Upazila(models.Model):
 # =========================================================
 
 class IndustrialEstate(models.Model):
+    class WorkflowStatus(models.TextChoices):
+        DRAFT = "DRAFT", "খসড়া"
+        SUBMITTED_TO_DATA_ENTRY = (
+            "SUBMITTED_TO_DATA_ENTRY",
+            "Data Entry-এর পর্যালোচনার অপেক্ষায়",
+        )
+        RETURNED_TO_ESTATE_OFFICER = (
+            "RETURNED_TO_ESTATE_OFFICER",
+            "Estate Officer-এর সংশোধনের অপেক্ষায়",
+        )
+        SUBMITTED_TO_RD_ADMIN = (
+            "SUBMITTED_TO_RD_ADMIN",
+            "RD Admin-এর পর্যালোচনার অপেক্ষায়",
+        )
+        RETURNED_TO_DATA_ENTRY = (
+            "RETURNED_TO_DATA_ENTRY",
+            "Data Entry-এর সংশোধনের অপেক্ষায়",
+        )
+        SUBMITTED_TO_SUPER_ADMIN = (
+            "SUBMITTED_TO_SUPER_ADMIN",
+            "Super Admin-এর যাচাইয়ের অপেক্ষায়",
+        )
+        RETURNED_TO_RD_ADMIN = (
+            "RETURNED_TO_RD_ADMIN",
+            "RD Admin-এর সংশোধনের অপেক্ষায়",
+        )
+        VERIFIED = "VERIFIED", "চূড়ান্তভাবে যাচাইকৃত"
+
     regional_office = models.ForeignKey(
         RegionalOffice,
         on_delete=models.PROTECT,
@@ -168,6 +196,77 @@ class IndustrialEstate(models.Model):
         return self.plots.aggregate(
             total=Sum("area_sqft")
         )["total"] or ZERO
+    workflow_status = models.CharField(
+        "পর্যালোচনার অবস্থা",
+        max_length=40,
+        choices=WorkflowStatus.choices,
+        default=WorkflowStatus.DRAFT,
+        db_index=True,
+    )
+
+from django.conf import settings
+from django.db import models
+
+
+class EstateReview(models.Model):
+    class Stage(models.TextChoices):
+        DATA_ENTRY = "DATA_ENTRY", "Data Entry"
+        RD_ADMIN = "RD_ADMIN", "RD Admin"
+        SUPER_ADMIN = "SUPER_ADMIN", "Super Admin"
+
+    class Action(models.TextChoices):
+        REVIEWED = "REVIEWED", "পর্যালোচনা"
+        RETURNED = "RETURNED", "সংশোধনের জন্য ফেরত"
+        FORWARDED = "FORWARDED", "পরবর্তী ধাপে প্রেরণ"
+        VERIFIED = "VERIFIED", "চূড়ান্ত যাচাই"
+
+    estate = models.ForeignKey(
+        "industrial_estate.IndustrialEstate",
+        on_delete=models.PROTECT,
+        related_name="review_history",
+        verbose_name="শিল্পনগরী",
+    )
+
+    stage = models.CharField(
+        "পর্যালোচনার ধাপ",
+        max_length=20,
+        choices=Stage.choices,
+    )
+
+    action = models.CharField(
+        "কার্যক্রম",
+        max_length=20,
+        choices=Action.choices,
+    )
+
+    reviewer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="estate_reviews",
+        verbose_name="পর্যালোচনাকারী",
+    )
+
+    comment = models.TextField(
+        "পর্যালোচনার মন্তব্য",
+        blank=True,
+    )
+
+    created_at = models.DateTimeField(
+        "পর্যালোচনার সময়",
+        auto_now_add=True,
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "শিল্পনগরী পর্যালোচনা"
+        verbose_name_plural = "শিল্পনগরী পর্যালোচনার ইতিহাস"
+
+    def __str__(self):
+        return (
+            f"{self.estate.name} - "
+            f"{self.get_stage_display()} - "
+            f"{self.get_action_display()}"
+        )
 
 
 class EstateLayoutRevisionDocument(models.Model):
