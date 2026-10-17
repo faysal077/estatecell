@@ -599,15 +599,6 @@ class IndustrialUnit(models.Model):
         return f"{self.name} ({self.unit_code})"
 
     @property
-    def total_employment(self):
-        latest = self.employment_records.order_by(
-            "-year", "-month", "-created_at"
-        ).first()
-        if latest:
-            return latest.total_employment
-        return 0
-
-    @property
     def total_allocated_area_sqft(self):
         return self.plot_allocations.aggregate(
             total=Sum("allocated_area_sqft")

@@ -124,16 +124,18 @@ class EmploymentHistoryAdmin(admin.ModelAdmin):
         "temporary_male",
         "temporary_female",
         "third_gender_workers",
-        "total_employees",
+        "total_employment",
     )
+
     list_filter = ("year", "month")
+
     search_fields = (
         "industrial_unit__name",
         "industrial_unit__unit_code",
         "industrial_unit__estate__name",
     )
-    date_hierarchy = "year"
 
+    autocomplete_fields = ("industrial_unit",)
 # =========================================================
 # Inlines
 # =========================================================
