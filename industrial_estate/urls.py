@@ -44,10 +44,8 @@ urlpatterns = [
     path("products/add/", views.ProductCreateView.as_view(), name="product_create"),
     path("products/<int:pk>/edit/", views.ProductUpdateView.as_view(), name="product_update"),
 
-    # Employment history
-    path("employment/", views.EmploymentListView.as_view(), name="employment_list"),
-    path("employment/add/", views.EmploymentCreateView.as_view(), name="employment_create"),
-    path("employment/<int:pk>/edit/", views.EmploymentUpdateView.as_view(), name="employment_update"),
+    
+
 
     # Monthly receivables and payments
     path("receivables/", views.ReceivableListView.as_view(), name="receivable_list"),
@@ -81,5 +79,50 @@ urlpatterns = [
     path("environment/<int:pk>/edit/", views.EnvironmentalDataUpdateView.as_view(), name="environment_update"),
     path("utility-usage/add/", views.UtilityUsageCreateView.as_view(), name="utility_usage_create"),
     path("utility-usage/<int:pk>/edit/", views.UtilityUsageUpdateView.as_view(), name="utility_usage_update"),
-
+    path(
+        "unit-production/",
+        views.unit_production_list,
+        name="unit_production_list",
+    ),
+    path(
+        "unit-production/<int:pk>/",
+        views.unit_production_update,
+        name="unit_production_update",
+    ),
+    path(
+        "unit-production/<int:pk>/products/<int:product_pk>/delete/",
+        views.unit_product_delete,
+        name="unit_product_delete",
+    ),
+    path(
+        "plot_allocations/<int:pk>/delete/",
+        views.unit_plot_allocation_delete,
+        name="allocation_delete",
+    ),
+    # Employment history
+    path(
+        "employment/",
+        views.employment_list,
+        name="employment_list",
+    ),
+    path(
+        "units/<int:pk>/status/",
+        views.unit_status_update,
+        name="unit_status_update",
+    ),
+    path(
+        "units/<int:unit_pk>/employment/add/",
+        views.employment_create,
+        name="employment_create",
+    ),
+    path(
+        "units/<int:unit_pk>/employment/<int:pk>/edit/",
+        views.employment_update,
+        name="employment_update",
+    ),
+    path(
+        "units/<int:unit_pk>/employment/<int:pk>/delete/",
+        views.employment_delete,
+        name="employment_delete",
+    ),
 ]

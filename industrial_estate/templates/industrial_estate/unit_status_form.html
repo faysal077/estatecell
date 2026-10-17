@@ -1,0 +1,56 @@
+{% extends "industrial_estate/base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">শিল্প ইউনিটের বর্তমান অবস্থা</h5>
+        </div>
+
+        <div class="card-body">
+            <p>
+                <strong>শিল্প ইউনিট:</strong> {{ unit.name }}
+            </p>
+            <p>
+                <strong>শিল্পনগরী:</strong> {{ unit.estate.name }}
+            </p>
+
+            <form method="post">
+                {% csrf_token %}
+
+                {% for field in form %}
+                    <div class="mb-3">
+                        {% if field.field.widget.input_type == "checkbox" %}
+                            <div class="form-check">
+                                {{ field }}
+                                <label class="form-check-label"
+                                       for="{{ field.id_for_label }}">
+                                    {{ field.label }}
+                                </label>
+                            </div>
+                        {% else %}
+                            <label class="form-label"
+                                   for="{{ field.id_for_label }}">
+                                {{ field.label }}
+                            </label>
+                            {{ field }}
+                        {% endif %}
+
+                        {% for error in field.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+
+                <button type="submit" class="btn btn-primary">
+                    সংরক্ষণ করুন
+                </button>
+                <a href="{% url 'industrial_estate:employment_list' %}"
+                   class="btn btn-outline-secondary">
+                    বাতিল
+                </a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

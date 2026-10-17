@@ -1,8 +1,129 @@
+{% extends "industrial_estate/base.html" %}
 
-{% extends "industrial_estate/related_record_list.html" %}
+{% block content %}
+<div class="container-fluid py-3">
 
-{% block page_title %}মাসভিত্তিক কর্মসংস্থানের তালিকা{% endblock %}
-{% block page_actions %}
-<a href="{% url 'industrial_estate:employment_create' %}" class="btn btn-primary">+ কর্মসংস্থানের তথ্য যোগ করুন</a>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4>সাব-সেকশন ০৪: অবস্থা ও কর্মসংস্থান</h4>
+            <p class="text-muted mb-0">
+                শিল্প ইউনিটের বর্তমান অবস্থা ও কর্মসংস্থানের রেকর্ড
+            </p>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-info">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-md-6">
+            <input type="search"
+                   name="q"
+                   value="{{ search }}"
+                   class="form-control"
+                   placeholder="শিল্প ইউনিট বা শিল্পনগরীর নাম দিয়ে খুঁজুন">
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary" type="submit">খুঁজুন</button>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'industrial_estate:employment_list' %}"
+               class="btn btn-outline-secondary">রিসেট</a>
+        </div>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>ক্রমিক</th>
+                    <th>শিল্পনগরী</th>
+                    <th>শিল্প ইউনিট</th>
+                    <th>বর্তমান অবস্থা</th>
+                    <th>উৎপাদন চালু</th>
+                    <th>সর্বশেষ কর্মী সংখ্যা</th>
+                    <th>কার্যক্রম</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for unit in units %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ unit.estate.name }}</td>
+                    <td>
+                        {{ unit.name }}
+                        {% if unit.unit_code %}
+                            <div class="small text-muted">
+                                {{ unit.unit_code }}
+                            </div>
+                        {% endif %}
+                    </td>
+                    <td>{{ unit.get_current_status_display }}</td>
+                    <td>
+                        {% if unit.production_active %}
+                            <span class="badge bg-success">হ্যাঁ</span>
+                        {% else %}
+                            <span class="badge bg-secondary">না</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% with latest=unit.employment_records.all|first %}
+                            {% if latest %}
+                                {{ latest.total_employees }} জন
+                                <div class="small text-muted">
+                                    {{ latest.record_date|date:"d-m-Y" }}
+                                </div>
+                            {% else %}
+                                তথ্য নেই
+                            {% endif %}
+                        {% endwith %}
+                    </td>
+                    <td>
+                        <div class="d-flex flex-wrap gap-1">
+                            <a class="btn btn-sm btn-outline-primary"
+                               href="{% url 'industrial_estate:unit_status_update' unit.pk %}">
+                                অবস্থা
+                            </a>
+
+                            <a class="btn btn-sm btn-success"
+                               href="{% url 'industrial_estate:employment_create' unit.pk %}">
+                                কর্মী যোগ
+                            </a>
+                        </div>
+
+                        {% for record in unit.employment_records.all %}
+                            <div class="mt-2">
+                                <small>{{ record.record_date|date:"d-m-Y" }}</small>
+                                <a class="btn btn-sm btn-outline-secondary"
+                                   href="{% url 'industrial_estate:employment_update' unit.pk record.pk %}">
+                                    সম্পাদনা
+                                </a>
+                                <form method="post"
+                                      class="d-inline"
+                                      action="{% url 'industrial_estate:employment_delete' unit.pk record.pk %}"
+                                      onsubmit="return confirm('এই কর্মসংস্থানের রেকর্ড মুছে ফেলতে চান?');">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                            class="btn btn-sm btn-outline-danger">
+                                        মুছুন
+                                    </button>
+                                </form>
+                            </div>
+                        {% endfor %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-4">
+                        কোনো শিল্প ইউনিট পাওয়া যায়নি।
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}
-

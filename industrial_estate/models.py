@@ -10,6 +10,8 @@ from django.db.models import Sum
 from django.utils import timezone
 from django.utils import timezone
 from django.conf import settings
+from django.db import models
+from django.core.validators import MinValueValidator
 ZERO = Decimal("0.00")
 
 
@@ -440,7 +442,22 @@ class IndustrialUnit(models.Model):
         SICK = "sick", "রুগ্ন"
         CLOSED = "closed", "বন্ধ"
         IMPLEMENTING = "implementing", "বাস্তবায়নাধীন"
-
+    class UnitStatus(models.TextChoices):
+        OPERATING = "OPERATING", "চালু"
+        TEMPORARILY_CLOSED = "TEMP_CLOSED", "সাময়িকভাবে বন্ধ"
+        PERMANENTLY_CLOSED = "PERM_CLOSED", "স্থায়ীভাবে বন্ধ"
+        UNDER_CONSTRUCTION = "CONSTRUCTION", "নির্মাণাধীন"
+        NOT_STARTED = "NOT_STARTED", "উৎপাদন শুরু হয়নি"
+    current_status = models.CharField(
+        "শিল্প ইউনিটের বর্তমান অবস্থা",
+        max_length=20,
+        choices=UnitStatus.choices,
+        default=UnitStatus.NOT_STARTED,
+    )
+    production_active = models.BooleanField(
+        "উৎপাদন কার্যক্রম চালু আছে কি না",
+        default=False,
+    )
     estate = models.ForeignKey(
         IndustrialEstate,
         on_delete=models.PROTECT,
@@ -748,19 +765,52 @@ class EmploymentHistory(models.Model):
         IndustrialUnit,
         on_delete=models.CASCADE,
         related_name="employment_records",
+        verbose_name="শিল্প ইউনিট",
     )
+
     year = models.PositiveIntegerField("বছর")
     month = models.PositiveSmallIntegerField("মাস")
-    male_workers = models.PositiveIntegerField("পুরুষ কর্মী", default=0)
-    female_workers = models.PositiveIntegerField("নারী কর্মী", default=0)
+
+    permanent_male = models.PositiveIntegerField(
+        "স্থায়ী পুরুষ কর্মী", default=0
+    )
+    permanent_female = models.PositiveIntegerField(
+        "স্থায়ী নারী কর্মী", default=0
+    )
+
+    temporary_male = models.PositiveIntegerField(
+        "অস্থায়ী পুরুষ কর্মী", default=0
+    )
+    temporary_female = models.PositiveIntegerField(
+        "অস্থায়ী নারী কর্মী", default=0
+    )
+
     third_gender_workers = models.PositiveIntegerField(
         "তৃতীয় লিঙ্গের কর্মী", default=0
     )
-    temporary_workers = models.PositiveIntegerField(
-        "অস্থায়ী কর্মী", default=0
-    )
+
     comments = models.TextField("মন্তব্য", blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    @property
+    def total_male(self):
+        return self.permanent_male + self.temporary_male
+
+    @property
+    def total_female(self):
+        return self.permanent_female + self.temporary_female
+
+    @property
+    def total_employment(self):
+        return (
+            self.permanent_male
+            + self.permanent_female
+            + self.temporary_male
+            + self.temporary_female
+            + self.third_gender_workers
+        )
 
     class Meta:
         ordering = ["-year", "-month"]
@@ -774,15 +824,9 @@ class EmploymentHistory(models.Model):
         verbose_name_plural = "কর্মসংস্থানের ইতিহাস"
 
     def __str__(self):
-        return f"{self.industrial_unit} — {self.month}/{self.year}"
-
-    @property
-    def total_employment(self):
         return (
-            self.male_workers
-            + self.female_workers
-            + self.third_gender_workers
-            + self.temporary_workers
+            f"{self.industrial_unit} — "
+            f"{self.month}/{self.year}"
         )
 
 

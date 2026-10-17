@@ -4,8 +4,10 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django import forms
 from esate_db.districts import DISTRICT_CHOICES_WITH_BN
-
+from django import forms
+from .models import IndustrialUnit
 from .models import District, Upazila
+from .models import EmploymentHistory
 from esate_db.districts import (
     DISTRICT_CHOICES_WITH_BN,
     DIVISION_NAMES,
@@ -604,17 +606,17 @@ class UnitProductForm(BootstrapModelForm):
         }
 
 
-class EmploymentHistoryForm(BootstrapModelForm):
+class EmploymentHistoryForm(forms.ModelForm):
     class Meta:
         model = EmploymentHistory
         fields = [
-            "industrial_unit",
             "year",
             "month",
-            "male_workers",
-            "female_workers",
+            "permanent_male",
+            "permanent_female",
+            "temporary_male",
+            "temporary_female",
             "third_gender_workers",
-            "temporary_workers",
             "comments",
         ]
         widgets = {
@@ -849,3 +851,63 @@ class UtilityUsageForm(BootstrapModelForm):
             )
 
         return cleaned
+class IndustrialUnitStatusForm(forms.ModelForm):
+    class Meta:
+        model = IndustrialUnit
+        fields = [
+            "current_status",
+            "production_active",
+        ]
+        widgets = {
+            "current_status": forms.Select(
+                attrs={"class": "form-select"}
+            ),
+            "production_active": forms.CheckboxInput(
+                attrs={"class": "form-check-input"}
+            ),
+        }
+
+
+class EmploymentHistoryForm(forms.ModelForm):
+    class Meta:
+        model = EmploymentHistory
+        fields = (
+            "industrial_unit",
+            "year",
+            "month",
+            "permanent_male",
+            "permanent_female",
+            "temporary_male",
+            "temporary_female",
+            "third_gender_workers",
+            "comments",
+        )
+        widgets = {
+            "year": forms.NumberInput(
+                attrs={"class": "form-control", "min": 2000}
+            ),
+            "month": forms.Select(
+                choices=[
+                    (i, f"{i:02d}") for i in range(1, 13)
+                ],
+                attrs={"class": "form-select"},
+            ),
+            "permanent_male": forms.NumberInput(
+                attrs={"class": "form-control", "min": 0}
+            ),
+            "permanent_female": forms.NumberInput(
+                attrs={"class": "form-control", "min": 0}
+            ),
+            "temporary_male": forms.NumberInput(
+                attrs={"class": "form-control", "min": 0}
+            ),
+            "temporary_female": forms.NumberInput(
+                attrs={"class": "form-control", "min": 0}
+            ),
+            "third_gender_workers": forms.NumberInput(
+                attrs={"class": "form-control", "min": 0}
+            ),
+            "comments": forms.Textarea(
+                attrs={"class": "form-control", "rows": 3}
+            ),
+        }

@@ -1,0 +1,82 @@
+ 
+{% extends "industrial_estate/base.html" %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4>সাব-সেকশন ০৩: কারখানা, উৎপাদন ও পণ্য</h4>
+            <p class="text-muted mb-0">
+                শিল্প ইউনিটের কারখানা, উৎপাদন ও উৎপাদিত পণ্যের তথ্য
+            </p>
+        </div>
+    </div>
+
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-md-6">
+            <input type="search"
+                   name="q"
+                   value="{{ search }}"
+                   class="form-control"
+                   placeholder="শিল্প ইউনিট, কোড, শিল্পনগরী বা পণ্যের নাম দিয়ে খুঁজুন">
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary" type="submit">
+                অনুসন্ধান
+            </button>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'industrial_estate:unit_production_list' %}"
+               class="btn btn-outline-secondary">
+                রিসেট
+            </a>
+        </div>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>ক্রমিক</th>
+                    <th>শিল্পনগরী</th>
+                    <th>শিল্প ইউনিট</th>
+                    <th>ইউনিট কোড</th>
+                    <th>উৎপাদিত পণ্য</th>
+                    <th>কার্যক্রম</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for unit in units %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ unit.estate.name }}</td>
+                    <td>{{ unit.name }}</td>
+                    <td>{{ unit.unit_code|default:"—" }}</td>
+                    <td>
+                        {% for product in unit.products.all %}
+                            <span class="badge bg-light text-dark border mb-1">
+                                {{ product.name }}
+                            </span>
+                        {% empty %}
+                            <span class="text-muted">তথ্য নেই</span>
+                        {% endfor %}
+                    </td>
+                    <td>
+                        <a href="{% url 'industrial_estate:unit_production_update' unit.pk %}"
+                           class="btn btn-sm btn-outline-primary">
+                            তথ্য দেখুন / সম্পাদনা
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-4">
+                        কোনো শিল্প ইউনিট পাওয়া যায়নি।
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,158 @@
+ 
+{% extends "industrial_estate/base.html" %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4>কারখানা, উৎপাদন ও পণ্যের তথ্য</h4>
+            <div class="text-muted">
+                শিল্প ইউনিট: {{ unit.name }}
+                {% if unit.unit_code %}
+                    ({{ unit.unit_code }})
+                {% endif %}
+            </div>
+            <div class="text-muted">
+                শিল্পনগরী: {{ unit.estate.name }}
+            </div>
+        </div>
+
+        <a href="{% url 'industrial_estate:unit_production_list' %}"
+           class="btn btn-outline-secondary">
+            তালিকায় ফিরুন
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <strong>কারখানা ও উৎপাদনের সাধারণ তথ্য</strong>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                {% for field in production_form %}
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ field.id_for_label }}">
+                            {{ field.label }}
+                        </label>
+                        {{ field }}
+
+                        {% if field.help_text %}
+                            <div class="form-text">{{ field.help_text }}</div>
+                        {% endif %}
+
+                        {% for error in field.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+
+                        {% if field.name == "factory_layout_plan" and unit.factory_layout_plan %}
+                            <div class="mt-2">
+                                বর্তমান ফাইল:
+                                <a href="{{ unit.factory_layout_plan.url }}"
+                                   target="_blank" rel="noopener">
+                                    অনুমোদিত লে-আউট প্ল্যান দেখুন
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                <button type="submit"
+                        name="save_production"
+                        value="1"
+                        class="btn btn-primary">
+                    উৎপাদনের তথ্য সংরক্ষণ
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <strong>উৎপাদনের খাত, উপখাত ও পণ্য</strong>
+        </div>
+        <div class="card-body">
+            <form method="post" class="mb-4">
+                {% csrf_token %}
+
+                {% for field in product_form %}
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ field.id_for_label }}">
+                            {{ field.label }}
+                        </label>
+                        {{ field }}
+
+                        {% for error in field.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+
+                <button type="submit"
+                        name="add_product"
+                        value="1"
+                        class="btn btn-success">
+                    <i class="bi bi-plus-circle"></i>
+                    পণ্য যোগ করুন
+                </button>
+            </form>
+
+            <hr>
+
+            <h6 class="mb-3">সংযুক্ত পণ্যের তালিকা</h6>
+
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ক্রমিক</th>
+                            <th>পণ্যের নাম</th>
+                            <th>উৎপাদনের খাত</th>
+                            <th>উৎপাদনের উপখাত</th>
+                            <th>মন্তব্য</th>
+                            <th>কার্যক্রম</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ product.name }}</td>
+                            <td>{{ product.production_sector|default:"—" }}</td>
+                            <td>{{ product.production_subsector|default:"—" }}</td>
+                            <td>{{ product.comments|default:"—" }}</td>
+                            <td>
+                                <form method="post"
+                                      action="{% url 'industrial_estate:unit_product_delete' unit.pk product.pk %}"
+                                      onsubmit="return confirm('পণ্যটি মুছে ফেলতে চান?');">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                            class="btn btn-sm btn-outline-danger">
+                                        মুছুন
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">
+                                এখনো কোনো পণ্য যোগ করা হয়নি।
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

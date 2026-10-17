@@ -101,12 +101,14 @@
                                         সম্পাদনা
                                     </a>
 
-                                    <a href="{% url 'industrial_estate:allocation_delete' allocation.pk %}"
-                                       class="btn btn-sm btn-outline-danger"
-                                       title="মুছে ফেলুন">
-                                        <i class="bi bi-trash"></i>
-                                        মুছুন
-                                    </a>
+                                    <form method="post"
+                                        action="{% url 'industrial_estate:allocation_delete' allocation.pk %}"
+                                        onsubmit="return confirm('এই প্লট বরাদ্দের তথ্য মুছে ফেলতে চান?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            মুছুন
+                                        </button>
+                                    </form>
                                 </div>
                             </td>
                         </tr>

@@ -1,4 +1,103 @@
+{% extends "industrial_estate/base.html" %}
 
-{% extends "industrial_estate/record_form.html" %}
-{% block page_title %}কর্মসংস্থানের মাসিক তথ্য{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-1">{{ page_title }}</h5>
+            <div class="small text-muted">
+                শিল্প ইউনিট: {{ unit.name }} |
+                শিল্পনগরী: {{ unit.estate.name }}
+            </div>
+        </div>
 
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label"
+                               for="{{ field.id_for_label }}">
+                            {{ field.label }}
+                        </label>
+
+                        {{ field }}
+
+                        {% if field.help_text %}
+                            <div class="form-text">
+                                {{ field.help_text }}
+                            </div>
+                        {% endif %}
+
+                        {% for error in field.errors %}
+                            <div class="text-danger small">
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+
+                <div class="alert alert-light border">
+                    <strong>মোট কর্মী:</strong>
+                    <span id="total-employees">0</span> জন
+                    <div class="small text-muted">
+                        ফর্মের সংখ্যা পরিবর্তনের সঙ্গে মোট কর্মী আপডেট হবে।
+                        সংরক্ষণের পর ডেটাবেস থেকে মোট সংখ্যা গণনা করা হবে।
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    সংরক্ষণ করুন
+                </button>
+
+                <a href="{% url 'industrial_estate:employment_list' %}"
+                   class="btn btn-outline-secondary">
+                    বাতিল
+                </a>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const fields = [
+        "id_permanent_male",
+        "id_permanent_female",
+        "id_temporary_male",
+        "id_temporary_female"
+    ];
+
+    const totalElement = document.getElementById("total-employees");
+
+    function updateTotal() {
+        let total = 0;
+
+        fields.forEach(function (id) {
+            const field = document.getElementById(id);
+            if (field) {
+                total += Math.max(0, parseInt(field.value || "0", 10) || 0);
+            }
+        });
+
+        totalElement.textContent = total;
+    }
+
+    fields.forEach(function (id) {
+        const field = document.getElementById(id);
+        if (field) {
+            field.addEventListener("input", updateTotal);
+        }
+    });
+
+    updateTotal();
+});
+</script>
+{% endblock %}

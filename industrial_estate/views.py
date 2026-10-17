@@ -16,6 +16,20 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_http_methods, require_POST
+from .models import IndustrialUnit, EmploymentHistory, UnitProduct, UnitPlotAllocation
+from .forms import IndustrialUnitStatusForm, EmploymentHistoryForm
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
+from django.shortcuts import get_object_or_404, redirect
+from django.views.decorators.http import require_POST
+from .models import UnitPlotAllocation
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
+from django.db.models import Q
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods
 
 from .models import IndustrialUnit, UnitProduct
@@ -1500,3 +1514,154 @@ def unit_product_delete(request, pk, product_pk):
         pk=product_pk,
         industrial_unit=unit,
     )
+@login_required
+@require_POST
+def unit_plot_allocation_delete(request, pk):
+    require_write_access(request.user)
+
+    allocation = get_object_or_404(
+        UnitPlotAllocation.objects.filter(
+            industrial_unit__in=get_accessible_units(request.user)
+        ),
+        pk=pk,
+    )
+
+    allocation.delete()
+
+    messages.success(request, "প্লট বরাদ্দের তথ্য মুছে ফেলা হয়েছে।")
+
+    return redirect("industrial_estate:allocation_list")
+@login_required
+def employment_list(request):
+    units = (
+        get_accessible_units(request.user)
+        .select_related("estate")
+        .prefetch_related("employment_records")
+        .order_by("estate__name", "name")
+    )
+
+    search = request.GET.get("q", "").strip()
+    if search:
+        units = units.filter(
+            Q(name__icontains=search)
+            | Q(unit_code__icontains=search)
+            | Q(estate__name__icontains=search)
+        ).distinct()
+
+    return render(
+        request,
+        "industrial_estate/employment_list.html",
+        {"units": units, "search": search},
+    )
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def unit_status_update(request, pk):
+    unit = get_object_or_404(
+        get_accessible_units(request.user),
+        pk=pk,
+    )
+
+    if request.method == "POST":
+        require_write_access(request.user)
+        form = IndustrialUnitStatusForm(request.POST, instance=unit)
+
+        if form.is_valid():
+            form.save()
+            messages.success(request, "শিল্প ইউনিটের অবস্থা সংরক্ষণ হয়েছে।")
+            return redirect(
+                "industrial_estate:employment_list"
+            )
+    else:
+        form = IndustrialUnitStatusForm(instance=unit)
+
+    return render(
+        request,
+        "industrial_estate/unit_status_form.html",
+        {"unit": unit, "form": form},
+    )
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def employment_create(request, unit_pk):
+    unit = get_object_or_404(
+        get_accessible_units(request.user),
+        pk=unit_pk,
+    )
+
+    if request.method == "POST":
+        require_write_access(request.user)
+        form = EmploymentHistoryForm(request.POST)
+
+        if form.is_valid():
+            record = form.save(commit=False)
+            record.industrial_unit = unit
+            record.save()
+
+            messages.success(request, "কর্মসংস্থানের তথ্য যোগ করা হয়েছে।")
+            return redirect("industrial_estate:employment_list")
+    else:
+        form = EmploymentHistoryForm()
+
+    return render(
+        request,
+        "industrial_estate/employment_form.html",
+        {"unit": unit, "form": form, "page_title": "কর্মসংস্থানের তথ্য যোগ"},
+    )
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def employment_update(request, unit_pk, pk):
+    unit = get_object_or_404(
+        get_accessible_units(request.user),
+        pk=unit_pk,
+    )
+
+    record = get_object_or_404(
+        EmploymentHistory,
+        pk=pk,
+        industrial_unit=unit,
+    )
+
+    if request.method == "POST":
+        require_write_access(request.user)
+        form = EmploymentHistoryForm(request.POST, instance=record)
+
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request, "কর্মসংস্থানের তথ্য হালনাগাদ হয়েছে।"
+            )
+            return redirect("industrial_estate:employment_list")
+    else:
+        form = EmploymentHistoryForm(instance=record)
+
+    return render(
+        request,
+        "industrial_estate/employment_form.html",
+        {"unit": unit, "form": form, "page_title": "কর্মসংস্থানের তথ্য সম্পাদনা"},
+    )
+
+
+@login_required
+@require_POST
+def employment_delete(request, unit_pk, pk):
+    require_write_access(request.user)
+
+    unit = get_object_or_404(
+        get_accessible_units(request.user),
+        pk=unit_pk,
+    )
+
+    record = get_object_or_404(
+        EmploymentHistory,
+        pk=pk,
+        industrial_unit=unit,
+    )
+    record.delete()
+
+    messages.success(request, "কর্মসংস্থানের রেকর্ড মুছে ফেলা হয়েছে।")
+    return redirect("industrial_estate:employment_list")

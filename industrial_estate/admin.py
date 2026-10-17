@@ -109,7 +109,30 @@ from .models import (
     EnvironmentalData,
     UtilityUsage,
 )
+from django.contrib import admin
+from .models import EmploymentHistory
 
+
+@admin.register(EmploymentHistory)
+class EmploymentHistoryAdmin(admin.ModelAdmin):
+    list_display = (
+        "industrial_unit",
+        "year",
+        "month",
+        "permanent_male",
+        "permanent_female",
+        "temporary_male",
+        "temporary_female",
+        "third_gender_workers",
+        "total_employees",
+    )
+    list_filter = ("year", "month")
+    search_fields = (
+        "industrial_unit__name",
+        "industrial_unit__unit_code",
+        "industrial_unit__estate__name",
+    )
+    date_hierarchy = "year"
 
 # =========================================================
 # Inlines
@@ -735,28 +758,28 @@ class UnitProductAdmin(admin.ModelAdmin):
     autocomplete_fields = ["industrial_unit"]
 
 
-@admin.register(EmploymentHistory)
-class EmploymentHistoryAdmin(admin.ModelAdmin):
-    list_display = [
-        "id",
-        "industrial_unit",
-        "year",
-        "month",
-        "male_workers",
-        "female_workers",
-        "third_gender_workers",
-        "temporary_workers",
-        "total_workers",
-    ]
+# @admin.register(EmploymentHistory)
+# class EmploymentHistoryAdmin(admin.ModelAdmin):
+#     list_display = [
+#         "id",
+#         "industrial_unit",
+#         "year",
+#         "month",
+#         "male_workers",
+#         "female_workers",
+#         "third_gender_workers",
+#         "temporary_workers",
+#         "total_workers",
+#     ]
 
-    list_filter = ["year", "month"]
+#     list_filter = ["year", "month"]
 
-    search_fields = [
-        "industrial_unit__name",
-        "industrial_unit__unit_code",
-    ]
+#     search_fields = [
+#         "industrial_unit__name",
+#         "industrial_unit__unit_code",
+#     ]
 
-    autocomplete_fields = ["industrial_unit"]
+#     autocomplete_fields = ["industrial_unit"]
 
     @admin.display(description="মোট কর্মী")
     def total_workers(self, obj):
