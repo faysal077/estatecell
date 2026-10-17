@@ -945,11 +945,26 @@ class MonthlyReceivable(models.Model):
 
     @property
     def fiscal_year_cumulative_collection(self):
-        return MonthlyPayment.objects.filter(
+        payments = MonthlyPayment.objects.filter(
             account__industrial_unit=self.industrial_unit,
             account__fiscal_year=self.fiscal_year,
-            account__month__lte=self.month,
-        ).aggregate(total=Sum("amount"))["total"] or ZERO
+        )
+
+        if self.month >= 7:
+            payments = payments.filter(
+                account__month__gte=7,
+                account__month__lte=self.month,
+            )
+        else:
+            payments = payments.filter(
+                account__month__gte=7
+            ) | payments.filter(
+                account__month__lte=self.month
+            )
+
+        return payments.aggregate(
+            total=Sum("amount")
+        )["total"] or ZERO
 
     def carry_forward_previous_balance(self):
         """Copy the preceding month's calculated outstanding balance."""

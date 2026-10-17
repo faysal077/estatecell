@@ -113,7 +113,6 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.urls import reverse
 from django.contrib import messages
-
 from accounts.models import UserRole
 from .models import (
     IndustrialEstate,
@@ -635,67 +634,70 @@ class IndustrialUnitDetailView(LoginRequiredMixin, DetailView):
     template_name = "industrial_estate/industrial_unit_detail.html"
     context_object_name = "unit"
 
+    
     def get_queryset(self):
-        return get_accessible_units(
-            self.request.user
-        ).select_related("estate").prefetch_related(
-            "plot_allocations__plot",
-            "products",
-            "employment_records",
-            "monthly_accounts__payments",
-            "bank_loans",
-            "transfers",
-            "export_products",
+        return (
+            get_accessible_units(self.request.user)
+            .select_related("estate")
+            .prefetch_related(
+                "plot_allocations__plot",
+                "products",
+                "employment_records",
+                "monthly_accounts__payments",
+                "bank_loans__documents",
+                "transfers",
+                "export_products",
+            )
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         unit = self.object
 
-        # Section 01: General information
         context["section_01_unit"] = unit
-
-        # Section 02: Plot allocation and possession
         context["section_02_allocations"] = unit.plot_allocations.all()
-
-        # Section 03: Products
         context["section_03_products"] = unit.products.all()
-
-        # Section 04: Employment
         context["section_04_employment"] = unit.employment_records.all()
 
-        # Section 05: Floor-space rent
-        # Actual model relationship is not yet confirmed.
+        # Section 05: Floor-space rental
         context["section_05_floor_rent"] = []
 
-        # Section 06: Accounts and receivables
-        context["section_06_receivables"] = unit.monthly_accounts.all()
+        # Section 06: Monthly receivables and collections
+        context["section_06_receivables"] = (
+            unit.monthly_accounts.all().order_by(
+                "-fiscal_year", "-month"
+            )
+        )
 
-        # Section 07: Bank loans
+        # Section 07: Bank loans and NOC documents
         context["section_07_bank_loans"] = unit.bank_loans.all()
 
-        # Section 08: Transfers
+        # Section 08: Transfers and cancellation appeals
         context["section_08_transfers"] = unit.transfers.all()
+        context["section_08_cancellation_appeals"] = (
+            PlotCancellationAppeal.objects.filter(
+                industrial_unit=unit
+            )
+        )
 
-        # Section 09: Exports
+        # Section 09: Export products
         context["section_09_exports"] = unit.export_products.all()
 
-        # Section 08: Cancellation and appeals
-        context["section_08_cancellation_appeals"] = Plot.objects.filter(
-            estate=unit.estate
+        # Section 10: Environment and utility usage
+        context["section_10_environmental_data"] = (
+            EnvironmentalData.objects.filter(
+                industrial_unit=unit
+            ).first()
         )
 
-        # Section 10: Environmental data
-        context["section_10_environmental_data"] = []
-
-        # Section 10: Utility usage
-        context["section_10_utility_usage"] = []
-
-        context["can_edit"] = (
-            get_user_profile(self.request.user).role != UserRole.VIEWER
+        context["section_10_utility_usage"] = UtilityUsage.objects.filter(
+            environmental_data__industrial_unit=unit
         )
+
+        context["can_edit"] = not is_read_only_user(self.request.user)
 
         return context
+
 
 
 class IndustrialUnitCreateView(LoginRequiredMixin, CreateView):
@@ -919,22 +921,40 @@ class ReceivableListView(UnitRelatedListView):
 
 
 # Payments belong to a monthly account, not directly to a unit.
+
 class PaymentCreateView(LoginRequiredMixin, CreateView):
     model = MonthlyPayment
     form_class = MonthlyPaymentForm
     template_name = "industrial_estate/record_form.html"
 
-    def get_initial(self):
-        initial = super().get_initial()
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+
+        accounts = MonthlyReceivable.objects.filter(
+            industrial_unit__in=get_accessible_units(
+                self.request.user
+            )
+        )
+
+        form.fields["account"].queryset = accounts
+
         account_pk = self.request.GET.get("account")
         if account_pk:
-            initial["account"] = account_pk
-        return initial
+            account = get_object_or_404(accounts, pk=account_pk)
+            form.fields["account"].initial = account.pk
+
+        return form
+
+    def form_valid(self, form):
+        require_write_access(self.request.user)
+        messages.success(self.request, "পেমেন্টের তথ্য সংরক্ষণ হয়েছে।")
+        return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse(
-            "industrial_estate:receivable_list"
-        ) + f"?unit={self.object.account.industrial_unit_id}"
+        return (
+            reverse("industrial_estate:receivable_list")
+            + f"?unit={self.object.account.industrial_unit_id}"
+        )
 
 
 class PaymentUpdateView(LoginRequiredMixin, UpdateView):
@@ -942,10 +962,37 @@ class PaymentUpdateView(LoginRequiredMixin, UpdateView):
     form_class = MonthlyPaymentForm
     template_name = "industrial_estate/record_form.html"
 
+    def get_queryset(self):
+        return MonthlyPayment.objects.filter(
+            account__industrial_unit__in=get_accessible_units(
+                self.request.user
+            )
+        ).select_related("account", "account__industrial_unit")
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+
+        form.fields["account"].queryset = (
+            MonthlyReceivable.objects.filter(
+                industrial_unit__in=get_accessible_units(
+                    self.request.user
+                )
+            )
+        )
+
+        return form
+
+    def form_valid(self, form):
+        require_write_access(self.request.user)
+        messages.success(self.request, "পেমেন্টের তথ্য হালনাগাদ হয়েছে।")
+        return super().form_valid(form)
+
     def get_success_url(self):
-        return reverse(
-            "industrial_estate:receivable_list"
-        ) + f"?unit={self.object.account.industrial_unit_id}"
+        return (
+            reverse("industrial_estate:receivable_list")
+            + f"?unit={self.object.account.industrial_unit_id}"
+        )
+
 
 
 # Bank loans
@@ -964,22 +1011,46 @@ class BankLoanListView(UnitRelatedListView):
 
 
 # Additional bank documents
+
 class BankLoanDocumentCreateView(LoginRequiredMixin, CreateView):
     model = BankLoanDocument
     form_class = BankLoanDocumentForm
     template_name = "industrial_estate/record_form.html"
 
-    def get_initial(self):
-        initial = super().get_initial()
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+
+        loans = BankLoan.objects.filter(
+            industrial_unit__in=get_accessible_units(
+                self.request.user
+            )
+        )
+
+        form.fields["loan"].queryset = loans
+
         loan_pk = self.request.GET.get("loan")
         if loan_pk:
-            initial["loan"] = loan_pk
-        return initial
+            loan = get_object_or_404(loans, pk=loan_pk)
+            form.fields["loan"].initial = loan.pk
+
+        return form
+
+    def form_valid(self, form):
+        require_write_access(self.request.user)
+        messages.success(
+            self.request,
+            "ব্যাংক ঋণের নথি সংরক্ষণ হয়েছে।",
+        )
+        return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse("industrial_estate:bank_loan_list") + (
-            f"?unit={self.object.loan.industrial_unit_id}"
+        unit_id = self.object.loan.industrial_unit_id
+
+        return (
+            reverse("industrial_estate:bank_loan_list")
+            + f"?unit={unit_id}"
         )
+
 
 
 # Transfers
@@ -1494,15 +1565,11 @@ def unit_production_update(request, pk):
     )
 
 
-@login_required
-@require_http_methods(["POST"])
-def unit_product_delete(request, pk, product_pk):
-    """নির্বাচিত শিল্প ইউনিটের একটি পণ্য মুছে ফেলা।"""
 
-    try:
-        require_write_access(request.user)
-    except PermissionDenied:
-        raise
+@login_required
+@require_POST
+def unit_product_delete(request, pk, product_pk):
+    require_write_access(request.user)
 
     unit = get_object_or_404(
         get_accessible_units(request.user),
@@ -1514,6 +1581,19 @@ def unit_product_delete(request, pk, product_pk):
         pk=product_pk,
         industrial_unit=unit,
     )
+
+    product.delete()
+
+    messages.success(
+        request,
+        "উৎপাদিত পণ্যের তথ্য মুছে ফেলা হয়েছে।",
+    )
+
+    return redirect(
+        "industrial_estate:unit_production_update",
+        pk=unit.pk,
+    )
+
 @login_required
 @require_POST
 def unit_plot_allocation_delete(request, pk):
