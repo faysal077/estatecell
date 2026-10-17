@@ -1,13 +1,15 @@
 
 from decimal import Decimal
-
+from django.db import models
+from django.core.validators import MinValueValidator
+from decimal import Decimal
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import Sum
 from django.utils import timezone
-
-
+from django.utils import timezone
+from django.conf import settings
 ZERO = Decimal("0.00")
 
 
@@ -206,8 +208,6 @@ class IndustrialEstate(models.Model):
 
 from django.conf import settings
 from django.db import models
-
-
 class EstateReview(models.Model):
     class Stage(models.TextChoices):
         DATA_ENTRY = "DATA_ENTRY", "Data Entry"
@@ -551,7 +551,25 @@ class IndustrialUnit(models.Model):
     is_export_oriented = models.BooleanField(
         "রপ্তানিমুখী শিল্প ইউনিট কি না", default=False
     )
+    # কারখানা ও উৎপাদন
+    factory_layout_approval_date = models.DateField(
+        "কারখানার লে-আউট অনুমোদনের তারিখ",
+        null=True,
+        blank=True,
+    )
 
+    factory_layout_file = models.FileField(
+        "কারখানার অনুমোদিত লে-আউট প্ল্যান",
+        upload_to="industrial_units/factory_layouts/",
+        null=True,
+        blank=True,
+    )
+
+    production_start_date = models.DateField(
+        "উৎপাদন শুরুর তারিখ",
+        null=True,
+        blank=True,
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -588,7 +606,34 @@ class IndustrialUnit(models.Model):
             + self.rental_end_date.month
             - self.rental_start_date.month,
         )
+# =========================================================
+# 5. Monthly record mixin for common date and month-year fields
+# =========================================================
+class MonthlyRecordMixin(models.Model):
+    """মাসভিত্তিক রেকর্ডের জন্য সাধারণ তারিখ ও মাস-বছর।"""
 
+    report_date = models.DateField(
+        "রিপোর্টের তারিখ",
+        default=timezone.localdate,
+    )
+    report_month = models.PositiveSmallIntegerField(
+        "মাস",
+        editable=False,
+        db_index=True,
+    )
+    report_year = models.PositiveSmallIntegerField(
+        "বছর",
+        editable=False,
+        db_index=True,
+    )
+
+    class Meta:
+        abstract = True
+
+    def save(self, *args, **kwargs):
+        self.report_month = self.report_date.month
+        self.report_year = self.report_date.year
+        super().save(*args, **kwargs)
 
 # =========================================================
 # 5. One plot can be allocated wholly or partly to a unit
@@ -596,8 +641,8 @@ class IndustrialUnit(models.Model):
 
 class UnitPlotAllocation(models.Model):
     class AllocationType(models.TextChoices):
-        FULL = "full", "পূর্ণ"
-        PARTIAL = "partial", "অংশ"
+        FULL = "FULL", "পূর্ণ বরাদ্দ"
+        PARTIAL = "PARTIAL", "আংশিক বরাদ্দ"
 
     industrial_unit = models.ForeignKey(
         IndustrialUnit,

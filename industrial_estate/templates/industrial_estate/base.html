@@ -46,21 +46,93 @@
                     <a href="{% url 'industrial_estate:plot_list_all' %}">
                         <i class="bi bi-grid"></i> প্লটের তথ্য
                     </a>
+                    <!-- Industrial Unit Section -->
+                    <div class="side-menu-group">
 
-                    <a href="{% url 'industrial_estate:industrial_unit_list' %}"
-                    class="{% if request.resolver_match.url_name == 'industrial_unit_list' %}active{% endif %}">
-                        শিল্প ইউনিট
-                    </a>
-                    <div class="side-sub">
-                        <a href="{% url 'industrial_estate:employment_list' %}"
-                        class="{% if request.resolver_match.url_name == 'employment_list' %}active{% endif %}">
-                            কর্মসংস্থান
+                        <a href="{% url 'industrial_estate:industrial_unit_list' %}"
+                        class="side-menu-title
+                        {% if request.resolver_match.url_name == 'industrial_unit_list' or request.resolver_match.url_name == 'industrial_unit_detail' or request.resolver_match.url_name == 'industrial_unit_update' %}active{% endif %}">
+                            <i class="bi bi-factory"></i>
+                            <span>শিল্প ইউনিট</span>
                         </a>
 
-                        <a href="{% url 'industrial_estate:receivable_list' %}"
-                        class="{% if request.resolver_match.url_name == 'receivable_list' %}active{% endif %}">
-                            পাওনা আদায় সংক্রান্ত
-                        </a>
+                        <div class="side-sub">
+
+                            <!-- Sub-section 01 -->
+                            <a href="{% url 'industrial_estate:industrial_unit_list' %}#general-information">
+                                <i class="bi bi-building"></i>
+                                সাধারণ পরিচিতি
+                            </a>
+
+                            <!-- Sub-section 02 -->
+                            <a href="{% url 'industrial_estate:allocation_list' %}">
+                                <i class="bi bi-grid-3x3"></i>
+                                প্লট বরাদ্দ ও দখল
+                            </a>
+
+                            <!-- Sub-section 03 -->
+                            <a href="{% url 'industrial_estate:product_list' %}">
+                                <i class="bi bi-box-seam"></i>
+                                কারখানা, উৎপাদন ও পণ্য
+                            </a>
+
+                            <!-- Sub-section 04 -->
+                            <a href="{% url 'industrial_estate:employment_list' %}">
+                                <i class="bi bi-people"></i>
+                                অবস্থা ও কর্মসংস্থান
+                            </a>
+
+                            <!-- Sub-section 05 -->
+                            <a href="{% url 'industrial_estate:industrial_unit_list' %}#floor-rental">
+                                <i class="bi bi-building-check"></i>
+                                ফ্লোর স্পেস ভাড়া
+                            </a>
+
+                            <!-- Sub-section 06 -->
+                            <a href="{% url 'industrial_estate:receivable_list' %}">
+                                <i class="bi bi-cash-stack"></i>
+                                শিল্প ইউনিটের পাওনা ও আদায় ব্যবস্থাপনা
+                            </a>
+
+                            <!-- Sub-section 07 -->
+                            <a href="{% url 'industrial_estate:bank_loan_list' %}">
+                                <i class="bi bi-bank"></i>
+                                ব্যাংক ঋণ ও অনাপত্তিপত্র
+                            </a>
+
+                            <!-- Sub-section 08 -->
+                            <div class="side-sub-group">
+                                <a href="{% url 'industrial_estate:transfer_list' %}">
+                                    <i class="bi bi-arrow-left-right"></i>
+                                    মালিকানা হস্তান্তর ও প্লট বাতিল
+                                </a>
+
+                                <div class="side-sub">
+                                    <a href="{% url 'industrial_estate:transfer_list' %}">
+                                        <i class="bi bi-person-lines-fill"></i>
+                                        মালিকানা/ইউনিট হস্তান্তর
+                                    </a>
+
+                                    <a href="{% url 'industrial_estate:industrial_unit_list' %}">
+                                        <i class="bi bi-file-earmark-text"></i>
+                                        প্লট বাতিল ও আপিল
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Sub-section 09 -->
+                            <a href="{% url 'industrial_estate:export_product_list' %}">
+                                <i class="bi bi-globe"></i>
+                                রপ্তানি ও আমদানি-সংক্রান্ত তথ্য
+                            </a>
+
+                            <!-- Sub-section 10 -->
+                            <a href="{% url 'industrial_estate:environment_create' %}">
+                                <i class="bi bi-tree"></i>
+                                পরিবেশ, সোলার ও বর্জ্য ব্যবস্থাপনা
+                            </a>
+
+                        </div>
                     </div>
                 <!-- <a href="#">প্লটের তথ্য</a>
                 <a href="#">কর্মসংস্থান</a>

@@ -1,7 +1,11 @@
 
 from django.urls import path
 from . import views
-
+from .views import (
+    UnitPlotAllocationListView,
+    UnitPlotAllocationCreateView,
+    UnitPlotAllocationUpdateView,
+)
 app_name = "industrial_estate"
 
 urlpatterns = [
@@ -28,11 +32,12 @@ urlpatterns = [
     path("units/add/", views.IndustrialUnitCreateView.as_view(), name="industrial_unit_create"),
     path("units/<int:pk>/", views.IndustrialUnitDetailView.as_view(), name="industrial_unit_detail"),
     path("units/<int:pk>/edit/", views.IndustrialUnitUpdateView.as_view(), name="industrial_unit_update"),
-
+    path("estate_reviews/", views.estate_review_queue, name="estate_review_queue"),
+    path("estate_reviews/<int:pk>/action/", views.estate_review_action,name="estate_review_action",),
     # Plot allocations
-    path("allocations/", views.AllocationListView.as_view(), name="allocation_list"),
-    path("allocations/add/", views.AllocationCreateView.as_view(), name="allocation_create"),
-    path("allocations/<int:pk>/edit/", views.AllocationUpdateView.as_view(), name="allocation_update"),
+    path("plot_allocations/", UnitPlotAllocationListView.as_view(), name="allocation_list"),
+    path("plot_allocations/add/", UnitPlotAllocationCreateView.as_view(), name="allocation_create"),
+    path("plot_allocations/<int:pk>/edit/", UnitPlotAllocationUpdateView.as_view(), name="allocation_update"),
 
     # Products
     path("products/", views.ProductListView.as_view(), name="product_list"),
@@ -76,4 +81,5 @@ urlpatterns = [
     path("environment/<int:pk>/edit/", views.EnvironmentalDataUpdateView.as_view(), name="environment_update"),
     path("utility-usage/add/", views.UtilityUsageCreateView.as_view(), name="utility_usage_create"),
     path("utility-usage/<int:pk>/edit/", views.UtilityUsageUpdateView.as_view(), name="utility_usage_update"),
+
 ]

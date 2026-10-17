@@ -1,175 +1,5 @@
-# from django import forms
-
-# from .models import IndustrialEstate, EstateLayoutRevisionDocument
-
-
-# class IndustrialEstateForm(forms.ModelForm):
-#     class Meta:
-#         model = IndustrialEstate
-#         fields = [
-#             "regional_office",
-#             "district",
-#             "upazila",
-#             "name",
-#             "officer_name",
-#             "officer_designation",
-#             "officer_mobile",
-#             "established_year",
-#             "total_land_acre",
-#             "allocatable_land_acre",
-#             "layout_approved",
-#             "layout_approval_date",
-#             "layout_file",
-#             "layout_revised",
-#             "layout_revision_date",
-#             "establishment_purpose",
-#         ]
-
-#         widgets = {
-#             "layout_approval_date": forms.DateInput(
-#                 attrs={
-#                     "type": "date",
-#                     "class": "form-control",
-#                 }
-#             ),
-#             "layout_revision_date": forms.DateInput(
-#                 attrs={
-#                     "type": "date",
-#                     "class": "form-control",
-#                 }
-#             ),
-#             "establishment_purpose": forms.Textarea(
-#                 attrs={
-#                     "rows": 3,
-#                     "class": "form-control",
-#                 }
-#             ),
-#         }
-
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-
-#         for name, field in self.fields.items():
-#             if name in [
-#                 "layout_approved",
-#                 "layout_revised",
-#             ]:
-#                 field.widget.attrs["class"] = "form-check-input"
-
-#             elif name in [
-#                 "regional_office",
-#                 "district",
-#                 "upazila",
-#                 "officer_designation",
-#             ]:
-#                 field.widget.attrs["class"] = "form-select"
-
-#             elif name not in [
-#                 "layout_approval_date",
-#                 "layout_revision_date",
-#                 "establishment_purpose",
-#             ]:
-#                 field.widget.attrs["class"] = "form-control"
-
-#         self.fields["layout_file"].help_text = (
-#             "শুধুমাত্র PDF ফাইল আপলোড করুন।"
-#         )
-
-#     def clean(self):
-#         cleaned = super().clean()
-
-#         total = cleaned.get("total_land_acre")
-#         allocatable = cleaned.get("allocatable_land_acre")
-
-#         # বরাদ্দযোগ্য জমি মোট জমির চেয়ে বেশি হতে পারবে না
-#         if (
-#             total is not None
-#             and allocatable is not None
-#             and allocatable > total
-#         ):
-#             self.add_error(
-#                 "allocatable_land_acre",
-#                 "বরাদ্দযোগ্য জমি মোট জমির চেয়ে বেশি হতে পারবে না।",
-#             )
-
-#         # লে-আউট অনুমোদিত হলে অনুমোদনের তারিখ দিতে হবে
-#         if (
-#             cleaned.get("layout_approved")
-#             and not cleaned.get("layout_approval_date")
-#         ):
-#             self.add_error(
-#                 "layout_approval_date",
-#                 "অনুমোদিত হলে অনুমোদনের তারিখ দিন।",
-#             )
-
-#         # লে-আউট সংশোধিত হলে সংশোধনের তারিখ দিতে হবে
-#         if (
-#             cleaned.get("layout_revised")
-#             and not cleaned.get("layout_revision_date")
-#         ):
-#             self.add_error(
-#                 "layout_revision_date",
-#                 "লে-আউট সংশোধন হলে সংশোধনের তারিখ দিন।",
-#             )
-
-#         # শুধু PDF ফাইল গ্রহণযোগ্য
-#         upload = cleaned.get("layout_file")
-
-#         if upload and not upload.name.lower().endswith(".pdf"):
-#             self.add_error(
-#                 "layout_file",
-#                 "শুধুমাত্র PDF ফাইল গ্রহণযোগ্য।",
-#             )
-
-#         # উপজেলা অবশ্যই নির্বাচিত জেলার অন্তর্ভুক্ত হতে হবে
-#         upazila = cleaned.get("upazila")
-#         district = cleaned.get("district")
-
-#         if (
-#             upazila
-#             and district
-#             and upazila.district_id != district.id
-#         ):
-#             self.add_error(
-#                 "upazila",
-#                 "নির্বাচিত উপজেলা নির্বাচিত জেলার অন্তর্ভুক্ত নয়।",
-#             )
-
-#         return cleaned
-
-
-# class EstateLayoutRevisionDocumentForm(forms.ModelForm):
-#     class Meta:
-#         model = EstateLayoutRevisionDocument
-#         fields = ["title", "file", "approval_date"]
-
-#         widgets = {
-#             "approval_date": forms.DateInput(
-#                 attrs={
-#                     "type": "date",
-#                     "class": "form-control",
-#                 }
-#             ),
-#         }
-
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-
-#         for field in self.fields.values():
-#             field.widget.attrs.setdefault(
-#                 "class",
-#                 "form-control",
-#             )
-
-#     def clean_file(self):
-#         file = self.cleaned_data["file"]
-
-#         if file and not file.name.lower().endswith(".pdf"):
-#             raise forms.ValidationError(
-#                 "শুধুমাত্র PDF ফাইল গ্রহণযোগ্য।"
-#             )
-
-#         return file
+from django import forms
+from .models import IndustrialUnit, UnitProduct
 from django import forms
 from django.core.exceptions import ValidationError
 from django import forms
@@ -743,7 +573,22 @@ class UnitPlotAllocationForm(BootstrapModelForm):
             "comments": forms.Textarea(attrs={"rows": 2}),
         }
 
-
+class IndustrialUnitProductionForm(forms.ModelForm):
+    class Meta:
+        model = IndustrialUnit
+        fields = [
+            "factory_layout_approval_date",
+            "factory_layout_plan",
+            "production_start_date",
+        ]
+        widgets = {
+            "factory_layout_approval_date": forms.DateInput(
+                attrs={"type": "date"}
+            ),
+            "production_start_date": forms.DateInput(
+                attrs={"type": "date"}
+            ),
+        }
 class UnitProductForm(BootstrapModelForm):
     class Meta:
         model = UnitProduct

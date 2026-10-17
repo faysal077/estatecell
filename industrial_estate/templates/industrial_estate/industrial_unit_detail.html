@@ -1,62 +1,560 @@
-
 {% extends "industrial_estate/base.html" %}
+
+{% block title %}{{ unit.name }} - শিল্প ইউনিটের বিস্তারিত{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-3">
-  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
-    <div><h4>{{ unit.name }}</h4><p class="text-muted mb-0">ইউনিট কোড: {{ unit.unit_code }}</p></div>
-    <a href="{% url 'industrial_estate:industrial_unit_update' unit.pk %}" class="btn btn-primary"><i class="bi bi-pencil"></i> সম্পাদনা</a>
-  </div>
 
-  <div class="row g-3 mb-3">
-    <div class="col-md-3"><div class="card border-0 shadow-sm h-100"><div class="card-body"><small class="text-muted">শিল্পনগরী</small><h5>{{ unit.estate.name }}</h5></div></div></div>
-    <div class="col-md-3"><div class="card border-0 shadow-sm h-100"><div class="card-body"><small class="text-muted">কার্যক্রমের অবস্থা</small><h5>{{ unit.get_operational_status_display }}</h5></div></div></div>
-    <div class="col-md-3"><div class="card border-0 shadow-sm h-100"><div class="card-body"><small class="text-muted">মোট কর্মসংস্থান</small><h5>{{ unit.total_employment }}</h5></div></div></div>
-    <div class="col-md-3"><div class="card border-0 shadow-sm h-100"><div class="card-body"><small class="text-muted">বরাদ্দকৃত আয়তন (বর্গফুট)</small><h5>{{ unit.total_allocated_area_sqft }}</h5></div></div></div>
-  </div>
-
-  <div class="card border-0 shadow-sm mb-3">
-    <div class="card-header bg-white fw-semibold">সাধারণ পরিচিতি</div>
-    <div class="card-body"><div class="row g-3">
-      <div class="col-md-6"><strong>মালিক:</strong> {{ unit.owner_name|default_if_none:"—" }}</div>
-      <div class="col-md-6"><strong>মালিকের মোবাইল:</strong> {{ unit.owner_phone|default_if_none:"—" }}</div>
-      <div class="col-md-6"><strong>প্রতিনিধি:</strong> {{ unit.representative_name|default_if_none:"—" }}</div>
-      <div class="col-md-6"><strong>প্রতিনিধির মোবাইল:</strong> {{ unit.representative_phone|default_if_none:"—" }}</div>
-      <div class="col-md-6"><strong>মালিকানার ধরন:</strong> {{ unit.get_ownership_type_display }}</div>
-      <div class="col-md-6"><strong>শিল্পের আকার:</strong> {{ unit.get_industry_size_display }}</div>
-      <div class="col-md-6"><strong>উৎপাদন খাত:</strong> {{ unit.production_sector }}</div>
-      <div class="col-md-6"><strong>উপখাত:</strong> {{ unit.subsector|default_if_none:"—" }}</div>
-      <div class="col-md-6"><strong>উৎপাদন শুরুর তারিখ:</strong> {{ unit.production_start_date|default_if_none:"—" }}</div>
-      <div class="col-md-6"><strong>কারখানার নকশা অনুমোদনের তারিখ:</strong> {{ unit.factory_layout_approval_date|default_if_none:"—" }}</div>
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+        <div>
+            <h4 class="mb-1">{{ unit.name }}</h4>
+            <p class="text-muted mb-0">
+                ইউনিট কোড: {{ unit.unit_code|default:"—" }}
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'industrial_estate:industrial_unit_update' unit.pk %}"
+               class="btn btn-primary">
+                <i class="bi bi-pencil-square"></i> সম্পাদনা
+            </a>
+            <a href="{% url 'industrial_estate:industrial_unit_list' %}"
+               class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> তালিকায় ফিরুন
+            </a>
+        </div>
     </div>
-    {% if unit.factory_layout_file %}<a href="{{ unit.factory_layout_file.url }}" target="_blank" rel="noopener">কারখানার নকশা দেখুন</a>{% endif %}
-  </div>
 
-  <div class="card border-0 shadow-sm mb-3">
-    <div class="card-header bg-white fw-semibold">ফ্লোর স্পেস ভাড়া</div>
-    <div class="card-body">
-      <p><strong>ভাড়া দেওয়া হয়:</strong> {% if unit.has_floor_rental %}হ্যাঁ{% else %}না{% endif %}</p>
-      {% if unit.has_floor_rental %}
-      <p><strong>ভাড়াটিয়ার নাম:</strong> {{ unit.tenant_name|default_if_none:"—" }}</p>
-      <p><strong>ভাড়ার মেয়াদ:</strong> {{ unit.rental_start_date|default_if_none:"—" }} থেকে {{ unit.rental_end_date|default_if_none:"—" }}</p>
-      <p><strong>বার্ষিক ভাড়া:</strong> {{ unit.annual_rent_received|default_if_none:"—" }}</p>
-      {% if unit.rental_agreement_file %}<a href="{{ unit.rental_agreement_file.url }}" target="_blank" rel="noopener">ভাড়ার চুক্তি দেখুন</a>{% endif %}
-      {% endif %}
-    </div>
-  </div>
+    <!-- Summary Cards -->
+    <div class="row g-3 mb-4">
 
-  <div class="card border-0 shadow-sm">
-    <div class="card-header bg-white fw-semibold">সংশ্লিষ্ট তথ্য ব্যবস্থাপনা</div>
-    <div class="card-body d-flex flex-wrap gap-2">
-      <a class="btn btn-outline-primary" href="{% url 'industrial_estate:allocation_list' %}">প্লট বরাদ্দ</a>
-      <a class="btn btn-outline-primary" href="{% url 'industrial_estate:product_list' %}">উৎপাদিত পণ্য</a>
-      <a class="btn btn-outline-primary" href="{% url 'industrial_estate:employment_list' %}">কর্মসংস্থান</a>
-      <a class="btn btn-outline-primary" href="{% url 'industrial_estate:receivable_list' %}">মাসিক পাওনা</a>
-      <a class="btn btn-outline-primary" href="{% url 'industrial_estate:bank_loan_list' %}">ব্যাংক ঋণ</a>
-      <a class="btn btn-outline-primary" href="{% url 'industrial_estate:transfer_list' %}">মালিকানা/ইউনিট স্থানান্তর</a>
-      <a class="btn btn-outline-primary" href="{% url 'industrial_estate:export_product_list' %}">রপ্তানি পণ্য</a>
-      <a class="btn btn-outline-primary" href="{% url 'industrial_estate:environment_create' %}">পরিবেশ ও ইউটিলিটি তথ্য</a>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <small class="text-muted">শিল্পনগরী</small>
+                    <h5 class="mt-2 mb-0">
+                        {{ unit.estate.name|default:"—" }}
+                    </h5>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <small class="text-muted">কার্যক্রমের অবস্থা</small>
+                    <h5 class="mt-2 mb-0">
+                        {{ unit.get_operational_status_display|default:"—" }}
+                    </h5>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <small class="text-muted">মোট কর্মসংস্থান</small>
+                    <h5 class="mt-2 mb-0">
+                        {{ unit.total_employment|default:"0" }}
+                    </h5>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <small class="text-muted">বরাদ্দকৃত আয়তন (বর্গফুট)</small>
+                    <h5 class="mt-2 mb-0">
+                        {{ unit.total_allocated_area_sqft|default:"0" }}
+                    </h5>
+                </div>
+            </div>
+        </div>
+
     </div>
-  </div>
+
+    <!-- General Information -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white fw-semibold">
+            <i class="bi bi-building me-2"></i>
+            সাধারণ পরিচিতি
+        </div>
+
+        <div class="card-body">
+            <div class="row g-3">
+
+                <div class="col-md-6">
+                    <strong>শিল্প ইউনিটের নাম:</strong>
+                    {{ unit.name|default:"—" }}
+                </div>
+
+                <div class="col-md-6">
+                    <strong>ইউনিট কোড:</strong>
+                    {{ unit.unit_code|default:"—" }}
+                </div>
+
+                <div class="col-md-6">
+                    <strong>মালিকের নাম:</strong>
+                    {{ unit.owner_name|default:"—" }}
+                </div>
+
+                <div class="col-md-6">
+                    <strong>মালিকের মোবাইল:</strong>
+                    {{ unit.owner_phone|default:"—" }}
+                </div>
+
+                <div class="col-md-6">
+                    <strong>প্রতিনিধির নাম:</strong>
+                    {{ unit.representative_name|default:"—" }}
+                </div>
+
+                <div class="col-md-6">
+                    <strong>প্রতিনিধির মোবাইল:</strong>
+                    {{ unit.representative_phone|default:"—" }}
+                </div>
+
+                <div class="col-md-6">
+                    <strong>মালিকানার ধরন:</strong>
+                    {{ unit.get_ownership_type_display|default:"—" }}
+                </div>
+
+                <div class="col-md-6">
+                    <strong>শিল্পের আকার:</strong>
+                    {{ unit.get_industry_size_display|default:"—" }}
+                </div>
+
+                <div class="col-md-6">
+                    <strong>উৎপাদন খাত:</strong>
+                    {{ unit.production_sector|default:"—" }}
+                </div>
+
+                <div class="col-md-6">
+                    <strong>উৎপাদনের উপখাত:</strong>
+                    {{ unit.production_subsector|default:"—" }}
+                </div>
+
+                <div class="col-md-6">
+                    <strong>উৎপাদন শুরুর তারিখ:</strong>
+                    {{ unit.production_start_date|default:"—" }}
+                </div>
+
+                <div class="col-md-6">
+                    <strong>কারখানার নকশা অনুমোদনের তারিখ:</strong>
+                    {{ unit.factory_layout_approval_date|default:"—" }}
+                </div>
+
+                <div class="col-md-6">
+                    <strong>রপ্তানিমুখী শিল্প:</strong>
+                    {% if unit.is_export_oriented %}
+                        <span class="badge bg-success">হ্যাঁ</span>
+                    {% else %}
+                        <span class="badge bg-secondary">না</span>
+                    {% endif %}
+                </div>
+
+                {% if unit.comments %}
+                <div class="col-12">
+                    <strong>মন্তব্য:</strong>
+                    {{ unit.comments }}
+                </div>
+                {% endif %}
+
+            </div>
+
+            {% if unit.factory_layout_file %}
+                <hr>
+                <a href="{{ unit.factory_layout_file.url }}"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-file-earmark-pdf"></i>
+                    কারখানার নকশা দেখুন
+                </a>
+            {% elif unit.factory_layout_plan %}
+                <hr>
+                <a href="{{ unit.factory_layout_plan.url }}"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-file-earmark-pdf"></i>
+                    কারখানার নকশা দেখুন
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Section 05: Floor Space Rental -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white fw-semibold">
+            <i class="bi bi-building-check me-2"></i>
+            Section 05: ফ্লোর স্পেস ভাড়া
+        </div>
+
+        <div class="card-body">
+            <div class="row g-3">
+
+                <div class="col-md-6">
+                    <strong>ফ্লোর স্পেস ভাড়া দেওয়া হয়:</strong>
+                    {% if unit.has_floor_rental %}
+                        <span class="badge bg-success">হ্যাঁ</span>
+                    {% else %}
+                        <span class="badge bg-secondary">না</span>
+                    {% endif %}
+                </div>
+
+                {% if unit.has_floor_rental %}
+
+                    <div class="col-md-6">
+                        <strong>ভাড়াটিয়ার নাম:</strong>
+                        {{ unit.tenant_name|default:"—" }}
+                    </div>
+
+                    <div class="col-md-6">
+                        <strong>ভাড়া শুরুর তারিখ:</strong>
+                        {{ unit.rental_start_date|default:"—" }}
+                    </div>
+
+                    <div class="col-md-6">
+                        <strong>ভাড়া শেষ হওয়ার তারিখ:</strong>
+                        {{ unit.rental_end_date|default:"—" }}
+                    </div>
+
+                    <div class="col-md-6">
+                        <strong>বার্ষিক ভাড়া:</strong>
+                        {{ unit.annual_rent_received|default:"—" }}
+                    </div>
+
+                    {% if unit.rental_comments %}
+                    <div class="col-12">
+                        <strong>ভাড়া সংক্রান্ত মন্তব্য:</strong>
+                        {{ unit.rental_comments }}
+                    </div>
+                    {% endif %}
+
+                    {% if unit.rental_agreement %}
+                    <div class="col-12">
+                        <a href="{{ unit.rental_agreement.url }}"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-file-earmark-pdf"></i>
+                            ভাড়ার চুক্তিপত্র দেখুন
+                        </a>
+                    </div>
+                    {% endif %}
+
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 08: Plot Cancellation and Appeal -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white fw-semibold">
+            <i class="bi bi-file-earmark-text me-2"></i>
+            Section 08: প্লট বাতিল ও আপিল সংক্রান্ত তথ্য
+        </div>
+
+        <div class="card-body">
+
+            {% with appeals=unit.cancellation_appeals.all %}
+                {% if appeals %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover align-middle mb-0">
+
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ক্রমিক</th>
+                                    <th>প্লট</th>
+                                    <th>বাতিলের তারিখ</th>
+                                    <th>বাতিলের কারণ</th>
+                                    <th>দাপ্তরিক ব্যবস্থা</th>
+                                    <th>আপিল</th>
+                                    <th>আপিলের তারিখ</th>
+                                    <th>সর্বশেষ অবস্থা</th>
+                                    <th>নথি</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                {% for appeal in appeals %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+
+                                    <td>
+                                        {{ appeal.plot|default:"—" }}
+                                    </td>
+
+                                    <td>
+                                        {{ appeal.cancellation_date|default:"—" }}
+                                    </td>
+
+                                    <td>
+                                        {{ appeal.cancellation_reason|default:"—" }}
+                                    </td>
+
+                                    <td>
+                                        {{ appeal.office_action|default:"—" }}
+                                    </td>
+
+                                    <td>
+                                        {% if appeal.appeal_filed %}
+                                            <span class="badge bg-success">হ্যাঁ</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">না</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td>
+                                        {{ appeal.appeal_date|default:"—" }}
+                                    </td>
+
+                                    <td>
+                                        {{ appeal.latest_status|default:"—" }}
+                                    </td>
+
+                                    <td>
+                                        {% if appeal.document %}
+                                            <a href="{{ appeal.document.url }}"
+                                               target="_blank"
+                                               rel="noopener noreferrer"
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-file-earmark-pdf"></i>
+                                                দেখুন
+                                            </a>
+                                        {% else %}
+                                            —
+                                        {% endif %}
+                                    </td>
+                                </tr>
+
+                                {% if appeal.appeal_details %}
+                                <tr>
+                                    <td colspan="9">
+                                        <strong>আপিলের বিস্তারিত:</strong>
+                                        {{ appeal.appeal_details }}
+                                    </td>
+                                </tr>
+                                {% endif %}
+
+                                {% endfor %}
+                            </tbody>
+
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-muted py-2">
+                        এই শিল্প ইউনিটের জন্য প্লট বাতিল বা আপিলের কোনো তথ্য পাওয়া যায়নি।
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <div class="mt-3">
+                <a href="{% url 'industrial_estate:receivable_list' %}"
+                   class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-info-circle"></i>
+                    সংশ্লিষ্ট তথ্য ব্যবস্থাপনা
+                </a>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Section 10A: Environment and Waste Management -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white fw-semibold">
+            <i class="bi bi-tree me-2"></i>
+            Section 10A: পরিবেশ ও বর্জ্য ব্যবস্থাপনা
+        </div>
+
+        <div class="card-body">
+
+            {% with env=unit.environmental_data %}
+                {% if env %}
+
+                    <div class="row g-3">
+
+                        <div class="col-md-6">
+                            <strong>সৌরবিদ্যুৎ ব্যবস্থা:</strong>
+                            {% if env.has_solar_power %}
+                                <span class="badge bg-success">আছে</span>
+                            {% else %}
+                                <span class="badge bg-secondary">নেই</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <strong>ETP ব্যবস্থা:</strong>
+                            {% if env.has_etp %}
+                                <span class="badge bg-success">আছে</span>
+                            {% else %}
+                                <span class="badge bg-secondary">নেই</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <strong>বর্জ্য ব্যবস্থাপনা:</strong>
+                            {{ env.waste_management|default:"—" }}
+                        </div>
+
+                        <div class="col-md-6">
+                            <strong>পরিবেশ সংক্রান্ত মন্তব্য:</strong>
+                            {{ env.comments|default:"—" }}
+                        </div>
+
+                    </div>
+
+                {% else %}
+                    <div class="text-muted py-2">
+                        পরিবেশ ও বর্জ্য ব্যবস্থাপনার তথ্য এখনো যোগ করা হয়নি।
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <div class="mt-3">
+                <a href="{% url 'industrial_estate:environment_create' %}"
+                   class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-pencil-square"></i>
+                    পরিবেশ ও ইউটিলিটি তথ্য ব্যবস্থাপনা
+                </a>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Section 10B: Utility Usage -->exit()
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white fw-semibold">
+            <i class="bi bi-lightning-charge me-2"></i>
+            Section 10B: ইউটিলিটি ব্যবহার সংক্রান্ত তথ্য
+        </div>
+
+        <div class="card-body">
+
+            {% with env=unit.environmental_data %}
+                {% if env %}
+
+                    {% with utilities=env.utility_usages.all %}
+                        {% if utilities %}
+
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover align-middle mb-0">
+
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>ক্রমিক</th>
+                                            <th>ইউটিলিটির ধরন</th>
+                                            <th>সময়কাল</th>
+                                            <th>বছর</th>
+                                            <th>মাস</th>
+                                            <th>ব্যবহারের পরিমাণ</th>
+                                            <th>একক</th>
+                                            <th>বিলের পরিমাণ</th>
+                                            <th>মন্তব্য</th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody>
+                                        {% for utility in utilities %}
+                                        <tr>
+                                            <td>{{ forloop.counter }}</td>
+                                            <td>
+                                                {{ utility.get_utility_type_display|default:utility.utility_type|default:"—" }}
+                                            </td>
+                                            <td>
+                                                {{ utility.get_period_type_display|default:utility.period_type|default:"—" }}
+                                            </td>
+                                            <td>{{ utility.year|default:"—" }}</td>
+                                            <td>{{ utility.month|default:"—" }}</td>
+                                            <td>{{ utility.quantity|default:"—" }}</td>
+                                            <td>{{ utility.unit|default:"—" }}</td>
+                                            <td>{{ utility.bill_amount|default:"—" }}</td>
+                                            <td>{{ utility.comments|default:"—" }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+
+                                </table>
+                            </div>
+
+                        {% else %}
+                            <div class="text-muted py-2">
+                                ইউটিলিটি ব্যবহারের কোনো তথ্য যোগ করা হয়নি।
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+
+                {% else %}
+                    <div class="text-muted py-2">
+                        প্রথমে পরিবেশ ও ইউটিলিটি তথ্য তৈরি করতে হবে।
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <div class="mt-3">
+                <a href="{% url 'industrial_estate:environment_create' %}"
+                   class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-plus-circle"></i>
+                    ইউটিলিটি তথ্য যোগ/সম্পাদনা
+                </a>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Related Information Management -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white fw-semibold">
+            <i class="bi bi-grid me-2"></i>
+            সংশ্লিষ্ট তথ্য ব্যবস্থাপনা
+        </div>
+
+        <div class="card-body d-flex flex-wrap gap-2">
+
+            <a class="btn btn-outline-primary"
+               href="{% url 'industrial_estate:allocation_list' %}">
+                <i class="bi bi-grid-3x3"></i> প্লট বরাদ্দ
+            </a>
+
+            <a class="btn btn-outline-primary"
+               href="{% url 'industrial_estate:product_list' %}">
+                <i class="bi bi-box-seam"></i> উৎপাদিত পণ্য
+            </a>
+
+            <a class="btn btn-outline-primary"
+               href="{% url 'industrial_estate:employment_list' %}">
+                <i class="bi bi-people"></i> কর্মসংস্থান
+            </a>
+
+            <a class="btn btn-outline-primary"
+               href="{% url 'industrial_estate:receivable_list' %}">
+                <i class="bi bi-cash-stack"></i> মাসিক পাওনা
+            </a>
+
+            <a class="btn btn-outline-primary"
+               href="{% url 'industrial_estate:bank_loan_list' %}">
+                <i class="bi bi-bank"></i> ব্যাংক ঋণ
+            </a>
+
+            <a class="btn btn-outline-primary"
+               href="{% url 'industrial_estate:transfer_list' %}">
+                <i class="bi bi-arrow-left-right"></i> মালিকানা/ইউনিট স্থানান্তর
+            </a>
+
+            <a class="btn btn-outline-primary"
+               href="{% url 'industrial_estate:export_product_list' %}">
+                <i class="bi bi-box-arrow-up-right"></i> রপ্তানি পণ্য
+            </a>
+
+            <a class="btn btn-outline-primary"
+               href="{% url 'industrial_estate:environment_create' %}">
+                <i class="bi bi-tree"></i> পরিবেশ ও ইউটিলিটি তথ্য
+            </a>
+
+        </div>
+    </div>
+
 </div>
 {% endblock %}

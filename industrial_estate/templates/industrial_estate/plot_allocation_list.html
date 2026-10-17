@@ -1,0 +1,137 @@
+
+{% extends "industrial_estate/base.html" %}
+
+{% block title %}প্লট বরাদ্দ ও দখল{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+        <div>
+            <h4 class="mb-1">
+                <i class="bi bi-grid-3x3-gap me-2"></i>
+                প্লট বরাদ্দ ও দখল
+            </h4>
+            <p class="text-muted mb-0">
+                সাব-সেকশন ০২: শিল্প ইউনিটের প্লট বরাদ্দের তথ্য
+            </p>
+        </div>
+
+        <a href="{% url 'industrial_estate:allocation_create' %}"
+           class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>
+            নতুন বরাদ্দ যোগ করুন
+        </a>
+    </div>
+
+    <!-- Summary -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">মোট বরাদ্দ রেকর্ড</div>
+                    <h4 class="mt-2 mb-0">{{ allocations|length }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Allocation Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3">
+            <h6 class="mb-0 fw-semibold">
+                <i class="bi bi-list-ul me-2"></i>
+                বরাদ্দের তালিকা
+            </h6>
+        </div>
+
+        <div class="card-body">
+
+            {% if allocations %}
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ক্রমিক</th>
+                            <th>শিল্প ইউনিট</th>
+                            <th>প্লট</th>
+                            <th>বরাদ্দের তারিখ</th>
+                            <th>বরাদ্দকৃত আয়তন</th>
+                            <th>দখলের অবস্থা</th>
+                            <th class="text-center">কার্যক্রম</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for allocation in allocations %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+
+                            <td>
+                                {{ allocation.industrial_unit.name|default:"—" }}
+                            </td>
+
+                            <td>
+                                {{ allocation.plot|default:"—" }}
+                            </td>
+
+                            <td>
+                                {{ allocation.allocation_date|default:"—" }}
+                            </td>
+
+                            <td>
+                                {{ allocation.allocated_area|default:"—" }}
+                            </td>
+
+                            <td>
+                                {% if allocation.possession_status %}
+                                    {{ allocation.get_possession_status_display|default:allocation.possession_status }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+
+                            <td class="text-center">
+                                <div class="d-flex justify-content-center gap-1 flex-wrap">
+                                    <a href="{% url 'industrial_estate:allocation_update' allocation.pk %}"
+                                       class="btn btn-sm btn-outline-primary"
+                                       title="সম্পাদনা">
+                                        <i class="bi bi-pencil-square"></i>
+                                        সম্পাদনা
+                                    </a>
+
+                                    <a href="{% url 'industrial_estate:allocation_delete' allocation.pk %}"
+                                       class="btn btn-sm btn-outline-danger"
+                                       title="মুছে ফেলুন">
+                                        <i class="bi bi-trash"></i>
+                                        মুছুন
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-inbox display-5 text-muted"></i>
+                <h6 class="mt-3">কোনো প্লট বরাদ্দের তথ্য পাওয়া যায়নি</h6>
+                <p class="text-muted mb-3">
+                    নতুন বরাদ্দের তথ্য যোগ করে শুরু করুন।
+                </p>
+                <a href="{% url 'industrial_estate:allocation_create' %}"
+                   class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-1"></i>
+                    নতুন বরাদ্দ যোগ করুন
+                </a>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+</div>
+{% endblock %}

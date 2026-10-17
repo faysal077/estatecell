@@ -749,3 +749,50 @@ textarea.form-control {
         padding: 0.6rem;
     }
 }
+/* Industrial Unit Form */
+.page-wrap form input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+.page-wrap form select,
+.page-wrap form textarea {
+    display: block;
+    width: 100%;
+    padding: 0.625rem 0.75rem;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: #212529;
+    background-color: #fff;
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    transition: border-color 0.15s ease-in-out,
+                box-shadow 0.15s ease-in-out;
+}
+
+.page-wrap form input:focus,
+.page-wrap form select:focus,
+.page-wrap form textarea:focus {
+    border-color: #86b7fe;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+
+.page-wrap form input[type="checkbox"],
+.page-wrap form input[type="radio"] {
+    margin-right: 0.4rem;
+}
+
+.page-wrap form input[type="file"] {
+    padding: 0.4rem;
+}
+
+.page-wrap form .form-label {
+    margin-bottom: 0.45rem;
+    color: #344054;
+}
+
+.page-wrap form .text-danger {
+    font-size: 0.85rem;
+}
+
+.page-wrap form textarea {
+    min-height: 100px;
+    resize: vertical;
+}

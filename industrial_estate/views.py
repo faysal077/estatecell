@@ -11,6 +11,29 @@ from django.views.generic import (
     DetailView,
     UpdateView,
 )
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
+from django.db.models import Q
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_http_methods
+
+from .models import IndustrialUnit, UnitProduct
+from .forms import (
+    IndustrialUnitProductionForm,
+    UnitProductForm,
+)
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import PermissionDenied
+from django.db.models import Q
+from django.shortcuts import get_object_or_404
+from django.urls import reverse
+from django.views.generic import ListView, CreateView, UpdateView
+from .models import UnitPlotAllocation, IndustrialEstate, Plot
+from .forms import UnitPlotAllocationForm
+from .models import UtilityUsage
+from .models import IndustrialEstate, IndustrialUnit
 from django.db.models import Count, Sum, Q
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.shortcuts import get_object_or_404
@@ -69,7 +92,22 @@ from django.shortcuts import get_object_or_404
 from accounts.models import UserRole
 from .models import IndustrialEstate, Plot
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
+from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
+from django.db.models import Q
+from django.shortcuts import get_object_or_404
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import ListView, DetailView, CreateView, UpdateView
+from django.urls import reverse
+from django.contrib import messages
 
+from accounts.models import UserRole
+from .models import (
+    IndustrialEstate,
+    IndustrialUnit,
+    Plot,
+    UnitProduct,
+    EstateReview,
+)
 
 def get_user_profile(user):
     if not user.is_authenticated:
@@ -131,6 +169,15 @@ def get_accessible_estates(user):
         return profile.assigned_estates.all()
 
     return IndustrialEstate.objects.none()
+
+def get_accessible_units(user):
+    """
+    Return only industrial units belonging to estates
+    accessible to the logged-in user.
+    """
+    return IndustrialUnit.objects.filter(
+        estate__in=get_accessible_estates(user)
+    )
 
 def get_user_role(user):
     return get_user_profile(user).role
@@ -544,15 +591,15 @@ class PlotUpdateView(LoginRequiredMixin, UpdateView):
 # Industrial unit pages
 # =========================================================
 
-class IndustrialUnitListView(ProtectedListView):
+class IndustrialUnitListView(LoginRequiredMixin, ListView):
     model = IndustrialUnit
     template_name = "industrial_estate/industrial_unit_list.html"
     context_object_name = "units"
 
     def get_queryset(self):
-        queryset = IndustrialUnit.objects.select_related("estate").order_by(
-            "estate__name", "name"
-        )
+        queryset = get_accessible_units(
+            self.request.user
+        ).select_related("estate").order_by("estate__name", "name")
 
         estate_pk = self.request.GET.get("estate")
         if estate_pk:
@@ -560,7 +607,6 @@ class IndustrialUnitListView(ProtectedListView):
 
         search = self.request.GET.get("q")
         if search:
-            from django.db.models import Q
             queryset = queryset.filter(
                 Q(name__icontains=search)
                 | Q(unit_code__icontains=search)
@@ -570,13 +616,15 @@ class IndustrialUnitListView(ProtectedListView):
         return queryset
 
 
-class IndustrialUnitDetailView(ProtectedDetailView):
+class IndustrialUnitDetailView(LoginRequiredMixin, DetailView):
     model = IndustrialUnit
     template_name = "industrial_estate/industrial_unit_detail.html"
     context_object_name = "unit"
 
     def get_queryset(self):
-        return IndustrialUnit.objects.select_related("estate").prefetch_related(
+        return get_accessible_units(
+            self.request.user
+        ).select_related("estate").prefetch_related(
             "plot_allocations__plot",
             "products",
             "employment_records",
@@ -586,18 +634,86 @@ class IndustrialUnitDetailView(ProtectedDetailView):
             "export_products",
         )
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        unit = self.object
+
+        # Section 01: General information
+        context["section_01_unit"] = unit
+
+        # Section 02: Plot allocation and possession
+        context["section_02_allocations"] = unit.plot_allocations.all()
+
+        # Section 03: Products
+        context["section_03_products"] = unit.products.all()
+
+        # Section 04: Employment
+        context["section_04_employment"] = unit.employment_records.all()
+
+        # Section 05: Floor-space rent
+        # Actual model relationship is not yet confirmed.
+        context["section_05_floor_rent"] = []
+
+        # Section 06: Accounts and receivables
+        context["section_06_receivables"] = unit.monthly_accounts.all()
+
+        # Section 07: Bank loans
+        context["section_07_bank_loans"] = unit.bank_loans.all()
+
+        # Section 08: Transfers
+        context["section_08_transfers"] = unit.transfers.all()
+
+        # Section 09: Exports
+        context["section_09_exports"] = unit.export_products.all()
+
+        # Section 08: Cancellation and appeals
+        context["section_08_cancellation_appeals"] = Plot.objects.filter(
+            estate=unit.estate
+        )
+
+        # Section 10: Environmental data
+        context["section_10_environmental_data"] = []
+
+        # Section 10: Utility usage
+        context["section_10_utility_usage"] = []
+
+        context["can_edit"] = (
+            get_user_profile(self.request.user).role != UserRole.VIEWER
+        )
+
+        return context
+
 
 class IndustrialUnitCreateView(LoginRequiredMixin, CreateView):
     model = IndustrialUnit
     form_class = IndustrialUnitForm
-    template_name = "industrial_estate/record_form.html"
+    template_name = "industrial_estate/industrial_unit_form.html"
 
-    def get_initial(self):
-        initial = super().get_initial()
-        estate_pk = self.request.GET.get("estate")
-        if estate_pk:
-            initial["estate"] = estate_pk
-        return initial
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        profile = get_user_profile(self.request.user)
+
+        form.fields["estate"].queryset = get_accessible_estates(
+            self.request.user
+        )
+
+        if profile.role == UserRole.ESTATE_OFFICER:
+            estates = get_accessible_estates(self.request.user)
+            if estates.count() != 1:
+                raise PermissionDenied(
+                    "আপনার নামে একটি শিল্পনগরী নিশ্চিত করুন।"
+                )
+
+            estate = estates.first()
+            form.fields["estate"].initial = estate.pk
+            form.fields["estate"].disabled = True
+
+        return form
+
+    def form_valid(self, form):
+        require_write_access(self.request.user)
+        messages.success(self.request, "শিল্প ইউনিটের তথ্য সংরক্ষণ হয়েছে।")
+        return super().form_valid(form)
 
     def get_success_url(self):
         return reverse(
@@ -609,7 +725,26 @@ class IndustrialUnitCreateView(LoginRequiredMixin, CreateView):
 class IndustrialUnitUpdateView(LoginRequiredMixin, UpdateView):
     model = IndustrialUnit
     form_class = IndustrialUnitForm
-    template_name = "industrial_estate/record_form.html"
+    template_name = "industrial_estate/industrial_unit_form.html"
+
+    def get_queryset(self):
+        return get_accessible_units(self.request.user)
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fields["estate"].queryset = get_accessible_estates(
+            self.request.user
+        )
+
+        if get_user_profile(self.request.user).role == UserRole.ESTATE_OFFICER:
+            form.fields["estate"].disabled = True
+
+        return form
+
+    def form_valid(self, form):
+        require_write_access(self.request.user)
+        messages.success(self.request, "শিল্প ইউনিটের তথ্য হালনাগাদ হয়েছে।")
+        return super().form_valid(form)
 
     def get_success_url(self):
         return reverse(
@@ -617,60 +752,95 @@ class IndustrialUnitUpdateView(LoginRequiredMixin, UpdateView):
             kwargs={"pk": self.object.pk},
         )
 
-
 # =========================================================
 # Reusable record CRUD views for related models
 # =========================================================
+
+class UnitRelatedListView(LoginRequiredMixin, ListView):
+    template_name = "industrial_estate/related_record_list.html"
+    context_object_name = "records"
+    unit_lookup = "industrial_unit"
+
+    def get_queryset(self):
+        unit_pk = self.request.GET.get("unit")
+        queryset = self.model.objects.filter(
+            **{
+                f"{self.unit_lookup}__estate__in":
+                    get_accessible_estates(self.request.user)
+            }
+        )
+
+        if unit_pk:
+            queryset = queryset.filter(
+                **{f"{self.unit_lookup}_id": unit_pk}
+            )
+
+        return queryset
+
 
 class UnitRelatedCreateView(LoginRequiredMixin, CreateView):
     template_name = "industrial_estate/record_form.html"
     unit_field = "industrial_unit"
 
-    def get_initial(self):
-        initial = super().get_initial()
-        unit_pk = self.request.GET.get("unit")
-        if unit_pk:
-            initial[self.unit_field] = unit_pk
-        return initial
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        unit_field = form.fields.get(self.unit_field)
+
+        if unit_field:
+            unit_field.queryset = get_accessible_units(self.request.user)
+
+            unit_pk = self.request.GET.get("unit")
+            if unit_pk:
+                unit_field.initial = get_object_or_404(
+                    get_accessible_units(self.request.user),
+                    pk=unit_pk,
+                ).pk
+
+        return form
 
     def form_valid(self, form):
+        require_write_access(self.request.user)
         messages.success(self.request, "তথ্য সংরক্ষণ করা হয়েছে।")
         return super().form_valid(form)
 
     def get_success_url(self):
+        unit_id = getattr(self.object, f"{self.unit_field}_id")
         return reverse(
             "industrial_estate:industrial_unit_detail",
-            kwargs={"pk": getattr(self.object, self.unit_field + "_id")},
+            kwargs={"pk": unit_id},
         )
 
 
 class UnitRelatedUpdateView(LoginRequiredMixin, UpdateView):
     template_name = "industrial_estate/record_form.html"
+    unit_field = "industrial_unit"
 
-    def get_success_url(self):
-        return reverse(
-            "industrial_estate:industrial_unit_detail",
-            kwargs={"pk": getattr(self.object, "industrial_unit_id")},
+    def get_queryset(self):
+        return self.model.objects.filter(
+            **{
+                f"{self.unit_field}__estate__in":
+                    get_accessible_estates(self.request.user)
+            }
         )
 
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        field = form.fields.get(self.unit_field)
+        if field:
+            field.queryset = get_accessible_units(self.request.user)
+        return form
+
     def form_valid(self, form):
+        require_write_access(self.request.user)
         messages.success(self.request, "তথ্য হালনাগাদ হয়েছে।")
         return super().form_valid(form)
 
-
-class UnitRelatedListView(ProtectedListView):
-    template_name = "industrial_estate/related_record_list.html"
-    context_object_name = "records"
-    unit_lookup = "industrial_unit_id"
-
-    def get_queryset(self):
-        unit_pk = self.request.GET.get("unit")
-        queryset = self.model.objects.all()
-
-        if unit_pk:
-            queryset = queryset.filter(**{self.unit_lookup: unit_pk})
-
-        return queryset
+    def get_success_url(self):
+        unit_id = getattr(self.object, f"{self.unit_field}_id")
+        return reverse(
+            "industrial_estate:industrial_unit_detail",
+            kwargs={"pk": unit_id},
+        )
 
 
 # Plot allocations
@@ -983,3 +1153,350 @@ def location_options(request):
         }
         for item in districts
     ], safe=False)
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
+from django.shortcuts import render, redirect
+from django.core.exceptions import PermissionDenied
+from django.contrib import messages
+
+
+@login_required
+def estate_review_queue(request):
+    profile = get_user_profile(request.user)
+
+    if profile.role == UserRole.DATA_ENTRY:
+        status = IndustrialEstate.WorkflowStatus.SUBMITTED_TO_DATA_ENTRY
+
+    elif profile.role == UserRole.RD_ADMIN:
+        status = IndustrialEstate.WorkflowStatus.SUBMITTED_TO_RD_ADMIN
+
+    elif profile.role == UserRole.SUPER_ADMIN:
+        status = IndustrialEstate.WorkflowStatus.SUBMITTED_TO_SUPER_ADMIN
+
+    else:
+        raise PermissionDenied(
+            "আপনার পর্যালোচনা তালিকা দেখার অনুমতি নেই।"
+        )
+
+    estates = get_accessible_estates(request.user).filter(
+        workflow_status=status
+    ).select_related(
+        "regional_office",
+        "created_by",
+    ).order_by("name")
+
+    return render(
+        request,
+        "industrial_estate/estate_review_queue.html",
+        {
+            "estates": estates,
+            "profile": profile,
+        },
+    )
+@login_required
+@require_POST
+def estate_review_action(request, pk):
+    profile = get_user_profile(request.user)
+
+    estate = get_accessible_estate_or_404(request.user, pk)
+    action = request.POST.get("action")
+    comment = request.POST.get("comment", "").strip()
+
+    current_status = estate.workflow_status
+
+    if profile.role == UserRole.DATA_ENTRY:
+        expected = IndustrialEstate.WorkflowStatus.SUBMITTED_TO_DATA_ENTRY
+        stage = EstateReview.Stage.DATA_ENTRY
+
+        if current_status != expected:
+            raise PermissionDenied("এই তথ্য আপনার পর্যালোচনার জন্য অপেক্ষমাণ নয়।")
+
+        if action == "forward":
+            estate.workflow_status = (
+                IndustrialEstate.WorkflowStatus.SUBMITTED_TO_RD_ADMIN
+            )
+            review_action = EstateReview.Action.FORWARDED
+        elif action == "return":
+            estate.workflow_status = (
+                IndustrialEstate.WorkflowStatus.RETURNED_TO_ESTATE_OFFICER
+            )
+            review_action = EstateReview.Action.RETURNED
+        else:
+            raise PermissionDenied("অবৈধ কার্যক্রম।")
+
+    elif profile.role == UserRole.RD_ADMIN:
+        expected = IndustrialEstate.WorkflowStatus.SUBMITTED_TO_RD_ADMIN
+        stage = EstateReview.Stage.RD_ADMIN
+
+        if current_status != expected:
+            raise PermissionDenied("এই তথ্য আপনার পর্যালোচনার জন্য অপেক্ষমাণ নয়।")
+
+        if action == "forward":
+            estate.workflow_status = (
+                IndustrialEstate.WorkflowStatus.SUBMITTED_TO_SUPER_ADMIN
+            )
+            review_action = EstateReview.Action.FORWARDED
+        elif action == "return":
+            estate.workflow_status = (
+                IndustrialEstate.WorkflowStatus.RETURNED_TO_DATA_ENTRY
+            )
+            review_action = EstateReview.Action.RETURNED
+        else:
+            raise PermissionDenied("অবৈধ কার্যক্রম।")
+
+    elif profile.role == UserRole.SUPER_ADMIN:
+        expected = IndustrialEstate.WorkflowStatus.SUBMITTED_TO_SUPER_ADMIN
+        stage = EstateReview.Stage.SUPER_ADMIN
+
+        if current_status != expected:
+            raise PermissionDenied("এই তথ্য আপনার যাচাইয়ের জন্য অপেক্ষমাণ নয়।")
+
+        if action == "verify":
+            estate.workflow_status = (
+                IndustrialEstate.WorkflowStatus.VERIFIED
+            )
+            review_action = EstateReview.Action.VERIFIED
+        elif action == "return":
+            estate.workflow_status = (
+                IndustrialEstate.WorkflowStatus.RETURNED_TO_RD_ADMIN
+            )
+            review_action = EstateReview.Action.RETURNED
+        else:
+            raise PermissionDenied("অবৈধ কার্যক্রম।")
+
+    else:
+        raise PermissionDenied("আপনার এই কার্যক্রমের অনুমতি নেই।")
+
+    estate.save(update_fields=["workflow_status", "updated_at"])
+
+    EstateReview.objects.create(
+        estate=estate,
+        stage=stage,
+        action=review_action,
+        reviewer=request.user,
+        comment=comment,
+    )
+
+    messages.success(request, "পর্যালোচনার কার্যক্রম সংরক্ষণ হয়েছে।")
+    return redirect("industrial_estate:estate_review_queue")
+
+class UnitPlotAllocationListView(LoginRequiredMixin, ListView):
+    model = UnitPlotAllocation
+    template_name = "industrial_estate/plot_allocation_list.html"
+    context_object_name = "allocations"
+
+    def get_queryset(self):
+        queryset = UnitPlotAllocation.objects.filter(
+            industrial_unit__in=get_accessible_units(self.request.user)
+        ).select_related(
+            "industrial_unit", "plot", "plot__estate"
+        ).order_by(
+            "plot__estate__name", "plot__plot_number"
+        )
+
+        unit_id = self.request.GET.get("industrial_unit")
+        if unit_id:
+            queryset = queryset.filter(industrial_unit_id=unit_id)
+
+        search = self.request.GET.get("q")
+        if search:
+            queryset = queryset.filter(
+                Q(industrial_unit__name__icontains=search)
+                | Q(industrial_unit__unit_code__icontains=search)
+                | Q(plot__plot_number__icontains=search)
+                | Q(plot__estate__name__icontains=search)
+            )
+
+        return queryset
+
+
+class UnitPlotAllocationCreateView(LoginRequiredMixin, CreateView):
+    model = UnitPlotAllocation
+    form_class = UnitPlotAllocationForm
+    template_name = "industrial_estate/plot_allocation_form.html"
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+
+        units = get_accessible_units(self.request.user)
+        estates = get_accessible_estates(self.request.user)
+
+        form.fields["industrial_unit"].queryset = units
+        form.fields["plot"].queryset = Plot.objects.filter(
+            estate__in=estates
+        ).select_related("estate")
+
+        unit_id = self.request.GET.get("industrial_unit")
+        if unit_id and units.filter(pk=unit_id).exists():
+            form.fields["industrial_unit"].initial = unit_id
+            form.fields["plot"].queryset = Plot.objects.filter(
+                estate_id=units.get(pk=unit_id).estate_id
+            )
+
+        return form
+
+    def form_valid(self, form):
+        require_write_access(self.request.user)
+        messages.success(self.request, "প্লট বরাদ্দের তথ্য সংরক্ষণ হয়েছে।")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("industrial_estate:allocation_list")
+
+
+class UnitPlotAllocationUpdateView(LoginRequiredMixin, UpdateView):
+    model = UnitPlotAllocation
+    form_class = UnitPlotAllocationForm
+    template_name = "industrial_estate/plot_allocation_form.html"
+
+    def get_queryset(self):
+        return UnitPlotAllocation.objects.filter(
+            industrial_unit__in=get_accessible_units(self.request.user)
+        ).select_related("industrial_unit", "plot")
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+
+        units = get_accessible_units(self.request.user)
+        estates = get_accessible_estates(self.request.user)
+
+        form.fields["industrial_unit"].queryset = units
+        form.fields["plot"].queryset = Plot.objects.filter(
+            estate__in=estates
+        ).select_related("estate")
+
+        return form
+
+    def form_valid(self, form):
+        require_write_access(self.request.user)
+        messages.success(self.request, "প্লট বরাদ্দের তথ্য হালনাগাদ হয়েছে।")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("industrial_estate:allocation_list")
+@login_required
+def unit_production_list(request):
+    """সাব-সেকশন ০৩: শিল্প ইউনিটের উৎপাদন ও পণ্যের তালিকা।"""
+
+    units = get_accessible_units(request.user).select_related(
+        "estate"
+    ).prefetch_related("products")
+
+    search = request.GET.get("q", "").strip()
+
+    if search:
+        units = units.filter(
+            Q(name__icontains=search)
+            | Q(unit_code__icontains=search)
+            | Q(estate__name__icontains=search)
+            | Q(products__name__icontains=search)
+        ).distinct()
+
+    return render(
+        request,
+        "industrial_estate/unit_production_list.html",
+        {
+            "units": units,
+            "search": search,
+        },
+    )
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def unit_production_update(request, pk):
+    """কারখানার তথ্য সম্পাদনা এবং একাধিক পণ্য ব্যবস্থাপনা।"""
+
+    unit = get_object_or_404(
+        get_accessible_units(request.user),
+        pk=pk,
+    )
+
+    if request.method == "POST":
+        try:
+            require_write_access(request.user)
+        except PermissionDenied:
+            raise
+
+        if "save_production" in request.POST:
+            production_form = IndustrialUnitProductionForm(
+                request.POST,
+                request.FILES,
+                instance=unit,
+            )
+            product_form = UnitProductForm()
+
+            if production_form.is_valid():
+                production_form.save()
+                messages.success(
+                    request,
+                    "কারখানা ও উৎপাদন-সংক্রান্ত তথ্য সংরক্ষণ হয়েছে।",
+                )
+                return redirect(
+                    "industrial_estate:unit_production_update",
+                    pk=unit.pk,
+                )
+
+        elif "add_product" in request.POST:
+            production_form = IndustrialUnitProductionForm(
+                instance=unit
+            )
+            product_form = UnitProductForm(request.POST)
+
+            if product_form.is_valid():
+                product = product_form.save(commit=False)
+                product.industrial_unit = unit
+                product.save()
+
+                messages.success(
+                    request,
+                    "উৎপাদিত পণ্যের তথ্য যোগ করা হয়েছে।",
+                )
+                return redirect(
+                    "industrial_estate:unit_production_update",
+                    pk=unit.pk,
+                )
+        else:
+            production_form = IndustrialUnitProductionForm(
+                instance=unit
+            )
+            product_form = UnitProductForm()
+
+    else:
+        production_form = IndustrialUnitProductionForm(instance=unit)
+        product_form = UnitProductForm()
+
+    products = unit.products.all()
+
+    return render(
+        request,
+        "industrial_estate/unit_production_form.html",
+        {
+            "unit": unit,
+            "production_form": production_form,
+            "product_form": product_form,
+            "products": products,
+        },
+    )
+
+
+@login_required
+@require_http_methods(["POST"])
+def unit_product_delete(request, pk, product_pk):
+    """নির্বাচিত শিল্প ইউনিটের একটি পণ্য মুছে ফেলা।"""
+
+    try:
+        require_write_access(request.user)
+    except PermissionDenied:
+        raise
+
+    unit = get_object_or_404(
+        get_accessible_units(request.user),
+        pk=pk,
+    )
+
+    product = get_object_or_404(
+        UnitProduct,
+        pk=product_pk,
+        industrial_unit=unit,
+    )

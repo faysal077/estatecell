@@ -1,7 +1,156 @@
+{% extends "industrial_estate/base.html" %}
 
-{% extends "industrial_estate/record_form.html" %}
-
-{% block page_title %}
-  {% if form.instance.pk %}শিল্প ইউনিটের তথ্য সম্পাদনা{% else %}নতুন শিল্প ইউনিট যোগ{% endif %}
+{% block title %}
+    {% if form.instance.pk %}
+        শিল্প ইউনিট সম্পাদনা
+    {% else %}
+        নতুন শিল্প ইউনিট
+    {% endif %}
 {% endblock %}
 
+{% block content %}
+<div class="container-fluid py-3">
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center
+                flex-wrap gap-2 mb-4">
+
+        <div>
+            <h4 class="mb-1">
+                <i class="bi bi-factory me-2"></i>
+                {% if form.instance.pk %}
+                    শিল্প ইউনিট সম্পাদনা
+                {% else %}
+                    নতুন শিল্প ইউনিট নিবন্ধন
+                {% endif %}
+            </h4>
+
+            <p class="text-muted mb-0">
+                সাব-সেকশন ০১: সাধারণ পরিচিতি
+            </p>
+        </div>
+
+        <a href="{% url 'industrial_estate:industrial_unit_list' %}"
+           class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>
+            তালিকায় ফিরুন
+        </a>
+    </div>
+
+    <!-- Form Card -->
+    <div class="card border-0 shadow-sm">
+
+        <div class="card-header bg-white py-3">
+            <h6 class="mb-0 fw-semibold">
+                <i class="bi bi-person-vcard me-2"></i>
+                শিল্প ইউনিটের পরিচিতি ও মালিকানা
+            </h6>
+        </div>
+
+        <div class="card-body p-4">
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger" role="alert">
+                    {% for error in form.non_field_errors %}
+                        <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <form method="post"
+                  enctype="multipart/form-data"
+                  novalidate>
+
+                {% csrf_token %}
+
+                <!-- Hidden Fields -->
+                {% for hidden in form.hidden_fields %}
+                    {{ hidden }}
+                    {% for error in hidden.errors %}
+                        <div class="text-danger small">
+                            {{ error }}
+                        </div>
+                    {% endfor %}
+                {% endfor %}
+
+                <!-- Visible Fields -->
+                <div class="row g-4">
+
+                    {% for field in form.visible_fields %}
+
+                        <div class="
+                            {% if field.name == 'comments' or field.name == 'factory_layout_file' or field.name == 'factory_layout_plan' %}
+                                col-12
+                            {% else %}
+                                col-md-6
+                            {% endif %}
+                        ">
+
+                            <label for="{{ field.id_for_label }}"
+                                   class="form-label fw-semibold">
+
+                                {{ field.label }}
+
+                                {% if field.field.required %}
+                                    <span class="text-danger">*</span>
+                                {% endif %}
+                            </label>
+
+                            {{ field }}
+
+                            {% if field.help_text %}
+                                <div class="form-text">
+                                    {{ field.help_text }}
+                                </div>
+                            {% endif %}
+
+                            {% if field.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in field.errors %}
+                                        <div>
+                                            <i class="bi bi-exclamation-circle me-1"></i>
+                                            {{ error }}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+
+                        </div>
+
+                    {% endfor %}
+
+                </div>
+
+                <hr class="my-4">
+
+                <!-- Action Buttons -->
+                <div class="d-flex justify-content-end flex-wrap gap-2">
+
+                    <a href="{% url 'industrial_estate:industrial_unit_list' %}"
+                       class="btn btn-light border">
+                        <i class="bi bi-x-circle me-1"></i>
+                        বাতিল
+                    </a>
+
+                    <button type="reset"
+                            class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>
+                        রিসেট
+                    </button>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle me-1"></i>
+                        {% if form.instance.pk %}
+                            পরিবর্তন সংরক্ষণ
+                        {% else %}
+                            শিল্প ইউনিট সংরক্ষণ
+                        {% endif %}
+                    </button>
+
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

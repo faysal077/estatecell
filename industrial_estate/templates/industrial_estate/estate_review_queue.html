@@ -1,0 +1,172 @@
+
+{% extends "industrial_estate/base.html" %}
+
+{% block title %}শিল্পনগরী পর্যালোচনা{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+        <div>
+            <h2 class="mb-1">শিল্পনগরী পর্যালোচনা</h2>
+            <p class="text-muted mb-0">
+                শিল্পনগরীর তথ্য যাচাই, মন্তব্য প্রদান এবং পরবর্তী ধাপে পাঠান।
+            </p>
+        </div>
+        <span class="badge bg-primary fs-6">
+            অপেক্ষমাণ: {{ estates|length }}
+        </span>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show"
+                 role="alert">
+                {{ message }}
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="alert"
+                        aria-label="বন্ধ করুন"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if estates %}
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 60px;">ক্রমিক</th>
+                        <th>শিল্পনগরীর নাম</th>
+                        <th>আঞ্চলিক কার্যালয়</th>
+                        <th>তথ্য প্রদানকারী</th>
+                        <th>বর্তমান অবস্থা</th>
+                        <th style="min-width: 300px;">পর্যালোচনা ও মন্তব্য</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for estate in estates %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+
+                            <td>
+                                <strong>{{ estate.name }}</strong>
+                                <div class="mt-2">
+                                    <a class="btn btn-sm btn-outline-primary"
+                                       href="{% url 'industrial_estate:estate_detail' estate.pk %}">
+                                        বিস্তারিত দেখুন
+                                    </a>
+                                </div>
+                            </td>
+
+                            <td>
+                                {{ estate.regional_office|default:"—" }}
+                            </td>
+
+                            <td>
+                                {% if estate.created_by %}
+                                    {{ estate.created_by.get_full_name|default:estate.created_by.username }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                {{ estate.get_workflow_status_display }}
+                            </td>
+
+                            <td>
+                                <form method="post"
+                                      action="{% url 'industrial_estate:estate_review_action' estate.pk %}">
+                                    {% csrf_token %}
+
+                                    <div class="mb-3">
+                                        <label for="comment_{{ estate.pk }}"
+                                               class="form-label">
+                                            পর্যালোচনার মন্তব্য
+                                        </label>
+
+                                        <textarea
+                                            class="form-control"
+                                            name="comment"
+                                            id="comment_{{ estate.pk }}"
+                                            rows="3"
+                                            placeholder="পর্যালোচনার মন্তব্য লিখুন..."></textarea>
+                                    </div>
+
+                                    <div class="d-flex flex-wrap gap-2">
+                                        {% if profile.role == "DATA_ENTRY" %}
+                                            <button type="submit"
+                                                    name="action"
+                                                    value="forward"
+                                                    class="btn btn-success btn-sm">
+                                                <i class="bi bi-arrow-right-circle"></i>
+                                                RD Admin-এর কাছে পাঠান
+                                            </button>
+
+                                            <button type="submit"
+                                                    name="action"
+                                                    value="return"
+                                                    class="btn btn-warning btn-sm">
+                                                <i class="bi bi-arrow-counterclockwise"></i>
+                                                Estate Officer-এর কাছে ফেরত
+                                            </button>
+
+                                        {% elif profile.role == "RD_ADMIN" %}
+                                            <button type="submit"
+                                                    name="action"
+                                                    value="forward"
+                                                    class="btn btn-success btn-sm">
+                                                <i class="bi bi-arrow-right-circle"></i>
+                                                Super Admin-এর কাছে পাঠান
+                                            </button>
+
+                                            <button type="submit"
+                                                    name="action"
+                                                    value="return"
+                                                    class="btn btn-warning btn-sm">
+                                                <i class="bi bi-arrow-counterclockwise"></i>
+                                                Data Entry-এর কাছে ফেরত
+                                            </button>
+
+                                        {% elif profile.role == "SUPER_ADMIN" %}
+                                            <button type="submit"
+                                                    name="action"
+                                                    value="verify"
+                                                    class="btn btn-primary btn-sm">
+                                                <i class="bi bi-check-circle"></i>
+                                                চূড়ান্ত যাচাই সম্পন্ন
+                                            </button>
+
+                                            <button type="submit"
+                                                    name="action"
+                                                    value="return"
+                                                    class="btn btn-warning btn-sm">
+                                                <i class="bi bi-arrow-counterclockwise"></i>
+                                                RD Admin-এর কাছে ফেরত
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    {% else %}
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-clipboard-check display-4 text-muted"></i>
+                <h4 class="mt-3">পর্যালোচনার জন্য কোনো তথ্য অপেক্ষমাণ নেই</h4>
+                <p class="text-muted mb-0">
+                    নতুন তথ্য জমা হলে এখানে দেখা যাবে।
+                </p>
+            </div>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}
