@@ -380,25 +380,36 @@ urlpatterns = [
         district_metadata,
         name='district_metadata'
     ),
-
+    #=====================================================
     # Reports
+    #=====================================================
     path(
         "reports/",
         include("reports.urls")
     ),
-
+    #=====================================================
     # AnotherLand application
+    #=====================================================
     path(
         'another-land/',
         include('AnotherLand.urls')
     ),
+    #=====================================================
+    # Industrial Estate application
+    #=====================================================
     path(
         "industrial-estate/",
         include("industrial_estate.urls"),
     ),
+    #=====================================================
+    # Estate Verification
+    #=====================================================
+    path(
+        "estate-verification/",
+        include("estate_verification.urls"),
+    ),
+    
 ]
-
-
 # Serve media files in development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

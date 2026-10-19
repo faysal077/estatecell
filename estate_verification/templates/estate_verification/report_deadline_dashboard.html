@@ -1,0 +1,149 @@
+{% extends "industrial_estate/base.html" %}
+{% load tz %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+  <div class="mb-4">
+    <h3>রিপোর্ট জমাদানের ড্যাশবোর্ড</h3>
+    <p class="text-muted">
+      নির্ধারিত সময়ের মধ্যে রিপোর্ট পূরণ ও জমা দিন।
+    </p>
+  </div>
+
+  {% for row in rows %}
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+
+      <div class="d-flex flex-wrap justify-content-between gap-3 mb-3">
+        <div>
+          <h5 class="mb-1">{{ row.deadline.get_report_key_display }}</h5>
+          <div class="text-muted small">
+            শিল্প এস্টেট: {{ row.estate.name }}
+          </div>
+        </div>
+
+        {% if row.status == "SUBMITTED" %}
+          <span class="badge bg-success align-self-start">জমা হয়েছে</span>
+        {% elif row.status == "UPCOMING" %}
+          <span class="badge bg-info text-dark align-self-start">শুরু হয়নি</span>
+        {% elif row.status == "EXPIRED" %}
+          <span class="badge bg-danger align-self-start">সময়সীমা শেষ</span>
+        {% else %}
+          <span class="badge bg-warning text-dark align-self-start">জমা দেওয়া বাকি</span>
+        {% endif %}
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col-md-6">
+          <div class="bg-light rounded p-3 h-100">
+            <div class="text-muted small mb-1">শুরুর সময়</div>
+            <strong>
+              {{ row.deadline.start_at|localtime|date:"d-m-Y h:i A" }}
+            </strong>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="bg-light rounded p-3 h-100">
+            <div class="text-muted small mb-1">শেষ সময়</div>
+            <strong>
+              {{ row.deadline.end_at|localtime|date:"d-m-Y h:i A" }}
+            </strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-between mb-2">
+        <span class="fw-semibold">সময়সীমার অগ্রগতি</span>
+        <span>{{ row.time_progress }}%</span>
+      </div>
+
+      <div class="progress mb-3" style="height: 10px;">
+        <div
+          class="progress-bar
+            {% if row.status == 'EXPIRED' %}bg-danger
+            {% elif row.time_progress >= 80 %}bg-warning
+            {% else %}bg-success{% endif %}"
+          role="progressbar"
+          style="width: {{ row.time_progress }}%;"
+          aria-valuenow="{{ row.time_progress }}"
+          aria-valuemin="0"
+          aria-valuemax="100">
+        </div>
+      </div>
+
+      <div class="text-muted small mb-3">
+        <span class="deadline-countdown"
+              data-start="{{ row.deadline.start_at|date:'c' }}"
+              data-end="{{ row.deadline.end_at|date:'c' }}">
+          সময় গণনা হচ্ছে...
+        </span>
+      </div>
+
+      {% if row.status == "SUBMITTED" %}
+        <div class="alert alert-success mb-0">
+          <strong>রিপোর্ট জমা সম্পন্ন।</strong>
+          {% if row.tracking.submitted_at %}
+            জমার সময়:
+            {{ row.tracking.submitted_at|localtime|date:"d-m-Y h:i A" }}
+          {% endif %}
+        </div>
+      {% elif row.status == "UPCOMING" %}
+        <div class="alert alert-info mb-0">
+          নির্ধারিত শুরুর সময়ের আগে Submit করা যাবে না।
+        </div>
+      {% elif row.status == "EXPIRED" %}
+        <div class="alert alert-danger mb-0">
+          সময়সীমা শেষ হয়েছে। Super Admin সময় বাড়ালে আবার Submit করা যাবে।
+        </div>
+      {% else %}
+        <div class="alert alert-warning mb-0">
+          রিপোর্ট জমা দেওয়া বাকি আছে।
+          বিদ্যমান রিপোর্ট ফর্ম থেকে তথ্য পূরণ করে Submit করুন।
+        </div>
+      {% endif %}
+
+    </div>
+  </div>
+  {% empty %}
+    <div class="alert alert-info">
+      আপনার জন্য বর্তমানে কোনো সক্রিয় রিপোর্টের সময়সীমা নেই।
+    </div>
+  {% endfor %}
+
+</div>
+
+<script>
+(function () {
+  function updateCountdowns() {
+    const now = Date.now();
+
+    document.querySelectorAll(".deadline-countdown").forEach(function (el) {
+      const start = new Date(el.dataset.start).getTime();
+      const end = new Date(el.dataset.end).getTime();
+
+      if (now < start) {
+        el.textContent = "জমা শুরু হতে বাকি: " + formatDuration(start - now);
+      } else if (now >= end) {
+        el.textContent = "জমা দেওয়ার সময় শেষ";
+      } else {
+        el.textContent = "সময়সীমা শেষ হতে বাকি: " + formatDuration(end - now);
+      }
+    });
+  }
+
+  function formatDuration(milliseconds) {
+    const seconds = Math.floor(milliseconds / 1000);
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+
+    return days + " দিন " + hours + " ঘণ্টা " + minutes + " মিনিট";
+  }
+
+  updateCountdowns();
+  setInterval(updateCountdowns, 60000);
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends "industrial_estate/base.html" %}
+{% load tz %}
+
+{% block content %}
+<div class="container py-4">
+
+  <a href="{% url 'estate_verification:deadline_management' %}"
+     class="btn btn-outline-secondary btn-sm mb-3">
+    &larr; ফিরে যান
+  </a>
+
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <h4 class="mb-1">রিপোর্টের সময়সীমা বৃদ্ধি</h4>
+      <div class="text-muted">{{ deadline.get_report_key_display }}</div>
+    </div>
+
+    <div class="card-body">
+      <p>
+        <strong>বর্তমান শেষ সময়:</strong>
+        {{ deadline.end_at|localtime|date:"d-m-Y h:i A" }}
+      </p>
+
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-success">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+
+      <form method="post">
+        {% csrf_token %}
+
+        {% for field in form %}
+          <div class="mb-3">
+            <label class="form-label" for="{{ field.id_for_label }}">
+              {{ field.label }}
+            </label>
+            {{ field }}
+
+            {% for error in field.errors %}
+              <div class="text-danger small">{{ error }}</div>
+            {% endfor %}
+          </div>
+        {% endfor %}
+
+        <button class="btn btn-primary" type="submit">
+          নতুন সময়সীমা কার্যকর করুন
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-white">
+      <h5 class="mb-0">সময় বৃদ্ধির ইতিহাস</h5>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>আগের শেষ সময়</th>
+            <th>নতুন শেষ সময়</th>
+            <th>কারণ</th>
+            <th>পরিবর্তনকারী</th>
+            <th>তারিখ</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for extension in extensions %}
+          <tr>
+            <td>
+              {{ extension.previous_end_at|localtime|date:"d-m-Y h:i A" }}
+            </td>
+            <td>
+              {{ extension.new_end_at|localtime|date:"d-m-Y h:i A" }}
+            </td>
+            <td>{{ extension.reason }}</td>
+            <td>{{ extension.extended_by }}</td>
+            <td>
+              {{ extension.created_at|localtime|date:"d-m-Y h:i A" }}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" class="text-center text-muted">
+              সময় বৃদ্ধির কোনো ইতিহাস নেই।
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

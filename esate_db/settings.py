@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     'reports',
     'AnotherLand',
     'industrial_estate',
+    "estate_verification",
     
 ]
 

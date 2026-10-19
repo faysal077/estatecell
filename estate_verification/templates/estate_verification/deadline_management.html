@@ -1,0 +1,112 @@
+{% extends "industrial_estate/base.html" %}
+{% load tz %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3>রিপোর্ট জমাদানের সময়সীমা</h3>
+      <p class="text-muted mb-0">
+        রিপোর্টভিত্তিক সময় নির্ধারণ ও সময় বৃদ্ধি
+      </p>
+    </div>
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-success">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white py-3">
+      <h5 class="mb-0">নতুন সময়সীমা নির্ধারণ</h5>
+    </div>
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+
+        <div class="row g-3">
+          {% for field in form %}
+            <div class="col-md-6">
+              <label class="form-label" for="{{ field.id_for_label }}">
+                {{ field.label }}
+              </label>
+              {{ field }}
+              {% for error in field.errors %}
+                <div class="text-danger small">{{ error }}</div>
+              {% endfor %}
+            </div>
+          {% endfor %}
+        </div>
+
+        {% for error in form.non_field_errors %}
+          <div class="alert alert-danger mt-3">{{ error }}</div>
+        {% endfor %}
+
+        <button class="btn btn-primary mt-3" type="submit">
+          সময়সীমা সংরক্ষণ
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3">
+      <h5 class="mb-0">রিপোর্টসমূহের সময়সীমা</h5>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>রিপোর্ট</th>
+            <th>শুরুর সময়</th>
+            <th>শেষ সময়</th>
+            <th>অবস্থা</th>
+            <th>জমা</th>
+            <th>কার্যক্রম</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in deadlines %}
+          <tr>
+            <td>{{ item.get_report_key_display }}</td>
+            <td>{{ item.start_at|localtime|date:"d-m-Y h:i A" }}</td>
+            <td>{{ item.end_at|localtime|date:"d-m-Y h:i A" }}</td>
+            <td>
+              {% if not item.is_active %}
+                <span class="badge bg-secondary">বন্ধ</span>
+              {% elif now < item.start_at %}
+                <span class="badge bg-info text-dark">শুরু হয়নি</span>
+              {% elif now >= item.end_at %}
+                <span class="badge bg-danger">সময় শেষ</span>
+              {% else %}
+                <span class="badge bg-success">চলমান</span>
+              {% endif %}
+            </td>
+            <td>
+              {{ item.submitted_count|default:0 }}
+            </td>
+            <td>
+              <a class="btn btn-sm btn-outline-primary"
+                 href="{% url 'estate_verification:deadline_extend' item.pk %}">
+                সময় বাড়ান
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="text-center py-4">
+              এখনো কোনো রিপোর্টের সময়সীমা নির্ধারণ করা হয়নি।
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

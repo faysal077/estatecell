@@ -1,0 +1,134 @@
+
+{% extends "industrial_estate/base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">রিপোর্টের ইতিহাস</h2>
+            <p class="text-muted mb-0">{{ submission.estate.name }}</p>
+        </div>
+        <a href="{% url 'estate_verification:estate_review' submission.pk %}"
+           class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> রিপোর্টে ফিরুন
+        </a>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0">Workflow History</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>সময়</th>
+                            <th>ব্যবহারকারী</th>
+                            <th>কার্যক্রম</th>
+                            <th>পূর্ববর্তী অবস্থা</th>
+                            <th>পরবর্তী অবস্থা</th>
+                            <th>মন্তব্য</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in history %}
+                            <tr>
+                                <td class="text-nowrap">
+                                    {{ item.created_at|date:"d M Y, h:i A" }}
+                                </td>
+                                <td>{{ item.actor|default:"ব্যবহারকারী" }}</td>
+                                <td>{{ item.get_action_display }}</td>
+                                <td>{{ item.get_from_status_display|default:"—" }}</td>
+                                <td>{{ item.get_to_status_display|default:"—" }}</td>
+                                <td>{{ item.comment|default:"—"|linebreaksbr }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    কোনো Workflow History পাওয়া যায়নি।
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0">তথ্য পরিবর্তনের ইতিহাস</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>সময়</th>
+                            <th>সংশোধনকারী</th>
+                            <th>মডেল</th>
+                            <th>রেকর্ড ID</th>
+                            <th>ফিল্ড</th>
+                            <th>পুরোনো মান</th>
+                            <th>নতুন মান</th>
+                            <th>কারণ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in field_changes %}
+                            <tr>
+                                <td class="text-nowrap">
+                                    {{ item.created_at|date:"d M Y, h:i A" }}
+                                </td>
+                                <td>{{ item.actor|default:"ব্যবহারকারী" }}</td>
+                                <td>{{ item.model_label }}</td>
+                                <td>{{ item.object_pk }}</td>
+                                <td>{{ item.field_name }}</td>
+                                <td><code>{{ item.old_value|default:"—" }}</code></td>
+                                <td><code>{{ item.new_value|default:"—" }}</code></td>
+                                <td>{{ item.reason|default:"—" }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-4">
+                                    কোনো তথ্য পরিবর্তনের ইতিহাস নেই।
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0">মন্তব্যের ইতিহাস</h5>
+        </div>
+        <div class="list-group list-group-flush">
+            {% for item in comments %}
+                <div class="list-group-item p-3">
+                    <div class="d-flex justify-content-between gap-3">
+                        <strong>{{ item.author|default:"ব্যবহারকারী" }}</strong>
+                        <small class="text-muted">
+                            {{ item.created_at|date:"d M Y, h:i A" }}
+                        </small>
+                    </div>
+                    <div class="small text-muted">{{ item.get_stage_display }}</div>
+                    {% if item.page_verification %}
+                        <div class="small text-primary">
+                            {{ item.page_verification.page_title }}
+                        </div>
+                    {% endif %}
+                    <p class="mb-0 mt-2">{{ item.comment|linebreaksbr }}</p>
+                </div>
+            {% empty %}
+                <div class="list-group-item text-muted py-4">
+                    কোনো মন্তব্য পাওয়া যায়নি।
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
