@@ -1,0 +1,46 @@
+{% extends "industrial_estate/base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <h3>সবুজায়নের তথ্য</h3>
+
+    <div class="alert alert-info">
+        <strong>শিল্পনগরী:</strong> {{ estate }}
+        <br>
+        <strong>তুলনার ভিত্তি তারিখ:</strong>
+        {{ setting.base_date|date:"d-m-Y" }}
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        {% for field in form %}
+            <div class="mb-3">
+                <label class="form-label" for="{{ field.id_for_label }}">
+                    {{ field.label }}
+                </label>
+                {{ field }}
+
+                {% if field.errors %}
+                    <div class="text-danger small">{{ field.errors }}</div>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        <div class="mb-3">
+            <label class="form-label">বৃক্ষরোপণের ছবি</label>
+            <input
+                type="file"
+                name="images"
+                class="form-control"
+                accept="image/*"
+                multiple
+            >
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            রিপোর্ট সংরক্ষণ
+        </button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "industrial_estate/base.html" %}
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between mb-3">
+        <h4>পানি সরবরাহ রিপোর্ট — {{ estate.name }}</h4>
+        <a class="btn btn-primary" href="{% url 'industrial_estate:water_supply_create' estate.pk %}">তথ্য যুক্ত করুন</a>
+    </div>
+    <div class="table-responsive"><table class="table table-bordered table-striped">
+        <thead><tr><th>তারিখ</th><th>সরবরাহ আছে?</th><th>প্রতিষ্ঠান</th><th>উৎস</th><th>পরিমাণ</th><th>একক</th><th>সংযোগ</th><th>অবস্থা</th><th>সমস্যা</th><th>সংযুক্তি</th><th>মন্তব্য</th></tr></thead>
+        <tbody>{% for r in records %}<tr>
+            <td>{{ r.last_updated_date|date:"d-m-Y" }}</td><td>{{ r.has_water_supply|yesno:"হ্যাঁ,না" }}</td>
+            <td>{{ r.supplier_name|default:"—" }}</td><td>{{ r.get_water_source_display|default:"—" }}</td>
+            <td>{{ r.monthly_quantity|default:"—" }}</td><td>{{ r.quantity_unit|default:"—" }}</td><td>{{ r.connection_count }}</td>
+            <td>{{ r.get_supply_status_display|default:"—" }}</td><td>{{ r.supply_problems|default:"—" }}</td>
+            <td>{% if r.attachment %}<a href="{{ r.attachment.url }}">দলিল</a>{% else %}—{% endif %}</td><td>{{ r.comments|default:"—" }}</td>
+        </tr>{% empty %}<tr><td colspan="11">কোনো তথ্য নেই।</td></tr>{% endfor %}</tbody>
+    </table></div>
+</div>
+{% endblock %}

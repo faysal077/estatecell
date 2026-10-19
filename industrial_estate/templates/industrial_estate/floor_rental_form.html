@@ -1,0 +1,241 @@
+
+{% extends "industrial_estate/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="mb-1">ফ্লোর স্পেস ভাড়ার তথ্য</h4>
+            <p class="text-muted mb-0">
+                শিল্প ইউনিট: {{ unit.name }}
+            </p>
+        </div>
+
+        <a href="{% url 'industrial_estate:industrial_unit_detail' unit.pk %}"
+           class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> ফিরে যান
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card shadow-sm">
+        <div class="card-header">
+            <strong>সাব-সেকশন ০৫: ফ্লোর স্পেস ভাড়া</strong>
+        </div>
+
+        <div class="card-body">
+            <form method="post"
+                  enctype="multipart/form-data"
+                  id="floorRentalForm">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                <div class="mb-4">
+                    <label for="{{ form.month.id_for_label }}"
+                           class="form-label fw-bold">
+                        মাস
+                    </label>
+                    {{ form.month }}
+                    {% for error in form.month.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold">
+                        ফ্লোর স্পেস ভাড়া দেওয়া আছে কি না?
+                    </label>
+
+                    <div class="d-flex gap-4">
+                        {% for radio in form.is_rented %}
+                            <div class="form-check">
+                                {{ radio.tag }}
+                                <label class="form-check-label"
+                                       for="{{ radio.id_for_label }}">
+                                    {{ radio.choice_label }}
+                                </label>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    {% for error in form.is_rented.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div id="rentalDetails" hidden>
+                    <hr>
+                    <h6 class="mb-3">ভাড়ার বিস্তারিত তথ্য</h6>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                ভাড়াটিয়া প্রতিষ্ঠানের নাম
+                            </label>
+                            {{ form.tenant_name }}
+                            {% for error in form.tenant_name.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                বাৎসরিক বিসিকের প্রাপ্ত অর্থ
+                            </label>
+                            {{ form.annual_rent_received }}
+                            {% for error in form.annual_rent_received.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                চুক্তি শুরুর তারিখ
+                            </label>
+                            {{ form.rental_start_date }}
+                            {% for error in form.rental_start_date.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                চুক্তি শেষের তারিখ
+                            </label>
+                            {{ form.rental_end_date }}
+                            {% for error in form.rental_end_date.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-12 mb-3">
+                            <label class="form-label">
+                                ভাড়ার মেয়াদ (স্বয়ংক্রিয় হিসাব)
+                            </label>
+                            <input type="text"
+                                   id="rentalDuration"
+                                   class="form-control"
+                                   readonly
+                                   placeholder="চুক্তির তারিখ নির্বাচন করুন">
+                        </div>
+
+                        <div class="col-12 mb-3">
+                            <label class="form-label">
+                                ভাড়ার চুক্তিপত্র (PDF)
+                            </label>
+                            {{ form.rental_agreement }}
+                            {% for error in form.rental_agreement.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-12 mb-3">
+                            <label class="form-label">মন্তব্য</label>
+                            {{ form.rental_comments }}
+                            {% for error in form.rental_comments.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 mt-3">
+                    <a href="{% url 'industrial_estate:industrial_unit_detail' unit.pk %}"
+                       class="btn btn-outline-secondary">
+                        বাতিল
+                    </a>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> সংরক্ষণ
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const rentalDetails = document.getElementById("rentalDetails");
+    const radioButtons = document.querySelectorAll(
+        'input[name="is_rented"]'
+    );
+    const startDate = document.getElementById(
+        "{{ form.rental_start_date.id_for_label }}"
+    );
+    const endDate = document.getElementById(
+        "{{ form.rental_end_date.id_for_label }}"
+    );
+    const duration = document.getElementById("rentalDuration");
+
+    function updateRentalFields() {
+        const selected = document.querySelector(
+            'input[name="is_rented"]:checked'
+        );
+
+        const showDetails = selected && selected.value === "True";
+        rentalDetails.hidden = !showDetails;
+
+        rentalDetails.querySelectorAll("input, textarea, select").forEach(
+            function (field) {
+                field.disabled = !showDetails;
+            }
+        );
+
+        if (showDetails) {
+            updateDuration();
+        } else {
+            duration.value = "";
+        }
+    }
+
+    function updateDuration() {
+        if (!startDate.value || !endDate.value) {
+            duration.value = "";
+            return;
+        }
+
+        const start = new Date(startDate.value + "T00:00:00");
+        const end = new Date(endDate.value + "T00:00:00");
+
+        if (end < start) {
+            duration.value = "শেষের তারিখ শুরুর তারিখের আগে";
+            return;
+        }
+
+        let months =
+            (end.getFullYear() - start.getFullYear()) * 12
+            + end.getMonth() - start.getMonth();
+
+        if (end.getDate() >= start.getDate()) {
+            months++;
+        }
+
+        duration.value = months + " মাস";
+    }
+
+    radioButtons.forEach(function (radio) {
+        radio.addEventListener("change", updateRentalFields);
+    });
+
+    startDate.addEventListener("change", updateDuration);
+    endDate.addEventListener("change", updateDuration);
+
+    updateRentalFields();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "industrial_estate/base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between mb-3">
+        <h4>KPI-ভুক্ত প্রতিষ্ঠানের রিপোর্ট — {{ estate.name }}</h4>
+        <a class="btn btn-primary"
+           href="{% url 'industrial_estate:kpi_institution_create' estate.pk %}">
+            তথ্য যুক্ত করুন
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+            <thead><tr>
+                <th>ক্রমিক</th><th>প্রতিষ্ঠান</th><th>KPI শ্রেণি</th>
+                <th>তারিখ</th><th>প্লট</th><th>ইজারাগ্রহীতা</th>
+                <th>যোগাযোগ</th><th>অনুমোদন</th><th>অবস্থা</th><th>মন্তব্য</th>
+            </tr></thead>
+            <tbody>
+            {% for r in records %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ r.institution_name }}</td>
+                    <td>{{ r.get_kpi_type_display }}</td>
+                    <td>{{ r.kpi_date|date:"d-m-Y" }}</td>
+                    <td>{{ r.plot.plot_number }}</td>
+                    <td>{{ r.lessee_name }}</td>
+                    <td>{{ r.contact_info }}</td>
+                    <td>{% if r.approval_pdf %}<a href="{{ r.approval_pdf.url }}">PDF</a>{% else %}—{% endif %}</td>
+                    <td>{{ r.get_current_status_display }}</td>
+                    <td>{{ r.comments|default:"—" }}</td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="10">কোনো তথ্য নেই।</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

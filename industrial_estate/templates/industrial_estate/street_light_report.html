@@ -1,0 +1,19 @@
+{% extends "industrial_estate/base.html" %}
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between mb-3">
+        <h4>স্ট্রিট লাইট রিপোর্ট — {{ estate.name }}</h4>
+        <a class="btn btn-primary" href="{% url 'industrial_estate:street_light_create' estate.pk %}">তথ্য যুক্ত করুন</a>
+    </div>
+    <div class="table-responsive"><table class="table table-bordered table-striped">
+        <thead><tr><th>তারিখ</th><th>আছে?</th><th>মোট</th><th>সচল</th><th>অচল</th><th>তদারকিকারী</th><th>পরিদর্শন</th><th>মেরামতের প্রয়োজন</th><th>ছবি</th><th>মন্তব্য</th></tr></thead>
+        <tbody>{% for r in records %}<tr>
+            <td>{{ r.report_date|date:"d-m-Y" }}</td><td>{{ r.has_street_lights|yesno:"হ্যাঁ,না" }}</td>
+            <td>{{ r.total_lights }}</td><td>{{ r.working_lights }}</td><td>{{ r.broken_lights }}</td>
+            <td>{{ r.get_supervising_organization_display }} {{ r.supervising_organization_other }}</td>
+            <td>{{ r.last_inspection_date|date:"d-m-Y"|default:"—" }}</td><td>{{ r.repair_installation_needs|default:"—" }}</td>
+            <td>{% if r.photo %}<a href="{{ r.photo.url }}">ছবি দেখুন</a>{% else %}—{% endif %}</td><td>{{ r.comments|default:"—" }}</td>
+        </tr>{% empty %}<tr><td colspan="10">কোনো তথ্য নেই।</td></tr>{% endfor %}</tbody>
+    </table></div>
+</div>
+{% endblock %}

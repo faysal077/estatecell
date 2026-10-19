@@ -1,0 +1,44 @@
+{% extends "industrial_estate/base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <h3>সবুজায়নের ভিত্তি তারিখ নির্ধারণ</h3>
+
+    <form method="post" class="card card-body mb-4">
+        {% csrf_token %}
+
+        {{ form.as_p }}
+
+        <button type="submit" class="btn btn-primary">
+            ভিত্তি তারিখ সংরক্ষণ
+        </button>
+    </form>
+
+    <h5>সংরক্ষিত ভিত্তি তারিখসমূহ</h5>
+
+    <div class="table-responsive">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ক্রমিক</th>
+                    <th>শিল্পনগরী</th>
+                    <th>ভিত্তি তারিখ</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in settings_list %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ item.estate }}</td>
+                        <td>{{ item.base_date|date:"d-m-Y" }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="3">কোনো ভিত্তি তারিখ নির্ধারণ করা হয়নি।</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

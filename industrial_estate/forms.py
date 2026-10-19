@@ -12,7 +12,19 @@ from esate_db.districts import (
     DISTRICT_CHOICES_WITH_BN,
     DIVISION_NAMES,
 )
-
+from django import forms
+from .models import (
+    KPIInstitution,
+    StreetLightRecord,
+    WaterSupplyRecord,
+    ElectricityRecord,
+    GasSupplyRecord,
+    PondRecord,
+    EstatePurposeRecord,
+    Plot,
+)
+from django import forms
+from .models import FloorSpaceRental
 from .models import (
     RegionalOffice,
     District,
@@ -76,8 +88,6 @@ RD_OFFICE_CHOICES = [
         "বিসিক আঞ্চলিক কার্যালয়, রাজশাহী",
     ),
 ]
-
-
 class EstateScopedFormMixin:
     """
     Restrict related model choices to the current user's estate scope.
@@ -911,3 +921,374 @@ class EmploymentHistoryForm(forms.ModelForm):
                 attrs={"class": "form-control", "rows": 3}
             ),
         }
+class FloorSpaceRentalForm(forms.ModelForm):
+    class Meta:
+        model = FloorSpaceRental
+        fields = [
+            "month",
+            "is_rented",
+            "tenant_name",
+            "rental_start_date",
+            "rental_end_date",
+            "annual_rent_received",
+            "rental_agreement",
+            "rental_comments",
+        ]
+
+        widgets = {
+            "month": forms.DateInput(
+                attrs={"type": "month", "class": "form-control"}
+            ),
+            "is_rented": forms.RadioSelect(
+                choices=[
+                    (True, "হ্যাঁ"),
+                    (False, "না"),
+                ]
+            ),
+            "tenant_name": forms.TextInput(
+                attrs={"class": "form-control"}
+            ),
+            "rental_start_date": forms.DateInput(
+                attrs={"type": "date", "class": "form-control"}
+            ),
+            "rental_end_date": forms.DateInput(
+                attrs={"type": "date", "class": "form-control"}
+            ),
+            "annual_rent_received": forms.NumberInput(
+                attrs={
+                    "class": "form-control",
+                    "min": "0",
+                    "step": "0.01",
+                }
+            ),
+            "rental_agreement": forms.ClearableFileInput(
+                attrs={
+                    "class": "form-control",
+                    "accept": ".pdf,application/pdf",
+                }
+            ),
+            "rental_comments": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 3,
+                }
+            ),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        if not cleaned_data.get("is_rented"):
+            # "না" হলে ভাড়াসংক্রান্ত অতিরিক্ত তথ্য সংরক্ষণ নয়।
+            cleaned_data["tenant_name"] = ""
+            cleaned_data["rental_start_date"] = None
+            cleaned_data["rental_end_date"] = None
+            cleaned_data["annual_rent_received"] = None
+            cleaned_data["rental_agreement"] = None
+            cleaned_data["rental_comments"] = ""
+
+        return cleaned_data
+
+    def clean_rental_agreement(self):
+        file = self.cleaned_data.get("rental_agreement")
+
+        if file and not file.name.lower().endswith(".pdf"):
+            raise forms.ValidationError(
+                "শুধুমাত্র PDF ফাইল আপলোড করা যাবে।"
+            )
+
+        return file
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["month"].input_formats = [
+            "%Y-%m",
+            "%Y-%m-%d",
+        ]
+        self.fields["month"].widget.format = "%Y-%m"
+
+from django import forms
+from .models import LegalCase, LegalCaseDocument
+
+
+class LegalCaseForm(forms.ModelForm):
+    class Meta:
+        model = LegalCase
+        fields = [
+            "industrial_unit",
+            "case_number",
+            "court_name",
+            "case_type",
+            "case_date",
+            "plaintiff_name",
+            "defendant_name",
+            "case_subject",
+            "local_office_action",
+            "latest_progress",
+            "latest_hearing_date",
+            "bscic_action_required",
+            "current_status",
+            "next_date",
+            "next_action",
+            "remarks",
+        ]
+
+        widgets = {
+            "case_date": forms.DateInput(attrs={"type": "date"}),
+            "latest_hearing_date": forms.DateInput(attrs={"type": "date"}),
+            "next_date": forms.DateInput(attrs={"type": "date"}),
+            "case_subject": forms.Textarea(attrs={"rows": 3}),
+            "local_office_action": forms.Textarea(attrs={"rows": 3}),
+            "latest_progress": forms.Textarea(attrs={"rows": 3}),
+            "bscic_action_required": forms.Textarea(attrs={"rows": 3}),
+            "next_action": forms.Textarea(attrs={"rows": 2}),
+            "remarks": forms.Textarea(attrs={"rows": 2}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["industrial_unit"].required = False
+        self.fields["industrial_unit"].empty_label = "শিল্পনগরীভিত্তিক মামলা"
+class LegalCaseDocumentForm(forms.ModelForm):
+    class Meta:
+        model = LegalCaseDocument
+        fields = ["document_type", "title", "file"]
+
+from django import forms
+from .models import LegalCase, LegalCaseDocument
+
+
+class MultipleFileInput(forms.FileInput):
+    allow_multiple_selected = True
+
+
+class MultipleFileField(forms.FileField):
+    widget = MultipleFileInput
+
+    def clean(self, data, initial=None):
+        if not data:
+            return []
+
+        clean_one = super().clean
+
+        if isinstance(data, (list, tuple)):
+            return [clean_one(item, initial) for item in data]
+
+        return [clean_one(data, initial)]
+
+
+class LegalCaseUploadForm(forms.Form):
+    case_documents = MultipleFileField(
+        label="মামলার কাগজপত্র",
+        required=False,
+    )
+
+    other_documents = MultipleFileField(
+        label="অন্যান্য দলিল",
+        required=False,
+    )
+from django import forms
+from .models import GreenerySetting, GreeneryReport
+
+
+class GreenerySettingForm(forms.ModelForm):
+    class Meta:
+        model = GreenerySetting
+        fields = ["estate", "base_date"]
+        widgets = {
+            "base_date": forms.DateInput(
+                attrs={"type": "date", "class": "form-control"}
+            ),
+            "estate": forms.Select(
+                attrs={"class": "form-select"}
+            ),
+        }
+
+
+class GreeneryReportForm(forms.ModelForm):
+    class Meta:
+        model = GreeneryReport
+        fields = [
+            "report_date",
+            "suitable_land",
+            "trees_at_base_date",
+            "vacant_land_at_base_date",
+            "plantable_trees",
+            "new_trees_planted",
+            "newly_greenified_land",
+            "greenery_initiatives",
+            "comments",
+        ]
+
+        widgets = {
+            "report_date": forms.DateInput(
+                attrs={"type": "date", "class": "form-control"}
+            ),
+            "suitable_land": forms.NumberInput(
+                attrs={"class": "form-control", "step": "0.01", "min": "0"}
+            ),
+            "trees_at_base_date": forms.NumberInput(
+                attrs={"class": "form-control", "min": "0"}
+            ),
+            "vacant_land_at_base_date": forms.NumberInput(
+                attrs={"class": "form-control", "step": "0.01", "min": "0"}
+            ),
+            "plantable_trees": forms.NumberInput(
+                attrs={"class": "form-control", "min": "0"}
+            ),
+            "new_trees_planted": forms.NumberInput(
+                attrs={"class": "form-control", "min": "0"}
+            ),
+            "newly_greenified_land": forms.NumberInput(
+                attrs={"class": "form-control", "step": "0.01", "min": "0"}
+            ),
+            "greenery_initiatives": forms.Textarea(
+                attrs={"class": "form-control", "rows": 3}
+            ),
+            "comments": forms.Textarea(
+                attrs={"class": "form-control", "rows": 2}
+            ),
+        }
+class BootstrapModelForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        for name, field in self.fields.items():
+            if isinstance(field.widget, forms.CheckboxInput):
+                field.widget.attrs["class"] = "form-check-input"
+            elif isinstance(field.widget, forms.Select):
+                field.widget.attrs["class"] = "form-select"
+            else:
+                field.widget.attrs["class"] = "form-control"
+
+            if isinstance(field.widget, forms.DateInput):
+                field.widget.attrs["type"] = "date"
+
+            if isinstance(field.widget, forms.NumberInput):
+                field.widget.attrs.setdefault("min", "0")
+class KPIInstitutionForm(BootstrapModelForm):
+    class Meta:
+        model = KPIInstitution
+        exclude = ["created_at", "updated_at"]
+
+        widgets = {
+            "kpi_date": forms.DateInput(attrs={"type": "date"}),
+            "approval_pdf": forms.ClearableFileInput(
+                attrs={"accept": ".pdf,application/pdf"}
+            ),
+            "comments": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["estate"].widget = forms.HiddenInput()
+        self.fields["plot"].queryset = Plot.objects.none()
+
+        estate_id = (
+            self.data.get("estate")
+            or self.initial.get("estate")
+            or getattr(self.instance, "estate_id", None)
+        )
+
+        if estate_id:
+            self.fields["plot"].queryset = Plot.objects.filter(
+                estate_id=estate_id
+            ).order_by("plot_number")
+
+
+class StreetLightRecordForm(BootstrapModelForm):
+    class Meta:
+        model = StreetLightRecord
+        exclude = ["created_at"]
+        widgets = {
+            "report_date": forms.DateInput(attrs={"type": "date"}),
+            "last_inspection_date": forms.DateInput(attrs={"type": "date"}),
+            "repair_installation_needs": forms.Textarea(attrs={"rows": 3}),
+            "comments": forms.Textarea(attrs={"rows": 3}),
+            "photo": forms.ClearableFileInput(attrs={"accept": "image/*"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["estate"].widget = forms.HiddenInput()
+
+
+class WaterSupplyRecordForm(BootstrapModelForm):
+    class Meta:
+        model = WaterSupplyRecord
+        exclude = ["created_at"]
+        widgets = {
+            "last_updated_date": forms.DateInput(attrs={"type": "date"}),
+            "supply_problems": forms.Textarea(attrs={"rows": 3}),
+            "comments": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["estate"].widget = forms.HiddenInput()
+
+
+class ElectricityRecordForm(BootstrapModelForm):
+    class Meta:
+        model = ElectricityRecord
+        exclude = ["created_at"]
+        widgets = {
+            "last_updated_date": forms.DateInput(attrs={"type": "date"}),
+            "supply_problems": forms.Textarea(attrs={"rows": 3}),
+            "comments": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["estate"].widget = forms.HiddenInput()
+
+
+class GasSupplyRecordForm(BootstrapModelForm):
+    class Meta:
+        model = GasSupplyRecord
+        exclude = ["created_at"]
+        widgets = {
+            "last_updated_date": forms.DateInput(attrs={"type": "date"}),
+            "supply_problems": forms.Textarea(attrs={"rows": 3}),
+            "comments": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["estate"].widget = forms.HiddenInput()
+
+
+class PondRecordForm(BootstrapModelForm):
+    class Meta:
+        model = PondRecord
+        exclude = ["created_at"]
+        widgets = {
+            "report_date": forms.DateInput(attrs={"type": "date"}),
+            "lease_start_date": forms.DateInput(attrs={"type": "date"}),
+            "lease_end_date": forms.DateInput(attrs={"type": "date"}),
+            "lease_agreement": forms.ClearableFileInput(
+                attrs={"accept": ".pdf,application/pdf"}
+            ),
+            "photo": forms.ClearableFileInput(attrs={"accept": "image/*"}),
+            "comments": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["estate"].widget = forms.HiddenInput()
+
+
+class EstatePurposeRecordForm(BootstrapModelForm):
+    class Meta:
+        model = EstatePurposeRecord
+        exclude = ["updated_by", "updated_at"]
+        widgets = {
+            "main_purpose": forms.Textarea(attrs={"rows": 4}),
+            "future_plan": forms.Textarea(attrs={"rows": 4}),
+            "comments": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["estate"].widget = forms.HiddenInput()

@@ -185,70 +185,114 @@
     </div>
 
     <!-- Section 05: Floor Space Rental -->
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white fw-semibold">
-            <i class="bi bi-building-check me-2"></i>
-            Section 05: ফ্লোর স্পেস ভাড়া
+    
+    <!-- Section 05: Floor Space Rental -->
+    <section id="floor-rental" class="mb-4">
+
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <h5 class="mb-0">
+                <i class="bi bi-building-check"></i>
+                সাব-সেকশন ০৫: ফ্লোর স্পেস ভাড়া
+            </h5>
+
+            {% if can_edit %}
+                <a href="{% url 'industrial_estate:floor_rental_create' unit.pk %}"
+                class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i>
+                    ভাড়ার তথ্য যুক্তকরণ
+                </a>
+            {% endif %}
         </div>
 
-        <div class="card-body">
-            <div class="row g-3">
-
-                <div class="col-md-6">
-                    <strong>ফ্লোর স্পেস ভাড়া দেওয়া হয়:</strong>
-                    {% if unit.has_floor_rental %}
-                        <span class="badge bg-success">হ্যাঁ</span>
-                    {% else %}
-                        <span class="badge bg-secondary">না</span>
-                    {% endif %}
+        {% with rentals=unit.floor_rentals.all %}
+            {% if rentals %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped align-middle">
+                        <thead>
+                            <tr>
+                                <th>ক্রমিক</th>
+                                <th>মাস</th>
+                                <th>ভাড়া দেওয়া আছে?</th>
+                                <th>ভাড়াটিয়া প্রতিষ্ঠান</th>
+                                <th>চুক্তির মেয়াদ</th>
+                                <th>বাৎসরিক প্রাপ্ত অর্থ</th>
+                                <th>চুক্তিপত্র</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rental in rentals %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ rental.month|date:"F Y" }}</td>
+                                    <td>
+                                        {% if rental.is_rented %}
+                                            <span class="badge bg-success">হ্যাঁ</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">না</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if rental.is_rented %}
+                                            {{ rental.tenant_name|default:"—" }}
+                                        {% else %}
+                                            —
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if rental.is_rented %}
+                                            {{ rental.rental_start_date|date:"d-m-Y"|default:"—" }}
+                                            থেকে
+                                            {{ rental.rental_end_date|date:"d-m-Y"|default:"—" }}
+                                            {% if rental.rental_duration_months %}
+                                                <small class="text-muted">
+                                                    ({{ rental.rental_duration_months }} মাস)
+                                                </small>
+                                            {% endif %}
+                                        {% else %}
+                                            —
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if rental.is_rented and rental.annual_rent_received != None %}
+                                            {{ rental.annual_rent_received|floatformat:2 }}
+                                        {% else %}
+                                            —
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if rental.rental_agreement %}
+                                            <a href="{{ rental.rental_agreement.url }}"
+                                            target="_blank"
+                                            rel="noopener">
+                                                <i class="bi bi-file-earmark-pdf"></i>
+                                                PDF দেখুন
+                                            </a>
+                                        {% else %}
+                                            —
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% if rental.rental_comments %}
+                                    <tr>
+                                        <td colspan="7">
+                                            <strong>মন্তব্য:</strong>
+                                            {{ rental.rental_comments }}
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
+            {% else %}
+                <div class="alert alert-light border">
+                    এই শিল্প ইউনিটের ফ্লোর স্পেস ভাড়ার কোনো তথ্য এখনো যুক্ত করা হয়নি।
+                </div>
+            {% endif %}
+        {% endwith %}
 
-                {% if unit.has_floor_rental %}
+    </section>
 
-                    <div class="col-md-6">
-                        <strong>ভাড়াটিয়ার নাম:</strong>
-                        {{ unit.tenant_name|default:"—" }}
-                    </div>
-
-                    <div class="col-md-6">
-                        <strong>ভাড়া শুরুর তারিখ:</strong>
-                        {{ unit.rental_start_date|default:"—" }}
-                    </div>
-
-                    <div class="col-md-6">
-                        <strong>ভাড়া শেষ হওয়ার তারিখ:</strong>
-                        {{ unit.rental_end_date|default:"—" }}
-                    </div>
-
-                    <div class="col-md-6">
-                        <strong>বার্ষিক ভাড়া:</strong>
-                        {{ unit.annual_rent_received|default:"—" }}
-                    </div>
-
-                    {% if unit.rental_comments %}
-                    <div class="col-12">
-                        <strong>ভাড়া সংক্রান্ত মন্তব্য:</strong>
-                        {{ unit.rental_comments }}
-                    </div>
-                    {% endif %}
-
-                    {% if unit.rental_agreement %}
-                    <div class="col-12">
-                        <a href="{{ unit.rental_agreement.url }}"
-                           target="_blank"
-                           rel="noopener noreferrer"
-                           class="btn btn-outline-primary btn-sm">
-                            <i class="bi bi-file-earmark-pdf"></i>
-                            ভাড়ার চুক্তিপত্র দেখুন
-                        </a>
-                    </div>
-                    {% endif %}
-
-                {% endif %}
-
-            </div>
-        </div>
-    </div>
     
     <!-- Section 06: Receivables and Collections -->
     <div class="card border-0 shadow-sm mb-4">
@@ -429,11 +473,9 @@
             {% endwith %}
         </div>
     </div>
-
-
-
     <!-- Section 08: Plot Cancellation and Appeal -->
-    <div class="card border-0 shadow-sm mb-4">
+    <div class="card border-0 shadow-sm mb-4" id="plot-cancellation">
+
         <div class="card-header bg-white fw-semibold">
             <i class="bi bi-file-earmark-text me-2"></i>
             Section 08: প্লট বাতিল ও আপিল সংক্রান্ত তথ্য
@@ -441,11 +483,27 @@
 
         <div class="card-body">
 
+            <!-- Sub-section 08A: Plot Cancellation -->
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <h6 class="mb-0">
+                    <i class="bi bi-x-octagon me-2"></i>
+                    ০৮.১ প্লট বাতিল সংক্রান্ত তথ্য
+                </h6>
+
+                {% if can_edit %}
+                    <!-- প্লট বাতিল সংক্রান্ত তথ্য -->
+                    <a href="{% url 'industrial_estate:appeal_create' %}?unit={{ unit.pk }}&type=cancellation"
+                    class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-circle me-1"></i>
+                        তথ্য যুক্ত করুন
+                    </a>
+                {% endif %}
+            </div>
+
             {% with appeals=unit.cancellation_appeals.all %}
                 {% if appeals %}
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-hover align-middle mb-0">
-
+                    <div class="table-responsive mb-4">
+                        <table class="table table-bordered table-hover align-middle">
                             <thead class="table-light">
                                 <tr>
                                     <th>ক্রমিক</th>
@@ -453,96 +511,119 @@
                                     <th>বাতিলের তারিখ</th>
                                     <th>বাতিলের কারণ</th>
                                     <th>দাপ্তরিক ব্যবস্থা</th>
-                                    <th>আপিল</th>
-                                    <th>আপিলের তারিখ</th>
-                                    <th>সর্বশেষ অবস্থা</th>
                                     <th>নথি</th>
                                 </tr>
                             </thead>
-
                             <tbody>
                                 {% for appeal in appeals %}
-                                <tr>
-                                    <td>{{ forloop.counter }}</td>
-
-                                    <td>
-                                        {{ appeal.plot|default:"—" }}
-                                    </td>
-
-                                    <td>
-                                        {{ appeal.cancellation_date|default:"—" }}
-                                    </td>
-
-                                    <td>
-                                        {{ appeal.cancellation_reason|default:"—" }}
-                                    </td>
-
-                                    <td>
-                                        {{ appeal.office_action|default:"—" }}
-                                    </td>
-
-                                    <td>
-                                        {% if appeal.appeal_filed %}
-                                            <span class="badge bg-success">হ্যাঁ</span>
-                                        {% else %}
-                                            <span class="badge bg-secondary">না</span>
-                                        {% endif %}
-                                    </td>
-
-                                    <td>
-                                        {{ appeal.appeal_date|default:"—" }}
-                                    </td>
-
-                                    <td>
-                                        {{ appeal.latest_status|default:"—" }}
-                                    </td>
-
-                                    <td>
-                                        {% if appeal.document %}
-                                            <a href="{{ appeal.document.url }}"
-                                               target="_blank"
-                                               rel="noopener noreferrer"
-                                               class="btn btn-sm btn-outline-primary">
-                                                <i class="bi bi-file-earmark-pdf"></i>
-                                                দেখুন
-                                            </a>
-                                        {% else %}
-                                            —
-                                        {% endif %}
-                                    </td>
-                                </tr>
-
-                                {% if appeal.appeal_details %}
-                                <tr>
-                                    <td colspan="9">
-                                        <strong>আপিলের বিস্তারিত:</strong>
-                                        {{ appeal.appeal_details }}
-                                    </td>
-                                </tr>
-                                {% endif %}
-
+                                    <tr>
+                                        <td>{{ forloop.counter }}</td>
+                                        <td>{{ appeal.plot|default:"—" }}</td>
+                                        <td>{{ appeal.cancellation_date|date:"d-m-Y"|default:"—" }}</td>
+                                        <td>{{ appeal.cancellation_reason|default:"—" }}</td>
+                                        <td>{{ appeal.office_action|default:"—" }}</td>
+                                        <td>
+                                            {% if appeal.document %}
+                                                <a href="{{ appeal.document.url }}"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                class="btn btn-outline-primary btn-sm">
+                                                    <i class="bi bi-file-earmark-pdf"></i>
+                                                    দেখুন
+                                                </a>
+                                            {% else %}
+                                                —
+                                            {% endif %}
+                                        </td>
+                                    </tr>
                                 {% endfor %}
                             </tbody>
-
                         </table>
                     </div>
                 {% else %}
-                    <div class="text-muted py-2">
-                        এই শিল্প ইউনিটের জন্য প্লট বাতিল বা আপিলের কোনো তথ্য পাওয়া যায়নি।
+                    <div class="text-muted border rounded p-3 mb-4">
+                        কোনো প্লট বাতিলের তথ্য যুক্ত করা হয়নি।
                     </div>
                 {% endif %}
             {% endwith %}
 
-            <div class="mt-3">
-                <a href="{% url 'industrial_estate:receivable_list' %}"
-                   class="btn btn-outline-secondary btn-sm">
-                    <i class="bi bi-info-circle"></i>
-                    সংশ্লিষ্ট তথ্য ব্যবস্থাপনা
-                </a>
+            <hr>
+
+            <!-- Sub-section 08B: Appeal Information -->
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 my-3">
+                <h6 class="mb-0">
+                    <i class="bi bi-file-earmark-check me-2"></i>
+                    ০৮.২ আপিল সংক্রান্ত তথ্য
+                </h6>
+
+                {% if can_edit %}
+                    <!-- আপিল সংক্রান্ত তথ্য -->
+                    <a href="{% url 'industrial_estate:appeal_create' %}?unit={{ unit.pk }}&type=appeal"
+                    class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-circle me-1"></i>
+                        তথ্য যুক্ত করুন
+                    </a>
+                {% endif %}
             </div>
+
+            {% with appeals=unit.cancellation_appeals.all %}
+                {% if appeals %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ক্রমিক</th>
+                                    <th>প্লট</th>
+                                    <th>আপিল হয়েছে?</th>
+                                    <th>আপিলের তারিখ</th>
+                                    <th>সর্বশেষ অবস্থা</th>
+                                    <th>আপিলের বিস্তারিত</th>
+                                    <th>নথি</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for appeal in appeals %}
+                                    <tr>
+                                        <td>{{ forloop.counter }}</td>
+                                        <td>{{ appeal.plot|default:"—" }}</td>
+                                        <td>
+                                            {% if appeal.appeal_filed %}
+                                                <span class="badge bg-success">হ্যাঁ</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">না</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ appeal.appeal_date|date:"d-m-Y"|default:"—" }}</td>
+                                        <td>{{ appeal.latest_status|default:"—" }}</td>
+                                        <td>{{ appeal.appeal_details|default:"—" }}</td>
+                                        <td>
+                                            {% if appeal.document %}
+                                                <a href="{{ appeal.document.url }}"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                class="btn btn-outline-primary btn-sm">
+                                                    <i class="bi bi-file-earmark-pdf"></i>
+                                                    দেখুন
+                                                </a>
+                                            {% else %}
+                                                —
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-muted border rounded p-3">
+                        কোনো আপিলের তথ্য যুক্ত করা হয়নি।
+                    </div>
+                {% endif %}
+            {% endwith %}
 
         </div>
     </div>
+
 
     <!-- Section 09: Export and Import Information -->
     <div class="card border-0 shadow-sm mb-4">
@@ -741,6 +822,77 @@
                 </a>
             </div>
 
+        </div>
+    </div>
+    <!-- Section: মামলার তথ্য -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">মামলার তথ্য</h5>
+
+            {% if can_edit %}
+                <a
+                    href="{% url 'industrial_estate:legal_case_create' %}?unit={{ unit.pk }}"
+                    class="btn btn-primary btn-sm"
+                >
+                    <i class="bi bi-plus-circle"></i>
+                    তথ্য যুক্ত করুন
+                </a>
+            {% endif %}
+        </div>
+
+        <div class="card-body">
+            {% if section_11_legal_cases %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped align-middle">
+                        <thead>
+                            <tr>
+                                <th>ক্রমিক</th>
+                                <th>মামলার নম্বর</th>
+                                <th>আদালতের নাম</th>
+                                <th>মামলার ধরন</th>
+                                <th>মামলার তারিখ</th>
+                                <th>বাদী</th>
+                                <th>বিবাদী</th>
+                                <th>সর্বশেষ অগ্রগতি</th>
+                                <th>পরবর্তী তারিখ</th>
+                                <th>বর্তমান অবস্থা</th>
+                                <th>কাগজপত্র</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for case in section_11_legal_cases %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ case.case_number }}</td>
+                                    <td>{{ case.court_name }}</td>
+                                    <td>{{ case.get_case_type_display }}</td>
+                                    <td>{{ case.case_date|date:"d/m/Y"|default:"—" }}</td>
+                                    <td>{{ case.plaintiff_name }}</td>
+                                    <td>{{ case.defendant_name }}</td>
+                                    <td>{{ case.latest_progress|default:"—"|truncatewords:12 }}</td>
+                                    <td>{{ case.next_date|date:"d/m/Y"|default:"—" }}</td>
+                                    <td>{{ case.get_current_status_display }}</td>
+                                    <td>
+                                        {% for document in case.documents.all %}
+                                            <a href="{{ document.file.url }}" target="_blank">
+                                                {{ document.title|default:document.file.name }}
+                                            </a>
+                                            <br>
+                                        {% empty %}
+                                            —
+                                        {% endfor %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted mb-0">
+                    এই শিল্প ইউনিটের জন্য এখনো কোনো মামলার তথ্য সংরক্ষণ করা হয়নি।
+                </p>
+            {% endif %}
         </div>
     </div>
 

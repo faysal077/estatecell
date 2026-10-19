@@ -1,0 +1,24 @@
+{% extends "industrial_estate/base.html" %}
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between mb-3">
+        <h4>শিল্পনগরী স্থাপনের উদ্দেশ্য — {{ estate.name }}</h4>
+        <a class="btn btn-primary"
+           href="{% url 'industrial_estate:estate_purpose_create' estate.pk %}">
+            তথ্য যুক্ত করুন / হালনাগাদ করুন
+        </a>
+    </div>
+
+    {% if records %}
+        <table class="table table-bordered">
+            <tr><th>শিল্পনগরী</th><td>{{ records.estate.name }}</td></tr>
+            <tr><th>স্থাপনের মূল উদ্দেশ্য</th><td>{{ records.main_purpose|linebreaksbr }}</td></tr>
+            <tr><th>ভবিষ্যৎ পরিকল্পনা</th><td>{{ records.future_plan|default:"—"|linebreaksbr }}</td></tr>
+            <tr><th>মন্তব্য</th><td>{{ records.comments|default:"—"|linebreaksbr }}</td></tr>
+            <tr><th>সর্বশেষ হালনাগাদ</th><td>{{ records.updated_at|date:"d-m-Y H:i" }}</td></tr>
+        </table>
+    {% else %}
+        <div class="alert alert-secondary">এখনো কোনো তথ্য সংরক্ষণ করা হয়নি।</div>
+    {% endif %}
+</div>
+{% endblock %}

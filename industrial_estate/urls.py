@@ -6,6 +6,7 @@ from .views import (
     UnitPlotAllocationCreateView,
     UnitPlotAllocationUpdateView,
 )
+from .views import FloorSpaceRentalCreateView
 app_name = "industrial_estate"
 
 urlpatterns = [
@@ -124,5 +125,111 @@ urlpatterns = [
         "units/<int:unit_pk>/employment/<int:pk>/delete/",
         views.employment_delete,
         name="employment_delete",
+    ),
+# Floor space rental information
+    path(
+        "industrial-units/<int:unit_id>/floor-rental/add/",
+        FloorSpaceRentalCreateView.as_view(),
+        name="floor_rental_create",
+    ),
+    #Legal Case Url
+    path(
+        "legal-cases/add/",
+        views.LegalCaseCreateView.as_view(),
+        name="legal_case_create",
+    ),
+    #Greenery Report Url
+    path(
+        "greenery/settings/",
+        views.greenery_setting_view,
+        name="greenery_setting",
+    ),
+    path(
+        "greenery/<int:estate_pk>/add/",
+        views.greenery_report_create,
+        name="greenery_report_create",
+    ),
+    # Page 6: KPI institution
+    path(
+        "kpi_institutions/<int:estate_pk>/add/",
+        views.KPIInstitutionCreateView.as_view(),
+        name="kpi_institution_create",
+    ),
+    path(
+        "kpi_institutions/<int:estate_pk>/report/",
+        views.KPIInstitutionReportView.as_view(),
+        name="kpi_institution_report",
+    ),
+   
+    # Page 7: Street lights
+    path(
+        "street_lights/<int:estate_pk>/add/",
+        views.StreetLightCreateView.as_view(),
+        name="street_light_create",
+    ),
+    path(
+        "street_lights/<int:estate_pk>/report/",
+        views.StreetLightReportView.as_view(),
+        name="street_light_report",
+    ),
+
+    # Page 8.1: Water
+    path(
+        "water_supply/<int:estate_pk>/add/",
+        views.WaterSupplyCreateView.as_view(),
+        name="water_supply_create",
+    ),
+    path(
+        "water_supply/<int:estate_pk>/report/",
+        views.WaterSupplyReportView.as_view(),
+        name="water_supply_report",
+    ),
+
+    # Page 8.2: Electricity
+    path(
+        "electricity/<int:estate_pk>/add/",
+        views.ElectricityCreateView.as_view(),
+        name="electricity_create",
+    ),
+    path(
+        "electricity/<int:estate_pk>/report/",
+        views.ElectricityReportView.as_view(),
+        name="electricity_report",
+    ),
+
+    # Page 8.3: Gas
+    path(
+        "gas_supply/<int:estate_pk>/add/",
+        views.GasSupplyCreateView.as_view(),
+        name="gas_supply_create",
+    ),
+    path(
+        "gas_supply/<int:estate_pk>/report/",
+        views.GasSupplyReportView.as_view(),
+        name="gas_supply_report",
+    ),
+
+    # Page 9: Ponds
+    path(
+        "ponds/<int:estate_pk>/add/",
+        views.PondRecordCreateView.as_view(),
+        name="pond_create",
+    ),
+    path(
+        "ponds/<int:estate_pk>/report/",
+        views.PondRecordReportView.as_view(),
+        name="pond_report",
+    ),
+
+    # Page 10: Estate purpose
+    path(
+        "estate_purpose/<int:estate_pk>/add/",
+        views.EstatePurposeCreateView.as_view(),
+        name="estate_purpose_create",
+    ),
+    path(
+        "estate_purpose/<int:estate_pk>/report/",
+        views.EstatePurposeReportView.as_view(),
+        name="estate_purpose_report",
     ),
 ]

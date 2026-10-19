@@ -1,0 +1,18 @@
+{% extends "industrial_estate/base.html" %}
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between mb-3">
+        <h4>বিদ্যুৎ সরবরাহ রিপোর্ট — {{ estate.name }}</h4>
+        <a class="btn btn-primary" href="{% url 'industrial_estate:electricity_create' estate.pk %}">তথ্য যুক্ত করুন</a>
+    </div>
+    <div class="table-responsive"><table class="table table-bordered table-striped">
+        <thead><tr><th>তারিখ</th><th>সংযোগ আছে?</th><th>সরবরাহকারী</th><th>সংযুক্ত ইউনিট</th><th>অনুমোদিত লোড</th><th>একক</th><th>অবস্থা</th><th>সমস্যা</th><th>মন্তব্য</th></tr></thead>
+        <tbody>{% for r in records %}<tr>
+            <td>{{ r.last_updated_date|date:"d-m-Y" }}</td><td>{{ r.has_electricity|yesno:"হ্যাঁ,না" }}</td>
+            <td>{{ r.get_supplier_display|default:"—" }} {{ r.supplier_other }}</td><td>{{ r.connected_unit_count }}</td>
+            <td>{{ r.approved_load|default:"—" }}</td><td>{{ r.approved_load_unit|default:"—" }}</td>
+            <td>{{ r.get_supply_status_display|default:"—" }}</td><td>{{ r.supply_problems|default:"—" }}</td><td>{{ r.comments|default:"—" }}</td>
+        </tr>{% empty %}<tr><td colspan="9">কোনো তথ্য নেই।</td></tr>{% endfor %}</tbody>
+    </table></div>
+</div>
+{% endblock %}

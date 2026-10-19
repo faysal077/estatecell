@@ -12,6 +12,9 @@ from django.utils import timezone
 from django.conf import settings
 from django.db import models
 from django.core.validators import MinValueValidator
+from datetime import date
+from django.db import models
+from django.core.exceptions import ValidationError
 ZERO = Decimal("0.00")
 
 
@@ -615,6 +618,147 @@ class IndustrialUnit(models.Model):
             - self.rental_start_date.month,
         )
 # =========================================================
+# 4. Floor space rental information (Page 3 / 02)
+# =========================================================
+def current_month_start():
+    """Return the first day of the current month."""
+    today = date.today()
+    return today.replace(day=1)
+
+
+class FloorSpaceRental(models.Model):
+    industrial_unit = models.ForeignKey(
+        "IndustrialUnit",
+        on_delete=models.CASCADE,
+        related_name="floor_rentals",
+        verbose_name="শিল্প ইউনিট",
+    )
+
+    month = models.DateField(
+        default=current_month_start,
+        verbose_name="মাস",
+        help_text="যে মাসের ভাড়ার তথ্য সংরক্ষণ করা হচ্ছে",
+    )
+
+    is_rented = models.BooleanField(
+        default=False,
+        verbose_name="ফ্লোর স্পেস ভাড়া দেওয়া আছে কি না",
+    )
+
+    tenant_name = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name="ভাড়াটিয়া প্রতিষ্ঠানের নাম",
+    )
+
+    rental_start_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="চুক্তি শুরুর তারিখ",
+    )
+
+    rental_end_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="চুক্তি শেষের তারিখ",
+    )
+
+    annual_rent_received = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="বাৎসরিক বিসিকের প্রাপ্ত অর্থ",
+    )
+
+    rental_agreement = models.FileField(
+        upload_to="floor_rental/agreements/",
+        blank=True,
+        null=True,
+        verbose_name="ভাড়ার চুক্তিপত্র",
+    )
+
+    rental_comments = models.TextField(
+        blank=True,
+        verbose_name="মন্তব্য",
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+    )
+
+    class Meta:
+        verbose_name = "ফ্লোর স্পেস ভাড়ার তথ্য"
+        verbose_name_plural = "ফ্লোর স্পেস ভাড়ার তথ্য"
+        ordering = ["-month", "-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["industrial_unit", "month"],
+                name="unique_floor_rental_unit_month",
+            )
+        ]
+
+    def clean(self):
+        if self.is_rented:
+            errors = {}
+
+            if not self.tenant_name:
+                errors["tenant_name"] = (
+                    "ভাড়াটিয়া প্রতিষ্ঠানের নাম লিখুন।"
+                )
+
+            if not self.rental_start_date:
+                errors["rental_start_date"] = (
+                    "চুক্তি শুরুর তারিখ দিন।"
+                )
+
+            if not self.rental_end_date:
+                errors["rental_end_date"] = (
+                    "চুক্তি শেষের তারিখ দিন।"
+                )
+
+            if (
+                self.rental_start_date
+                and self.rental_end_date
+                and self.rental_end_date < self.rental_start_date
+            ):
+                errors["rental_end_date"] = (
+                    "চুক্তি শেষের তারিখ শুরুর তারিখের আগে হতে পারবে না।"
+                )
+
+            if errors:
+                raise ValidationError(errors)
+
+    @property
+    def rental_duration_months(self):
+        """Approximate duration in months, including partial months."""
+        if not self.rental_start_date or not self.rental_end_date:
+            return None
+
+        start = self.rental_start_date
+        end = self.rental_end_date
+
+        months = (
+            (end.year - start.year) * 12
+            + end.month - start.month
+        )
+
+        if end.day >= start.day:
+            months += 1
+
+        return max(months, 0)
+
+    def __str__(self):
+        return (
+            f"{self.industrial_unit} - "
+            f"{self.month:%Y-%m}"
+        )
+
+# =========================================================
 # 5. Monthly record mixin for common date and month-year fields
 # =========================================================
 class MonthlyRecordMixin(models.Model):
@@ -1126,12 +1270,23 @@ class UnitTransfer(models.Model):
 # =========================================================
 
 class PlotCancellationAppeal(models.Model):
+    class RecordType(models.TextChoices):
+        CANCELLATION = "cancellation", "প্লট বাতিল"
+        APPEAL = "appeal", "আপিল"
     class AppealStatus(models.TextChoices):
         PENDING = "pending", "বিবেচনাধীন"
         APPROVED = "approved", "অনুমোদিত"
         REJECTED = "rejected", "নাকচ"
         WITHDRAWN = "withdrawn", "প্রত্যাহার"
         OTHER = "other", "অন্যান্য"
+    
+    record_type = models.CharField(
+        "তথ্যের ধরন",
+        max_length=20,
+        choices=RecordType.choices,
+        default=RecordType.CANCELLATION,
+        db_index=True,
+    )
 
     industrial_unit = models.ForeignKey(
         IndustrialUnit,
@@ -1299,3 +1454,649 @@ class UtilityUsage(models.Model):
 
     def __str__(self):
         return f"{self.get_utility_type_display()} — {self.year}"
+class LegalCase(models.Model):
+
+    class CaseType(models.TextChoices):
+        CIVIL = "civil", "দেওয়ানি"
+        CRIMINAL = "criminal", "ফৌজদারি"
+        OTHER = "other", "অন্যান্য"
+
+    class CaseStatus(models.TextChoices):
+        ONGOING = "ongoing", "চলমান"
+        DISPOSED = "disposed", "নিষ্পত্তি"
+        APPEAL = "appeal", "আপিল"
+
+    estate = models.ForeignKey(
+        IndustrialEstate,
+        on_delete=models.PROTECT,
+        related_name="legal_cases",
+        verbose_name="শিল্পনগরী",
+    )
+
+    industrial_unit = models.ForeignKey(
+        IndustrialUnit,
+        on_delete=models.PROTECT,
+        related_name="legal_cases",
+        verbose_name="সংশ্লিষ্ট শিল্প ইউনিট",
+        null=True,
+        blank=True,
+    )
+
+    case_number = models.CharField("মামলার নম্বর", max_length=100)
+    court_name = models.CharField("আদালতের নাম", max_length=255)
+
+    case_type = models.CharField(
+        "মামলার ধরন",
+        max_length=20,
+        choices=CaseType.choices,
+    )
+
+    case_date = models.DateField("মামলার তারিখ", null=True, blank=True)
+    plaintiff_name = models.CharField("বাদীর নাম", max_length=255)
+    defendant_name = models.CharField("বিবাদীর নাম", max_length=255)
+
+    case_subject = models.TextField("মামলার বিষয়")
+    local_office_action = models.TextField(
+        "স্থানীয় কার্যালয়ের কার্যক্রম", blank=True
+    )
+    latest_progress = models.TextField("সর্বশেষ অগ্রগতি", blank=True)
+    latest_hearing_date = models.DateField(
+        "সর্বশেষ শুনানি/আদেশের তারিখ", null=True, blank=True
+    )
+    bscic_action_required = models.TextField("বিসিকের করণীয়", blank=True)
+
+    current_status = models.CharField(
+        "মামলার বর্তমান অবস্থা",
+        max_length=20,
+        choices=CaseStatus.choices,
+        default=CaseStatus.ONGOING,
+    )
+
+    next_date = models.DateField("পরবর্তী তারিখ", null=True, blank=True)
+    next_action = models.TextField("পরবর্তী করণীয়", blank=True)
+    remarks = models.TextField("মন্তব্য", blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-case_date", "-created_at"]
+        verbose_name = "মামলার তথ্য"
+        verbose_name_plural = "মামলার তথ্যসমূহ"
+
+    def __str__(self):
+        return f"{self.case_number} — {self.court_name}"
+
+
+class LegalCaseDocument(models.Model):
+
+    class DocumentType(models.TextChoices):
+        CASE_PAPER = "case_paper", "মামলার কাগজপত্র"
+        OTHER = "other", "অন্যান্য দলিল"
+
+    legal_case = models.ForeignKey(
+        LegalCase,
+        on_delete=models.CASCADE,
+        related_name="documents",
+        verbose_name="মামলা",
+    )
+
+    document_type = models.CharField(
+        "দলিলের ধরন",
+        max_length=20,
+        choices=DocumentType.choices,
+    )
+
+    title = models.CharField(
+        "দলিলের নাম",
+        max_length=255,
+        blank=True,
+    )
+
+    file = models.FileField(
+        "ফাইল",
+        upload_to="legal_cases/%Y/%m/",
+    )
+
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-uploaded_at"]
+        verbose_name = "মামলার দলিল"
+        verbose_name_plural = "মামলার দলিলসমূহ"
+
+    def __str__(self):
+        return self.title or self.file.name
+from decimal import Decimal
+from django.conf import settings
+from django.core.validators import MinValueValidator
+from django.db import models
+from django.utils import timezone
+
+
+class GreenerySetting(models.Model):
+    """Superadmin কর্তৃক নির্ধারিত ভিত্তি তারিখ।"""
+
+    estate = models.OneToOneField(
+        IndustrialEstate,
+        on_delete=models.PROTECT,
+        related_name="greenery_setting",
+        verbose_name="শিল্পনগরী",
+    )
+
+    base_date = models.DateField("তুলনার ভিত্তি তারিখ")
+
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="সর্বশেষ হালনাগাদকারী",
+    )
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "সবুজায়নের ভিত্তি তারিখ"
+        verbose_name_plural = "সবুজায়নের ভিত্তি তারিখসমূহ"
+
+    def __str__(self):
+        return f"{self.estate} — {self.base_date:%d-%m-%Y}"
+
+
+class GreeneryReport(models.Model):
+    """নির্দিষ্ট রিপোর্টের তারিখে সবুজায়নের অগ্রগতি।"""
+
+    estate = models.ForeignKey(
+        IndustrialEstate,
+        on_delete=models.PROTECT,
+        related_name="greenery_reports",
+        verbose_name="শিল্পনগরী",
+    )
+
+    # রিপোর্ট জমা দেওয়ার সময়কার ভিত্তি তারিখ সংরক্ষণ
+    base_date = models.DateField("তুলনার ভিত্তি তারিখ")
+
+    report_date = models.DateField(
+        "রিপোর্টের তারিখ",
+        default=timezone.localdate,
+    )
+
+    suitable_land = models.DecimalField(
+        "বৃক্ষরোপণের জন্য উপযুক্ত মোট জমি (শতক)",
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal("0"))],
+    )
+
+    trees_at_base_date = models.PositiveIntegerField(
+        "ভিত্তি তারিখ পর্যন্ত রোপিত গাছের সংখ্যা",
+    )
+
+    vacant_land_at_base_date = models.DecimalField(
+        "ভিত্তি তারিখে খালি উপযুক্ত জমি (শতক)",
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal("0"))],
+    )
+
+    plantable_trees = models.PositiveIntegerField(
+        "খালি জায়গায় রোপণযোগ্য গাছের সংখ্যা",
+    )
+
+    new_trees_planted = models.PositiveIntegerField(
+        "ভিত্তি তারিখের পর নতুন রোপিত গাছের সংখ্যা",
+    )
+
+    newly_greenified_land = models.DecimalField(
+        "নতুন সবুজায়নকৃত জমি (শতক)",
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal("0"))],
+    )
+
+    greenery_initiatives = models.TextField(
+        "অবশিষ্ট জমিতে বৃক্ষরোপণের উদ্যোগ",
+        blank=True,
+    )
+
+    comments = models.TextField("মন্তব্য", blank=True)
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="greenery_reports",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-report_date", "-created_at"]
+        verbose_name = "সবুজায়নের রিপোর্ট"
+        verbose_name_plural = "সবুজায়নের রিপোর্টসমূহ"
+
+    @property
+    def greenery_rate(self):
+        if self.vacant_land_at_base_date <= 0:
+            return Decimal("0.00")
+
+        return (
+            self.newly_greenified_land
+            / self.vacant_land_at_base_date
+            * Decimal("100")
+        ).quantize(Decimal("0.01"))
+
+    def __str__(self):
+        return f"{self.estate} — {self.report_date:%d-%m-%Y}"
+
+
+class GreeneryReportImage(models.Model):
+    """একটি রিপোর্টের একাধিক ছবি।"""
+
+    report = models.ForeignKey(
+        GreeneryReport,
+        on_delete=models.CASCADE,
+        related_name="images",
+    )
+
+    image = models.ImageField(
+        "বৃক্ষরোপণের ছবি",
+        upload_to="greenery/%Y/%m/",
+    )
+
+    photo_date = models.DateField(
+        "ছবির তারিখ",
+        null=True,
+        blank=True,
+    )
+
+    caption = models.CharField(
+        "ছবির বিবরণ",
+        max_length=255,
+        blank=True,
+    )
+
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-photo_date", "-uploaded_at"]
+        verbose_name = "সবুজায়নের ছবি"
+        verbose_name_plural = "সবুজায়নের ছবিসমূহ"
+# =========================================================
+# Page 6: KPI-ভুক্ত প্রতিষ্ঠান
+# =========================================================
+
+class KPIInstitution(models.Model):
+    class KPIType(models.TextChoices):
+        STRATEGIC = "strategic", "কৌশলগত"
+        SECURITY = "security", "নিরাপত্তা"
+        GOVERNMENT = "government", "সরকারি গুরুত্বপূর্ণ প্রতিষ্ঠান"
+        OTHER = "other", "অন্যান্য"
+
+    class CurrentStatus(models.TextChoices):
+        ACTIVE = "active", "সচল"
+        INACTIVE = "inactive", "নিষ্ক্রিয়"
+        UNDER_REVIEW = "under_review", "পর্যালোচনাধীন"
+        OTHER = "other", "অন্যান্য"
+
+    estate = models.ForeignKey(
+        IndustrialEstate, on_delete=models.PROTECT,
+        related_name="kpi_institutions", verbose_name="শিল্পনগরী"
+    )
+    institution_name = models.CharField("প্রতিষ্ঠানের নাম", max_length=255)
+    kpi_type = models.CharField(
+        "KPI-ভুক্তির ধরন/শ্রেণি", max_length=30, choices=KPIType.choices
+    )
+    kpi_date = models.DateField("KPI-ভুক্তির তারিখ")
+    plot = models.ForeignKey(
+        Plot, on_delete=models.PROTECT,
+        related_name="kpi_institutions", verbose_name="প্রতিষ্ঠানের প্লট নম্বর"
+    )
+    lessee_name = models.CharField("ইজারা গ্রহিতার নাম", max_length=255)
+    contact_info = models.CharField("যোগাযোগের তথ্য", max_length=100)
+    approval_pdf = models.FileField(
+        "KPI-ভুক্তির আদেশ/অনুমোদন",
+        upload_to="kpi_institutions/approvals/"
+    )
+    current_status = models.CharField(
+        "বর্তমান অবস্থা", max_length=20,
+        choices=CurrentStatus.choices, default=CurrentStatus.ACTIVE
+    )
+    comments = models.TextField("মন্তব্য", blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["estate__name", "institution_name"]
+        verbose_name = "KPI-ভুক্ত প্রতিষ্ঠান"
+        verbose_name_plural = "KPI-ভুক্ত প্রতিষ্ঠানসমূহ"
+
+    def clean(self):
+        if self.plot_id and self.estate_id:
+            if self.plot.estate_id != self.estate_id:
+                raise ValidationError({
+                    "plot": "নির্বাচিত প্লটটি এই শিল্পনগরীর নয়।"
+                })
+
+    def __str__(self):
+        return self.institution_name
+
+
+# =========================================================
+# Page 7: Street Light
+# =========================================================
+
+class StreetLightRecord(models.Model):
+    class SupervisingOrganization(models.TextChoices):
+        BSCIC = "bscic", "বিসিক"
+        MUNICIPALITY = "municipality", "পৌরসভা"
+        OTHER = "other", "অন্যান্য"
+
+    estate = models.ForeignKey(
+        IndustrialEstate, on_delete=models.PROTECT,
+        related_name="street_light_records", verbose_name="শিল্পনগরী"
+    )
+    has_street_lights = models.BooleanField("স্ট্রিট লাইট আছে কি না", default=False)
+    total_lights = models.PositiveIntegerField("মোট স্ট্রিট লাইটের সংখ্যা", default=0)
+    working_lights = models.PositiveIntegerField("সচল লাইটের সংখ্যা", default=0)
+    broken_lights = models.PositiveIntegerField("অচল লাইটের সংখ্যা", default=0)
+    supervising_organization = models.CharField(
+        "তদারকিকারী প্রতিষ্ঠান",
+        max_length=20,
+        choices=SupervisingOrganization.choices,
+        default=SupervisingOrganization.BSCIC,
+    )
+    supervising_organization_other = models.CharField(
+        "অন্যান্য তদারকিকারী প্রতিষ্ঠান", max_length=255, blank=True
+    )
+    last_inspection_date = models.DateField(
+        "সর্বশেষ পরিদর্শনের তারিখ", null=True, blank=True
+    )
+    repair_installation_needs = models.TextField(
+        "মেরামত বা স্থাপনের প্রয়োজনীয়তা", blank=True
+    )
+    photo = models.ImageField(
+        "ছবি", upload_to="street_lights/", null=True, blank=True
+    )
+    comments = models.TextField("মন্তব্য", blank=True)
+    report_date = models.DateField("তথ্যের তারিখ", default=timezone.localdate)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-report_date", "-created_at"]
+        verbose_name = "স্ট্রিট লাইটের তথ্য"
+        verbose_name_plural = "স্ট্রিট লাইটের তথ্যসমূহ"
+
+    def clean(self):
+        errors = {}
+        if self.working_lights + self.broken_lights > self.total_lights:
+            errors["broken_lights"] = (
+                "সচল ও অচল লাইটের যোগফল মোট লাইটের বেশি হতে পারবে না।"
+            )
+        if not self.has_street_lights and (
+            self.total_lights or self.working_lights or self.broken_lights
+        ):
+            errors["total_lights"] = (
+                "স্ট্রিট লাইট না থাকলে লাইটের সংখ্যা শূন্য হতে হবে।"
+            )
+        if errors:
+            raise ValidationError(errors)
+
+    def __str__(self):
+        return f"{self.estate} — {self.report_date}"
+
+
+# =========================================================
+# Page 8.1: Water Supply
+# =========================================================
+
+class WaterSupplyRecord(models.Model):
+    class WaterSource(models.TextChoices):
+        GROUNDWATER = "groundwater", "ভূগর্ভস্থ পানি"
+        SURFACE = "surface", "ভূপৃষ্ঠের পানি"
+        MUNICIPAL = "municipal", "পৌর/ওয়াসা সরবরাহ"
+        OTHER = "other", "অন্যান্য"
+
+    class SupplyStatus(models.TextChoices):
+        NORMAL = "normal", "স্বাভাবিক"
+        PARTIAL = "partial", "আংশিক সচল"
+        INTERRUPTED = "interrupted", "বিঘ্নিত"
+        STOPPED = "stopped", "বন্ধ"
+
+    estate = models.ForeignKey(
+        IndustrialEstate, on_delete=models.PROTECT,
+        related_name="water_supply_records", verbose_name="শিল্পনগরী"
+    )
+    has_water_supply = models.BooleanField("পানি সরবরাহ ব্যবস্থা আছে কি না", default=False)
+    supplier_name = models.CharField("সরবরাহকারী প্রতিষ্ঠান", max_length=255, blank=True)
+    water_source = models.CharField(
+        "পানি সরবরাহের উৎস", max_length=20,
+        choices=WaterSource.choices, blank=True
+    )
+    monthly_quantity = models.DecimalField(
+        "মাসিক সরবরাহের পরিমাণ", max_digits=14, decimal_places=2,
+        null=True, blank=True, validators=[MinValueValidator(Decimal("0"))]
+    )
+    quantity_unit = models.CharField(
+        "পরিমাণের একক", max_length=30, blank=True,
+        help_text="যেমন: ঘনমিটার, লিটার"
+    )
+    connection_count = models.PositiveIntegerField("পানির সংযোগের সংখ্যা", default=0)
+    supply_status = models.CharField(
+        "সরবরাহ ব্যবস্থার বর্তমান অবস্থা",
+        max_length=20, choices=SupplyStatus.choices, blank=True
+    )
+    supply_problems = models.TextField("পানি সরবরাহের সমস্যা", blank=True)
+    last_updated_date = models.DateField("সর্বশেষ হালনাগাদের তারিখ", default=timezone.localdate)
+    attachment = models.FileField(
+        "সংযুক্তি", upload_to="utilities/water/", null=True, blank=True
+    )
+    comments = models.TextField("মন্তব্য", blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-last_updated_date", "-created_at"]
+        verbose_name = "পানি সরবরাহের তথ্য"
+        verbose_name_plural = "পানি সরবরাহের তথ্যসমূহ"
+
+    def __str__(self):
+        return f"{self.estate} — পানি"
+
+
+# =========================================================
+# Page 8.2: Electricity
+# =========================================================
+
+class ElectricityRecord(models.Model):
+    class Supplier(models.TextChoices):
+        PDB = "pdb", "পিডিবি"
+        RURAL_ELECTRICITY = "rural_electricity", "পল্লী বিদ্যুৎ"
+        OTHER = "other", "অন্যান্য"
+
+    class SupplyStatus(models.TextChoices):
+        NORMAL = "normal", "স্বাভাবিক"
+        PARTIAL = "partial", "আংশিক সচল"
+        STOPPED = "stopped", "বন্ধ"
+
+    estate = models.ForeignKey(
+        IndustrialEstate, on_delete=models.PROTECT,
+        related_name="electricity_records", verbose_name="শিল্পনগরী"
+    )
+    has_electricity = models.BooleanField("বিদ্যুৎ সংযোগ আছে কি না", default=False)
+    supplier = models.CharField(
+        "বিদ্যুৎ সরবরাহকারী প্রতিষ্ঠান", max_length=30,
+        choices=Supplier.choices, blank=True
+    )
+    supplier_other = models.CharField("অন্যান্য সরবরাহকারী", max_length=255, blank=True)
+    connected_unit_count = models.PositiveIntegerField(
+        "সংযুক্ত শিল্প ইউনিটের সংখ্যা", default=0
+    )
+    approved_load = models.DecimalField(
+        "অনুমোদিত লোড", max_digits=14, decimal_places=3,
+        null=True, blank=True, validators=[MinValueValidator(Decimal("0"))]
+    )
+    approved_load_unit = models.CharField(
+        "অনুমোদিত লোডের একক", max_length=10, blank=True,
+        help_text="kW অথবা MW"
+    )
+    supply_status = models.CharField(
+        "বিদ্যুৎ সরবরাহের বর্তমান অবস্থা", max_length=20,
+        choices=SupplyStatus.choices, blank=True
+    )
+    supply_problems = models.TextField("বিদ্যুৎ বিভ্রাট/সরবরাহ সমস্যা", blank=True)
+    last_updated_date = models.DateField("তথ্য হালনাগাদের তারিখ", default=timezone.localdate)
+    comments = models.TextField("মন্তব্য", blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-last_updated_date", "-created_at"]
+        verbose_name = "বিদ্যুৎ সরবরাহের তথ্য"
+        verbose_name_plural = "বিদ্যুৎ সরবরাহের তথ্যসমূহ"
+
+    def __str__(self):
+        return f"{self.estate} — বিদ্যুৎ"
+
+
+# =========================================================
+# Page 8.3: Gas
+# =========================================================
+
+class GasSupplyRecord(models.Model):
+    class SupplyType(models.TextChoices):
+        PIPELINE = "pipeline", "পাইপলাইন"
+        CYLINDER = "cylinder", "সিলিন্ডার"
+        OTHER = "other", "অন্যান্য"
+
+    estate = models.ForeignKey(
+        IndustrialEstate, on_delete=models.PROTECT,
+        related_name="gas_supply_records", verbose_name="শিল্পনগরী"
+    )
+    has_gas_supply = models.BooleanField("গ্যাস সরবরাহ আছে কি না", default=False)
+    supplier_name = models.CharField("সরবরাহকারী প্রতিষ্ঠান", max_length=255, blank=True)
+    connected_unit_count = models.PositiveIntegerField(
+        "গ্যাস সংযোগপ্রাপ্ত শিল্প ইউনিটের সংখ্যা", default=0
+    )
+    supply_type = models.CharField(
+        "সরবরাহের ধরন", max_length=20, choices=SupplyType.choices, blank=True
+    )
+    supply_problems = models.TextField("গ্যাস সরবরাহের সমস্যা", blank=True)
+    last_updated_date = models.DateField("সর্বশেষ হালনাগাদের তারিখ", default=timezone.localdate)
+    comments = models.TextField("মন্তব্য", blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-last_updated_date", "-created_at"]
+        verbose_name = "গ্যাস সরবরাহের তথ্য"
+        verbose_name_plural = "গ্যাস সরবরাহের তথ্যসমূহ"
+
+    def __str__(self):
+        return f"{self.estate} — গ্যাস"
+
+
+# =========================================================
+# Page 9: Ponds
+# =========================================================
+
+class PondRecord(models.Model):
+    class LeaseCollectionStatus(models.TextChoices):
+        PAID = "paid", "সম্পূর্ণ আদায়"
+        PARTIAL = "partial", "আংশিক আদায়"
+        DUE = "due", "বকেয়া"
+        NOT_APPLICABLE = "not_applicable", "প্রযোজ্য নয়"
+
+    estate = models.ForeignKey(
+        IndustrialEstate, on_delete=models.PROTECT,
+        related_name="pond_records", verbose_name="শিল্পনগরী"
+    )
+    pond_name = models.CharField("পুকুরের নাম/শনাক্তকরণ নম্বর", max_length=255)
+    pond_count = models.PositiveIntegerField("পুকুরের সংখ্যা", default=1)
+    pond_area = models.DecimalField(
+        "পুকুরের আয়তন", max_digits=14, decimal_places=2,
+        validators=[MinValueValidator(Decimal("0"))]
+    )
+    area_unit = models.CharField(
+        "আয়তনের একক", max_length=30, default="শতক",
+        help_text="যেমন: শতক, একর, বর্গমিটার"
+    )
+    is_leased = models.BooleanField("পুকুর ইজারা দেওয়া হয়েছে কি না", default=False)
+    lessee_name = models.CharField("ইজারাগ্রহীতার নাম", max_length=255, blank=True)
+    lease_start_date = models.DateField("ইজারা শুরুর তারিখ", null=True, blank=True)
+    lease_end_date = models.DateField("ইজারার মেয়াদ শেষের তারিখ", null=True, blank=True)
+    lease_amount = models.DecimalField(
+        "ইজারামূল্য", max_digits=14, decimal_places=2,
+        null=True, blank=True, validators=[MinValueValidator(Decimal("0"))]
+    )
+    amount_collected = models.DecimalField(
+        "ইজারার মাধ্যমে এ পর্যন্ত আদায়কৃত অর্থ",
+        max_digits=14, decimal_places=2, default=Decimal("0.00"),
+        validators=[MinValueValidator(Decimal("0"))]
+    )
+    collection_status = models.CharField(
+        "ইজারার অর্থ আদায়ের অবস্থা", max_length=20,
+        choices=LeaseCollectionStatus.choices,
+        default=LeaseCollectionStatus.NOT_APPLICABLE
+    )
+    lease_agreement = models.FileField(
+        "ইজারার চুক্তিপত্র (PDF)", upload_to="ponds/lease_agreements/",
+        null=True, blank=True
+    )
+    repair_leaseable_count = models.PositiveIntegerField(
+        "সংস্কারপূর্বক লিজযোগ্য পুকুরের সংখ্যা", default=0
+    )
+    unleaseable_count = models.PositiveIntegerField(
+        "লিজ অযোগ্য পুকুরের সংখ্যা", default=0
+    )
+    photo = models.ImageField(
+        "পুকুরের ছবি", upload_to="ponds/photos/", null=True, blank=True
+    )
+    comments = models.TextField("মন্তব্য", blank=True)
+    report_date = models.DateField("তথ্যের তারিখ", default=timezone.localdate)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["estate__name", "pond_name"]
+        verbose_name = "পুকুরের তথ্য"
+        verbose_name_plural = "পুকুরের তথ্যসমূহ"
+
+    def clean(self):
+        if self.is_leased:
+            errors = {}
+            if not self.lessee_name:
+                errors["lessee_name"] = "ইজারাগ্রহীতার নাম আবশ্যক।"
+            if self.lease_start_date and self.lease_end_date:
+                if self.lease_end_date < self.lease_start_date:
+                    errors["lease_end_date"] = "শেষের তারিখ শুরুর তারিখের আগে হতে পারবে না।"
+            if errors:
+                raise ValidationError(errors)
+
+    def __str__(self):
+        return f"{self.estate} — {self.pond_name}"
+
+
+# =========================================================
+# Page 10: Purpose of Industrial Estate
+# =========================================================
+
+class EstatePurposeRecord(models.Model):
+    estate = models.OneToOneField(
+        IndustrialEstate, on_delete=models.PROTECT,
+        related_name="purpose_record", verbose_name="শিল্পনগরী"
+    )
+    main_purpose = models.TextField("স্থাপনের মূল উদ্দেশ্য")
+    future_plan = models.TextField("ভবিষ্যৎ পরিকল্পনা", blank=True)
+    comments = models.TextField("মন্তব্য", blank=True)
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="updated_estate_purposes"
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "শিল্পনগরী স্থাপনের উদ্দেশ্য"
+        verbose_name_plural = "শিল্পনগরী স্থাপনের উদ্দেশ্যসমূহ"
+
+    def __str__(self):
+        return f"{self.estate} — স্থাপনের উদ্দেশ্য"

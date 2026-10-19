@@ -83,24 +83,31 @@
                             </a>
 
                             <!-- Sub-section 05 -->
+                            <!-- 
                             <a href="{% url 'industrial_estate:industrial_unit_list' %}#floor-rental">
                                 <i class="bi bi-building-check"></i>
                                 ফ্লোর স্পেস ভাড়া
-                            </a>
+                            </a> 
+                            -->
 
                             <!-- 06: পাওনা ও আদায় -->
+                            <!-- 
                             <a href="{% url 'industrial_estate:receivable_list' %}">
                                 <i class="bi bi-cash-stack"></i>
                                 পাওনা ও আদায় ব্যবস্থাপনা
-                            </a>
+                            </a> 
+                            -->
 
                             <!-- Sub-section 07 -->
+                            <!-- 
                             <a href="{% url 'industrial_estate:bank_loan_list' %}">
                                 <i class="bi bi-bank"></i>
                                 ব্যাংক ঋণ ও অনাপত্তিপত্র
-                            </a>
+                            </a> 
+                            -->
 
                             <!-- Sub-section 08 -->
+                            <!-- 
                             <div class="side-sub-group">
                                 <a href="{% url 'industrial_estate:transfer_list' %}">
                                     <i class="bi bi-arrow-left-right"></i>
@@ -118,33 +125,61 @@
                                         প্লট বাতিল ও আপিল
                                     </a>
                                 </div>
-                            </div>
+                            </div> 
+                            -->
 
                             <!-- Sub-section 09 -->
+                            <!-- 
                             <a href="{% url 'industrial_estate:export_product_list' %}">
                                 <i class="bi bi-globe"></i>
                                 রপ্তানি ও আমদানি-সংক্রান্ত তথ্য
-                            </a>
-
-                            <!-- Sub-section 10 -->
-                            <a href="{% url 'industrial_estate:environment_create' %}">
-                                <i class="bi bi-tree"></i>
-                                পরিবেশ, সোলার ও বর্জ্য ব্যবস্থাপনা
-                            </a>
-
+                            </a> 
+                            -->
                         </div>
+
+                        <!-- Sub-section 10 -->
+                        <a href="{% url 'industrial_estate:environment_create' %}">
+                            <i class="bi bi-tree"></i>
+                                পরিবেশ, সোলার ও বর্জ্য ব্যবস্থাপনা
+                        </a>
+                        <!-- Sub-section: Greenery -->
+                        {% if request.user.is_superuser %}
+                            <a href="{% url 'industrial_estate:greenery_setting' %}">
+                                <i class="bi bi-tree"></i>
+                                সবুজায়নের ভিত্তি তারিখ
+                            </a>
+                        {% endif %}
+                        <!-- KPI -->
+                        {% if current_estate %}
+                            <a href="{% url 'industrial_estate:kpi_institution_report' current_estate.pk %}">
+                                <i class="bi bi-building-check"></i>
+                                KPI-ভুক্ত প্রতিষ্ঠানের রিপোর্ট
+                            </a>
+
+                            <a href="{% url 'industrial_estate:kpi_institution_create' current_estate.pk %}">
+                                <i class="bi bi-plus-circle"></i>
+                                KPI-ভুক্ত প্রতিষ্ঠানের তথ্য যুক্ত করুন
+                            </a>
+                        {% endif %}
+
+                        {% if current_estate %}
+                            <!-- Street Light -->
+                            <a href="{% url 'industrial_estate:street_light_report' current_estate.pk %}">
+                                <i class="bi bi-lightbulb"></i>
+                                স্ট্রিট লাইট রিপোর্ট
+                            </a>
+
+                            <a href="{% url 'industrial_estate:street_light_create' current_estate.pk %}">
+                                <i class="bi bi-plus-circle"></i>
+                                স্ট্রিট লাইটের তথ্য যুক্ত করুন
+                            </a>
+
+                            <!-- Keep the remaining current_estate-dependent links here -->
+                        {% endif %}
+
+                        
+                        
                     </div>
-                <!-- <a href="#">প্লটের তথ্য</a>
-                <a href="#">কর্মসংস্থান</a>
-                <a href="#">শিল্প ইউনিট</a>
-                <a href="#">মামলার তথ্য</a>
-                <a href="#">সবুজায়নের তথ্য</a>
-                <a href="#">KPI ভুক্ত প্রতিষ্ঠানের তথ্য</a>
-                <a href="#">Street Light সংক্রান্ত</a>
-                <a href="#">Utility সংক্রান্ত</a>
-                <a href="#">পুকুর সংক্রান্ত</a>
-                <a href="#">পাওনা আদায় সংক্রান্ত</a>
-                <a href="#">শিল্পনগরী স্থাপনের উদ্দেশ্য</a> -->
             </div>
 
             <a href="#"><i class="bi bi-database"></i> হিসাব ও অর্থ</a>

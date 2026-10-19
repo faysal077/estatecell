@@ -4,6 +4,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, Sum
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template import context
 from django.urls import reverse, reverse_lazy
 from django.views.generic import (
     ListView,
@@ -11,6 +12,26 @@ from django.views.generic import (
     DetailView,
     UpdateView,
 )
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import Http404
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views import View
+from .models import LegalCase, LegalCaseDocument, IndustrialUnit
+from .forms import LegalCaseForm
+from datetime import date
+from django.http import Http404
+from django.contrib import messages
+from django.urls import reverse
+from django.shortcuts import get_object_or_404
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import IntegrityError, transaction
+from django.shortcuts import get_object_or_404
+from django.urls import reverse
+from django.views.generic import CreateView
+from .forms import FloorSpaceRentalForm
+from .models import FloorSpaceRental, IndustrialUnit
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
@@ -31,7 +52,6 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods
-
 from .models import IndustrialUnit, UnitProduct
 from .forms import (
     IndustrialUnitProductionForm,
@@ -121,7 +141,35 @@ from .models import (
     UnitProduct,
     EstateReview,
 )
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import PermissionDenied
+from django.db.models import Model
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.utils import timezone
+from django.views import View
 
+from .models import (
+    IndustrialEstate,
+    KPIInstitution,
+    StreetLightRecord,
+    WaterSupplyRecord,
+    ElectricityRecord,
+    GasSupplyRecord,
+    PondRecord,
+    EstatePurposeRecord,
+    Plot,
+)
+from .forms import (
+    KPIInstitutionForm,
+    StreetLightRecordForm,
+    WaterSupplyRecordForm,
+    ElectricityRecordForm,
+    GasSupplyRecordForm,
+    PondRecordForm,
+    EstatePurposeRecordForm,
+)
 def get_user_profile(user):
     if not user.is_authenticated:
         raise PermissionDenied
@@ -672,12 +720,21 @@ class IndustrialUnitDetailView(LoginRequiredMixin, DetailView):
         # Section 07: Bank loans and NOC documents
         context["section_07_bank_loans"] = unit.bank_loans.all()
 
-        # Section 08: Transfers and cancellation appeals
+        # Section 08: Transfers
         context["section_08_transfers"] = unit.transfers.all()
-        context["section_08_cancellation_appeals"] = (
-            PlotCancellationAppeal.objects.filter(
-                industrial_unit=unit
-            )
+
+        # Section 08A: Plot cancellation information
+        context["section_08_cancellations"] = (
+            unit.cancellation_appeals.filter(
+                record_type=PlotCancellationAppeal.RecordType.CANCELLATION
+            ).select_related("plot")
+        )
+
+        # Section 08B: Appeal information
+        context["section_08_appeals"] = (
+            unit.cancellation_appeals.filter(
+                record_type=PlotCancellationAppeal.RecordType.APPEAL
+            ).select_related("plot")
         )
 
         # Section 09: Export products
@@ -690,10 +747,15 @@ class IndustrialUnitDetailView(LoginRequiredMixin, DetailView):
             ).first()
         )
 
-        context["section_10_utility_usage"] = UtilityUsage.objects.filter(
-            environmental_data__industrial_unit=unit
+        context["section_10_utility_usage"] = (
+            UtilityUsage.objects.filter(
+                environmental_data__industrial_unit=unit
+            )
         )
-
+        # Section 11: Legal cases
+        context["section_11_legal_cases"] = (
+            unit.legal_cases.prefetch_related("documents").all()
+)
         context["can_edit"] = not is_read_only_user(self.request.user)
 
         return context
@@ -1084,26 +1146,88 @@ class ExportProductListView(UnitRelatedListView):
 
 
 # Cancellation/appeals are linked to both a unit and a plot.
+
 class AppealCreateView(LoginRequiredMixin, CreateView):
     model = PlotCancellationAppeal
     form_class = PlotCancellationAppealForm
     template_name = "industrial_estate/record_form.html"
 
+    def dispatch(self, request, *args, **kwargs):
+        self.record_type = request.GET.get(
+            "type", PlotCancellationAppeal.RecordType.CANCELLATION
+        )
+
+        if self.record_type not in {
+            PlotCancellationAppeal.RecordType.CANCELLATION,
+            PlotCancellationAppeal.RecordType.APPEAL,
+        }:
+            raise Http404("Invalid record type")
+
+        return super().dispatch(request, *args, **kwargs)
+
     def get_initial(self):
         initial = super().get_initial()
+
         unit_pk = self.request.GET.get("unit")
         plot_pk = self.request.GET.get("plot")
+
         if unit_pk:
-            initial["industrial_unit"] = unit_pk
+            unit = get_object_or_404(
+                get_accessible_units(self.request.user),
+                pk=unit_pk,
+            )
+            initial["industrial_unit"] = unit.pk
+
         if plot_pk:
-            initial["plot"] = plot_pk
+            plot = get_object_or_404(
+                Plot.objects.filter(
+                    estate__in=get_accessible_estates(self.request.user)
+                ),
+                pk=plot_pk,
+            )
+            initial["plot"] = plot.pk
+
         return initial
+
+    def form_valid(self, form):
+        require_write_access(self.request.user)
+
+        unit = form.cleaned_data["industrial_unit"]
+        plot = form.cleaned_data["plot"]
+
+        # নিশ্চিত করুন, ইউনিটটি ব্যবহারকারীর আওতাভুক্ত।
+        if not get_accessible_units(self.request.user).filter(
+            pk=unit.pk
+        ).exists():
+            form.add_error(
+                "industrial_unit",
+                "এই শিল্প ইউনিটে আপনার প্রবেশাধিকার নেই।",
+            )
+            return self.form_invalid(form)
+
+        # প্লট ও শিল্প ইউনিট একই শিল্পনগরীর হতে হবে।
+        if plot.estate_id != unit.estate_id:
+            form.add_error(
+                "plot",
+                "নির্বাচিত প্লটটি এই শিল্প ইউনিটের শিল্পনগরীর অন্তর্ভুক্ত নয়।",
+            )
+            return self.form_invalid(form)
+
+        form.instance.record_type = self.record_type
+
+        messages.success(
+            self.request,
+            "প্লট বাতিল/আপিলের তথ্য সফলভাবে সংরক্ষণ করা হয়েছে।",
+        )
+
+        return super().form_valid(form)
 
     def get_success_url(self):
         return reverse(
             "industrial_estate:industrial_unit_detail",
             kwargs={"pk": self.object.industrial_unit_id},
         )
+
 
 
 class AppealUpdateView(LoginRequiredMixin, UpdateView):
@@ -1745,3 +1869,494 @@ def employment_delete(request, unit_pk, pk):
 
     messages.success(request, "কর্মসংস্থানের রেকর্ড মুছে ফেলা হয়েছে।")
     return redirect("industrial_estate:employment_list")
+
+
+
+
+class FloorSpaceRentalCreateView(LoginRequiredMixin, CreateView):
+    model = FloorSpaceRental
+    form_class = FloorSpaceRentalForm
+    template_name = "industrial_estate/floor_rental_form.html"
+
+    def get_unit(self):
+        if not hasattr(self, "_floor_rental_unit"):
+            self._floor_rental_unit = get_object_or_404(
+                get_accessible_units(self.request.user),
+                pk=self.kwargs["unit_id"],
+            )
+        return self._floor_rental_unit
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["unit"] = self.get_unit()
+        return context
+
+    def get_initial(self):
+        initial = super().get_initial()
+        today = date.today()
+        initial["month"] = today.replace(day=1)
+        initial["is_rented"] = True
+        return initial
+
+    def form_valid(self, form):
+        require_write_access(self.request.user)
+        form.instance.industrial_unit = self.get_unit()
+
+        try:
+            with transaction.atomic():
+                response = super().form_valid(form)
+        except IntegrityError:
+            form.add_error(
+                "month",
+                "এই শিল্প ইউনিটের জন্য নির্বাচিত মাসের তথ্য ইতোমধ্যে রয়েছে।",
+            )
+            return self.form_invalid(form)
+
+        messages.success(
+            self.request,
+            "ফ্লোর স্পেস ভাড়ার তথ্য সফলভাবে সংরক্ষণ করা হয়েছে।",
+        )
+        return response
+
+    def get_success_url(self):
+        return reverse(
+            "industrial_estate:industrial_unit_detail",
+            kwargs={"pk": self.object.industrial_unit_id},
+        )
+class LegalCaseCreateView(LoginRequiredMixin, View):
+    template_name = "industrial_estate/legal_case_form.html"
+
+    def get_unit(self):
+        unit_pk = self.request.GET.get("unit") or self.request.POST.get("unit_id")
+
+        if not unit_pk:
+            return None
+
+        unit = get_object_or_404(
+            get_accessible_units(self.request.user),
+            pk=unit_pk,
+        )
+        return unit
+
+    def get(self, request, *args, **kwargs):
+        unit = self.get_unit()
+
+        form = LegalCaseForm()
+        form.fields["industrial_unit"].queryset = (
+            get_accessible_units(request.user)
+        )
+
+        if unit:
+            form.initial["industrial_unit"] = unit.pk
+
+        return render(
+            request,
+            self.template_name,
+            {"form": form, "unit": unit},
+        )
+
+    def post(self, request, *args, **kwargs):
+        require_write_access(request.user)
+
+        unit = self.get_unit()
+        form = LegalCaseForm(request.POST)
+        form.fields["industrial_unit"].queryset = (
+            get_accessible_units(request.user)
+        )
+
+        if unit:
+            # Detail page থেকে এলে সংশ্লিষ্ট ইউনিট পরিবর্তন করতে দেবে না।
+            form.data = request.POST.copy()
+            form.data["industrial_unit"] = str(unit.pk)
+
+        if form.is_valid():
+            case = form.save(commit=False)
+
+            if unit:
+                case.industrial_unit = unit
+                case.estate = unit.estate
+            else:
+                # শিল্পনগরীভিত্তিক মামলা যোগ করার ক্ষেত্রে
+                # আলাদা estate নির্বাচন/নির্ধারণের ব্যবস্থা প্রয়োজন।
+                form.add_error(
+                    None,
+                    "শিল্পনগরী নির্বাচন ছাড়া মামলা সংরক্ষণ করা যাবে না।",
+                )
+                return render(
+                    request,
+                    self.template_name,
+                    {"form": form, "unit": unit},
+                )
+
+            case.save()
+
+            for uploaded_file in request.FILES.getlist("case_documents"):
+                LegalCaseDocument.objects.create(
+                    legal_case=case,
+                    document_type=LegalCaseDocument.DocumentType.CASE_PAPER,
+                    file=uploaded_file,
+                )
+
+            for uploaded_file in request.FILES.getlist("other_documents"):
+                LegalCaseDocument.objects.create(
+                    legal_case=case,
+                    document_type=LegalCaseDocument.DocumentType.OTHER,
+                    file=uploaded_file,
+                )
+
+            messages.success(request, "মামলার তথ্য সফলভাবে সংরক্ষণ করা হয়েছে।")
+            return redirect(
+                "industrial_estate:industrial_unit_detail",
+                pk=case.industrial_unit_id,
+            )
+
+        return render(
+            request,
+            self.template_name,
+            {"form": form, "unit": unit},
+        )
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
+from django.db import transaction
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+
+from .models import (
+    GreenerySetting,
+    GreeneryReport,
+    GreeneryReportImage,
+)
+from .forms import GreenerySettingForm, GreeneryReportForm
+
+
+@login_required
+def greenery_setting_view(request):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+
+    if request.method == "POST":
+        form = GreenerySettingForm(request.POST)
+    else:
+        form = GreenerySettingForm()
+
+    if request.method == "POST" and form.is_valid():
+        estate = form.cleaned_data["estate"]
+
+        setting, _ = GreenerySetting.objects.get_or_create(
+            estate=estate,
+            defaults={"base_date": form.cleaned_data["base_date"]},
+        )
+
+        setting.base_date = form.cleaned_data["base_date"]
+        setting.updated_by = request.user
+        setting.save()
+
+        messages.success(request, "ভিত্তি তারিখ সফলভাবে সংরক্ষণ করা হয়েছে।")
+        return redirect("industrial_estate:greenery_setting")
+
+    settings_list = GreenerySetting.objects.select_related("estate").all()
+
+    return render(
+        request,
+        "industrial_estate/greenery_setting.html",
+        {
+            "form": form,
+            "settings_list": settings_list,
+        },
+    )
+@login_required
+def greenery_report_create(request, estate_pk):
+    estate = get_object_or_404(
+        get_accessible_estates(request.user),
+        pk=estate_pk,
+    )
+
+    setting = get_object_or_404(
+        GreenerySetting,
+        estate=estate,
+    )
+
+    if request.method == "POST":
+        form = GreeneryReportForm(request.POST)
+
+        if form.is_valid():
+            report_date = form.cleaned_data["report_date"]
+
+            if report_date < setting.base_date:
+                form.add_error(
+                    "report_date",
+                    "রিপোর্টের তারিখ ভিত্তি তারিখের আগে হতে পারবে না।",
+                )
+            else:
+                with transaction.atomic():
+                    report = form.save(commit=False)
+                    report.estate = estate
+                    report.base_date = setting.base_date
+                    report.created_by = request.user
+                    report.save()
+
+                    for image_file in request.FILES.getlist("images"):
+                        GreeneryReportImage.objects.create(
+                            report=report,
+                            image=image_file,
+                        )
+
+                    for index, photo_date in enumerate(
+                        request.POST.getlist("photo_dates")
+                    ):
+                        if not photo_date:
+                            continue
+
+                        image_file = request.FILES.getlist("images")
+                        if index < len(image_file):
+                            GreeneryReportImage.objects.filter(
+                                report=report,
+                                image=f"greenery/{image_file[index].name}",
+                            ).update(photo_date=photo_date)
+
+                messages.success(
+                    request,
+                    "সবুজায়নের রিপোর্ট সফলভাবে সংরক্ষণ করা হয়েছে।",
+                )
+                return redirect("industrial_estate:greenery_report_list")
+
+    else:
+        form = GreeneryReportForm(
+            initial={"report_date": timezone.localdate()}
+        )
+
+    return render(
+        request,
+        "industrial_estate/greenery_report_form.html",
+        {
+            "form": form,
+            "estate": estate,
+            "setting": setting,
+        },
+    )
+class EstateRecordCreateView(LoginRequiredMixin, View):
+    model = None
+    form_class = None
+    form_template = None
+    report_url_name = None
+    singleton = False
+
+    def get_estate(self):
+        return get_object_or_404(
+            get_accessible_estates(self.request.user),
+            pk=self.kwargs["estate_pk"],
+        )
+
+    def get_existing_record(self, estate):
+        if self.singleton:
+            return self.model.objects.filter(estate=estate).first()
+        return None
+
+    def get(self, request, *args, **kwargs):
+        estate = self.get_estate()
+        instance = self.get_existing_record(estate)
+
+        if instance:
+            form = self.form_class(instance=instance)
+        else:
+            form = self.form_class(initial={"estate": estate.pk})
+
+        return render(
+            request,
+            self.form_template,
+            {"form": form, "estate": estate},
+        )
+
+    def post(self, request, *args, **kwargs):
+        require_write_access(request.user)
+        estate = self.get_estate()
+        instance = self.get_existing_record(estate)
+
+        form = self.form_class(
+            request.POST,
+            request.FILES,
+            instance=instance,
+            initial={"estate": estate.pk},
+        )
+
+        if form.is_valid():
+            record = form.save(commit=False)
+            record.estate = estate
+
+            # KPI-এর plot অবশ্যই একই শিল্পনগরীর হতে হবে।
+            if isinstance(record, KPIInstitution):
+                if record.plot.estate_id != estate.pk:
+                    form.add_error(
+                        "plot",
+                        "এই প্লটটি নির্বাচিত শিল্পনগরীর অন্তর্ভুক্ত নয়।",
+                    )
+                    return render(
+                        request,
+                        self.form_template,
+                        {"form": form, "estate": estate},
+                    )
+
+            if isinstance(record, EstatePurposeRecord):
+                record.updated_by = request.user
+
+            record.save()
+            messages.success(request, "তথ্য সফলভাবে সংরক্ষণ করা হয়েছে।")
+
+            return redirect(
+                self.report_url_name,
+                estate_pk=estate.pk,
+            )
+
+        return render(
+            request,
+            self.form_template,
+            {
+                "form": form,
+                "estate": estate,
+                "page_title": self.page_title,
+                "report_url": reverse(
+                    self.report_url_name,
+                    kwargs={"estate_pk": estate.pk},
+                ),
+            },
+                    )
+
+
+class EstateRecordListView(LoginRequiredMixin, View):
+    model = None
+    report_template = None
+    context_name = "records"
+    singleton = False
+
+    def get(self, request, *args, **kwargs):
+        estate = get_object_or_404(
+            get_accessible_estates(request.user),
+            pk=kwargs["estate_pk"],
+        )
+
+        queryset = self.model.objects.filter(estate=estate)
+
+        if self.singleton:
+            records = queryset.first()
+        else:
+            records = queryset
+
+        return render(
+            request,
+            self.report_template,
+            {
+                "estate": estate,
+                self.context_name: records,
+            },
+        )
+class KPIInstitutionCreateView(EstateRecordCreateView):
+    model = KPIInstitution
+    form_class = KPIInstitutionForm
+    form_template = "industrial_estate/kpi_institution_form.html"
+    report_url_name = "industrial_estate:kpi_institution_report"
+    page_title = "KPI-ভুক্ত প্রতিষ্ঠানের তথ্য"
+
+
+class KPIInstitutionReportView(EstateRecordListView):
+    model = KPIInstitution
+    report_template = "industrial_estate/kpi_institution_report.html"
+    page_title = "KPI-ভুক্ত প্রতিষ্ঠানের তথ্য"
+
+
+class StreetLightCreateView(EstateRecordCreateView):
+    model = StreetLightRecord
+    form_class = StreetLightRecordForm
+    form_template = "industrial_estate/street_light_form.html"
+    report_url_name = "industrial_estate:street_light_report"
+    page_title = "রাস্তার আলোর তথ্য"
+
+
+class StreetLightReportView(EstateRecordListView):
+    model = StreetLightRecord
+    report_template = "industrial_estate/street_light_report.html"
+    page_title = "রাস্তার আলোর তথ্য"
+
+
+class WaterSupplyCreateView(EstateRecordCreateView):
+    model = WaterSupplyRecord
+    form_class = WaterSupplyRecordForm
+    form_template = "industrial_estate/water_supply_form.html"
+    report_url_name = "industrial_estate:water_supply_report"
+    page_title = "পানি সরবরাহের তথ্য"
+
+
+class WaterSupplyReportView(EstateRecordListView):
+    model = WaterSupplyRecord
+    report_template = "industrial_estate/water_supply_report.html"
+    page_title = "পানি সরবরাহের তথ্য"
+
+
+class ElectricityCreateView(EstateRecordCreateView):
+    model = ElectricityRecord
+    form_class = ElectricityRecordForm
+    form_template = "industrial_estate/electricity_form.html"
+    report_url_name = "industrial_estate:electricity_report"
+    page_title = "বিদ্যুৎ সরবরাহের তথ্য"
+
+
+class ElectricityReportView(EstateRecordListView):
+    model = ElectricityRecord
+    report_template = "industrial_estate/electricity_report.html"
+    page_title = "বিদ্যুৎ সরবরাহের তথ্য"
+
+
+class GasSupplyCreateView(EstateRecordCreateView):
+    model = GasSupplyRecord
+    form_class = GasSupplyRecordForm
+    form_template = "industrial_estate/gas_supply_form.html"
+    report_url_name = "industrial_estate:gas_supply_report"
+    page_title = "গ্যাস সরবরাহের তথ্য"
+
+
+class GasSupplyReportView(EstateRecordListView):
+    model = GasSupplyRecord
+    report_template = "industrial_estate/gas_supply_report.html"
+    page_title = "গ্যাস সরবরাহের তথ্য"
+
+
+class PondRecordCreateView(EstateRecordCreateView):
+    model = PondRecord
+    form_class = PondRecordForm
+    form_template = "industrial_estate/pond_form.html"
+    report_url_name = "industrial_estate:pond_report"
+    page_title = "পুকুরের তথ্য"
+
+
+class PondRecordReportView(EstateRecordListView):
+    model = PondRecord
+    report_template = "industrial_estate/pond_report.html"
+    page_title = "পুকুরের তথ্য"
+
+
+class EstatePurposeCreateView(EstateRecordCreateView):
+    model = EstatePurposeRecord
+    form_class = EstatePurposeRecordForm
+    form_template = "industrial_estate/estate_purpose_form.html"
+    report_url_name = "industrial_estate:estate_purpose_report"
+    singleton = True
+    page_title = "শিল্পনগরী প্রতিষ্ঠারর উদ্দেশ্য"
+
+
+class EstatePurposeReportView(EstateRecordListView):
+    model = EstatePurposeRecord
+    report_template = "industrial_estate/estate_purpose_report.html"
+    singleton = True
+    page_title = "শিল্পনগরী প্রতিষ্ঠারর উদ্দেশ্য"
+    
+def unit_detail(request, pk):
+    unit = get_object_or_404(
+        IndustrialUnit.objects.select_related("estate"),
+        pk=pk,
+    )
+
+    return render(
+        request,
+        "industrial_estate/unit_detail.html",
+        {"unit": unit},
+    )
