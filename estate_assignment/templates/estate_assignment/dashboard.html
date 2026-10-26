@@ -1,0 +1,212 @@
+
+{% extends "industrial_estate/base.html" %}
+
+{% block title %}Estate Officer Assignment{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    <div class="d-flex flex-wrap justify-content-between
+                align-items-center mb-4 gap-2">
+        <div>
+            <h2 class="fw-bold mb-1">Estate Officer Assignment</h2>
+            <p class="text-muted mb-0">
+                Assign an Estate Officer to each industrial estate.
+            </p>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }}
+                        alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close"
+                        data-bs-dismiss="alert"
+                        aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Summary cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Total Estates</div>
+                    <div class="fs-3 fw-bold">{{ total_estates }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Assigned Estates</div>
+                    <div class="fs-3 fw-bold text-success">
+                        {{ assigned_count }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Unassigned Estates</div>
+                    <div class="fs-3 fw-bold text-danger">
+                        {{ unassigned_count }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- District filter -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0">Filter Estates</h5>
+        </div>
+
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-6">
+                    <label for="district" class="form-label">
+                        District
+                    </label>
+
+                    <select name="district" id="district"
+                            class="form-select">
+                        <option value="">All Districts</option>
+
+                        {% for district in districts %}
+                            <option value="{{ district.district_id }}"
+                                {% if selected_district == district.district_id|stringformat:"s" %}
+                                    selected
+                                {% endif %}>
+                                {{ district.district__name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <button type="submit"
+                            class="btn btn-primary w-100">
+                        <i class="bi bi-funnel"></i>
+                        Filter
+                    </button>
+                </div>
+
+                <div class="col-md-3">
+                    <a href="{% url 'estate_assignment:dashboard' %}"
+                       class="btn btn-outline-secondary w-100">
+                        Reset Filter
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Estate assignment table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3">
+            <div class="d-flex flex-wrap justify-content-between gap-2">
+                <h5 class="mb-0">Estate Assignment List</h5>
+                <span class="text-muted small">
+                    Available officers: {{ available_officer_count }}
+                </span>
+            </div>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 60px;">#</th>
+                            <th>District</th>
+                            <th>Industrial Estate</th>
+                            <th>Assigned Officer</th>
+                            <th style="min-width: 270px;">
+                                Assign / Change Officer
+                            </th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for row in estate_rows %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+
+                                <td>
+                                    {{ row.estate.district.name }}
+                                </td>
+
+                                <td>
+                                    <div class="fw-semibold">
+                                        {{ row.estate.name }}
+                                    </div>
+                                </td>
+
+                                <td>
+                                    {% if row.officer %}
+                                        <div class="fw-semibold">
+                                            {{ row.officer.full_name|default:row.officer.user.username }}
+                                        </div>
+                                        <span class="badge bg-success">
+                                            Assigned
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-danger">
+                                            Unassigned
+                                        </span>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    <form method="post"
+                                          action="{% url 'estate_assignment:assign_officer' %}">
+                                        {% csrf_token %}
+
+                                        {{ row.form.estate_id }}
+
+                                        <div class="d-flex gap-2">
+                                            <div class="flex-grow-1">
+                                                {{ row.form.officer }}
+                                            </div>
+
+                                            <button type="submit"
+                                                    class="btn btn-primary btn-sm">
+                                                {% if row.officer %}
+                                                    Change
+                                                {% else %}
+                                                    Assign
+                                                {% endif %}
+                                            </button>
+                                        </div>
+
+                                        {% if row.form.officer.errors %}
+                                            <div class="text-danger small mt-1">
+                                                {{ row.form.officer.errors }}
+                                            </div>
+                                        {% endif %}
+                                    </form>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5"
+                                    class="text-center py-5 text-muted">
+                                    No estates found for this district.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -408,6 +408,11 @@ urlpatterns = [
         "estate-verification/",
         include("estate_verification.urls"),
     ),
+    # Keep your existing URL patterns.
+    path(
+        "estate-assignment/",
+        include("estate_assignment.urls"),
+    ),
     
 ]
 # Serve media files in development

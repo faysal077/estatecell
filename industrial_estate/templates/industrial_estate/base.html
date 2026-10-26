@@ -81,13 +81,12 @@
                                 <i class="bi bi-people"></i>
                                 অবস্থা ও কর্মসংস্থান
                             </a>
-
                             <!-- Sub-section 05 -->
                             <!-- 
-                            <a href="{% url 'industrial_estate:industrial_unit_list' %}#floor-rental">
-                                <i class="bi bi-building-check"></i>
-                                ফ্লোর স্পেস ভাড়া
-                            </a> 
+                                <a href="{% url 'industrial_estate:industrial_unit_list' %}#floor-rental">
+                                    <i class="bi bi-building-check"></i>
+                                    ফ্লোর স্পেস ভাড়া
+                                </a> 
                             -->
 
                             <!-- 06: পাওনা ও আদায় -->
@@ -136,7 +135,6 @@
                             </a> 
                             -->
                         </div>
-
                         <!-- Sub-section 10 -->
                         <a href="{% url 'industrial_estate:environment_create' %}">
                             <i class="bi bi-tree"></i>
@@ -176,12 +174,15 @@
 
                             <!-- Keep the remaining current_estate-dependent links here -->
                         {% endif %}
-
-                        
-                        
                     </div>
             </div>
 
+            
+            <a href="{% url 'estate_assignment:dashboard' %}">
+                   <i class="bi bi-person-check"></i>
+                   Estate Officer Assignment
+            </a>
+            
             <a href="#"><i class="bi bi-database"></i> হিসাব ও অর্থ</a>
             <a href="{% url 'estate_verification:dashboard' %}">
                 <i class="bi bi-bar-chart"></i> রিপোর্ট সমূহ
