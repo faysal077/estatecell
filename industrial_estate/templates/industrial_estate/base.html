@@ -200,15 +200,32 @@
             </div> 
             -->
 
-            <div class="top-actions d-flex align-items-right gap-3">
+            <div class="top-actions d-flex ms-auto gap-3">
                 <i class="bi bi-bell"></i>
                 <i class="bi bi-grid-3x3-gap-fill"></i>
-                <div class="user-chip">
-                    <i class="bi bi-person-circle"></i>
-                    <span>
-                        স্বাগতম<br>
-                        <b>{{ request.user.get_full_name|default:request.user.username }}</b>
-                    </span>
+                <div class="dropdown">
+                    <a
+                        class="user-chip dropdown-toggle text-decoration-none"
+                        href="#"
+                        id="userDropdown"
+                        role="button"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
+                    >
+                        <i class="bi bi-person-circle"></i>
+                        <span>
+                            স্বাগতম<br>
+                            <b>{{ request.user.get_full_name|default:request.user.username }}</b>
+                        </span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <li>
+                            <a class="dropdown-item" href="{% url 'accounts:logout' %}">
+                                <i class="bi bi-box-arrow-right me-2"></i>
+                                Logout
+                            </a>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </header>

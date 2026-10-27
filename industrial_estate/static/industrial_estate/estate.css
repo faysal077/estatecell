@@ -148,6 +148,8 @@ body {
 .top-actions {
     display: flex;
     align-items: center;
+    flex: 1;
+    justify-content: flex-end;
     gap: 22px;
     color: #23354b;
     font-size: 20px;
@@ -159,6 +161,7 @@ body {
     gap: 10px;
     border-left: 1px solid var(--border);
     padding-left: 16px;
+    color: inherit;
     font-size: 12px;
     line-height: 1.4;
 }
