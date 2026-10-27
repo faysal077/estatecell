@@ -15,7 +15,7 @@ urlpatterns = [
     path("add/", views.EstateCreateView.as_view(), name="estate_create"),
     path("<int:pk>/", views.estate_detail, name="estate_detail"),
     path("<int:pk>/edit/", views.EstateUpdateView.as_view(), name="estate_update"),
-    path("<int:pk>/layout-revisions/add/", views.layout_revision_add, name="layout_revision_upload"),
+    path("<int:pk>/layout-revisions/add/", views.layout_revision_add, name="layout_revision_add"),
 
     # Location APIs
     path("api/location-options/", views.location_options, name="location_options"),
