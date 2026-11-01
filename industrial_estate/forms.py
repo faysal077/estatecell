@@ -568,6 +568,32 @@ class IndustrialUnitForm(BootstrapModelForm, PDFValidationMixin):
 
 
 class UnitPlotAllocationForm(BootstrapModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["allocated_area_sqft"].required = False
+
+    def clean(self):
+        cleaned = super().clean()
+        allocation_type = cleaned.get("allocation_type")
+        plot = cleaned.get("plot")
+
+        if allocation_type == UnitPlotAllocation.AllocationType.FULL:
+            if plot and plot.area_sqft is None:
+                self.add_error(
+                    "plot",
+                    "পূর্ণ বরাদ্দের জন্য প্লটের মোট আয়তন নির্ধারিত থাকতে হবে।",
+                )
+            elif plot:
+                cleaned["allocated_area_sqft"] = plot.area_sqft
+        elif allocation_type == UnitPlotAllocation.AllocationType.PARTIAL:
+            if not cleaned.get("allocated_area_sqft"):
+                self.add_error(
+                    "allocated_area_sqft",
+                    "আংশিক বরাদ্দের জন্য আয়তন লিখুন।",
+                )
+
+        return cleaned
+
     class Meta:
         model = UnitPlotAllocation
         fields = [
@@ -580,6 +606,17 @@ class UnitPlotAllocationForm(BootstrapModelForm):
             "comments",
         ]
         widgets = {
+            "plot": forms.Select(attrs={"class": "form-select plot-choice"}),
+            "allocation_type": forms.Select(
+                attrs={"class": "form-select type-choice"}
+            ),
+            "allocated_area_sqft": forms.NumberInput(
+                attrs={
+                    "class": "form-control area-choice",
+                    "min": "0.01",
+                    "step": "0.01",
+                }
+            ),
             "allocation_date": forms.DateInput(attrs={"type": "date"}),
             "possession_date": forms.DateInput(attrs={"type": "date"}),
             "comments": forms.Textarea(attrs={"rows": 2}),

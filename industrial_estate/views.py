@@ -66,10 +66,11 @@ from django.urls import reverse
 from django.views.generic import ListView, CreateView, UpdateView
 from .models import UnitPlotAllocation, IndustrialEstate, Plot
 from .forms import UnitPlotAllocationForm
+from decimal import Decimal
 from .models import UtilityUsage
 from .models import IndustrialEstate, IndustrialUnit
 from django.db.models import Count, Sum, Q
-from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
+from django.core.exceptions import ObjectDoesNotExist, PermissionDenied, ValidationError
 from django.shortcuts import get_object_or_404
 from .models import IndustrialEstate
 from django.http import JsonResponse
@@ -1519,7 +1520,233 @@ class UnitPlotAllocationListView(LoginRequiredMixin, ListView):
         return queryset
 
 
-class UnitPlotAllocationCreateView(LoginRequiredMixin, CreateView):
+class PlotAllocationRowsMixin:
+    success_message = "প্লট বরাদ্দের তথ্য সংরক্ষণ হয়েছে।"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        form = context["form"]
+        plots = form.fields["plot"].queryset.annotate(
+            occupied_area_sqft=Sum("allocations__allocated_area_sqft"),
+            full_allocation_count=Count(
+                "allocations",
+                filter=Q(
+                    allocations__allocation_type=UnitPlotAllocation.AllocationType.FULL
+                ),
+            ),
+        )
+        unit_estates = {
+            str(unit.pk): unit.estate_id
+            for unit in form.fields["industrial_unit"].queryset.only(
+                "pk", "estate_id"
+            )
+        }
+        plot_data = {}
+
+        for plot in plots:
+            occupied = plot.occupied_area_sqft or Decimal("0")
+            full_allocated = plot.full_allocation_count > 0
+            if (
+                self.object
+                and self.object.pk
+                and self.object.plot_id == plot.pk
+            ):
+                occupied -= self.object.allocated_area_sqft or Decimal("0")
+                if (
+                    self.object.allocation_type
+                    == UnitPlotAllocation.AllocationType.FULL
+                ):
+                    full_allocated = False
+
+            available = (
+                max(Decimal("0"), plot.area_sqft - occupied)
+                if plot.area_sqft is not None
+                else None
+            )
+            plot_data[str(plot.pk)] = {
+                "estate": plot.estate_id,
+                "area": str(plot.area_sqft) if plot.area_sqft is not None else "",
+                "occupied": str(occupied),
+                "available": str(available) if available is not None else "",
+                "full_allocated": full_allocated,
+            }
+
+        context["allocation_plots"] = plots
+        context["plot_allocation_data"] = {
+            "units": unit_estates,
+            "plots": plot_data,
+        }
+        context["allocation_type_choices"] = (
+            UnitPlotAllocation.AllocationType.choices
+        )
+        context["extra_allocation_rows"] = self._posted_extra_rows()
+        return context
+
+    def _posted_extra_rows(self):
+        if self.request.method != "POST":
+            return []
+
+        plots = self.request.POST.getlist("extra_plot")
+        types = self.request.POST.getlist("extra_allocation_type")
+        areas = self.request.POST.getlist("extra_allocated_area_sqft")
+        return [
+            {
+                "plot": plots[index] if index < len(plots) else "",
+                "type": types[index] if index < len(types) else "",
+                "area": areas[index] if index < len(areas) else "",
+            }
+            for index in range(max(len(plots), len(types), len(areas)))
+        ]
+
+    def _validate_extra_rows(self, form):
+        plots = self.request.POST.getlist("extra_plot")
+        types = self.request.POST.getlist("extra_allocation_type")
+        areas = self.request.POST.getlist("extra_allocated_area_sqft")
+        row_count = max(len(plots), len(types), len(areas))
+
+        errors = []
+        rows = []
+        for index in range(row_count):
+            plot_id = plots[index] if index < len(plots) else ""
+            allocation_type = types[index] if index < len(types) else ""
+            area_value = areas[index] if index < len(areas) else ""
+
+            if not plot_id and not area_value:
+                continue
+            if not plot_id:
+                errors.append("প্রতিটি অতিরিক্ত বরাদ্দের জন্য প্লট নির্বাচন করুন।")
+                continue
+
+            try:
+                plot = form.fields["plot"].queryset.get(pk=plot_id)
+            except (Plot.DoesNotExist, ValueError):
+                errors.append("অতিরিক্ত প্লটের নির্বাচন বা আয়তন সঠিক নয়।")
+                continue
+
+            if allocation_type not in UnitPlotAllocation.AllocationType.values:
+                errors.append("প্রতিটি প্লটের বরাদ্দের ধরন নির্বাচন করুন।")
+                continue
+            if allocation_type == UnitPlotAllocation.AllocationType.FULL:
+                area = plot.area_sqft
+                if area is None:
+                    errors.append("পূর্ণ বরাদ্দের জন্য প্লটের মোট আয়তন নির্ধারিত থাকতে হবে।")
+                    continue
+            else:
+                if not area_value:
+                    errors.append("আংশিক বরাদ্দের জন্য আয়তন লিখুন।")
+                    continue
+                try:
+                    area = UnitPlotAllocationForm.base_fields[
+                        "allocated_area_sqft"
+                    ].clean(area_value)
+                except ValidationError:
+                    errors.append("আংশিক বরাদ্দের আয়তন সঠিক নয়।")
+                    continue
+
+            if not area.is_finite() or area <= 0:
+                errors.append("বরাদ্দকৃত আয়তন শূন্যের বেশি হতে হবে।")
+                continue
+            if plot.estate_id != form.cleaned_data["industrial_unit"].estate_id:
+                errors.append("শিল্প ইউনিট ও প্লট একই শিল্পনগরীর হতে হবে।")
+                continue
+
+            rows.append(
+                {
+                    "plot": plot,
+                    "allocation_type": allocation_type,
+                    "allocated_area_sqft": area,
+                }
+            )
+
+        allocations = []
+        if form.cleaned_data.get("plot") and form.cleaned_data.get("allocated_area_sqft"):
+            allocations.append(
+                {
+                    "plot": form.cleaned_data["plot"],
+                    "area": form.cleaned_data["allocated_area_sqft"],
+                    "type": form.cleaned_data["allocation_type"],
+                }
+            )
+        allocations.extend(
+            {
+                "plot": row["plot"],
+                "area": row["allocated_area_sqft"],
+                "type": row["allocation_type"],
+            }
+            for row in rows
+        )
+
+        allocations_by_plot = {}
+        for allocation in allocations:
+            plot = allocation["plot"]
+            allocations_by_plot.setdefault(plot.pk, []).append(allocation)
+
+        for allocations_for_plot in allocations_by_plot.values():
+            plot = allocations_for_plot[0]["plot"]
+            existing_allocations = plot.allocations.exclude(
+                pk=getattr(self.object, "pk", None)
+            )
+            existing = existing_allocations.aggregate(
+                total=Sum("allocated_area_sqft")
+            )["total"] or Decimal("0")
+            has_full_allocation = existing_allocations.filter(
+                allocation_type=UnitPlotAllocation.AllocationType.FULL
+            ).exists()
+            includes_full = any(
+                allocation["type"] == UnitPlotAllocation.AllocationType.FULL
+                for allocation in allocations_for_plot
+            )
+            requested_area = sum(
+                (allocation["area"] for allocation in allocations_for_plot),
+                Decimal("0"),
+            )
+
+            if includes_full and (existing_allocations.exists() or len(allocations_for_plot) > 1):
+                errors.append(
+                    f"প্লট {plot.plot_number} পূর্ণ বরাদ্দ হলে অন্য কোনো বরাদ্দ রাখা যাবে না।"
+                )
+            elif has_full_allocation:
+                errors.append(
+                    f"প্লট {plot.plot_number} ইতিমধ্যে পূর্ণ বরাদ্দ দেওয়া হয়েছে।"
+                )
+            elif plot.area_sqft is not None and existing + requested_area > plot.area_sqft:
+                errors.append(
+                    f"প্লট {plot.plot_number}-এ উপলভ্য আয়তনের চেয়ে বেশি বরাদ্দ দেওয়া যাবে না।"
+                )
+
+        return errors, rows
+
+    def form_valid(self, form):
+        require_write_access(self.request.user)
+        with transaction.atomic():
+            errors, rows = self._validate_extra_rows(form)
+            if errors:
+                for error in errors:
+                    form.add_error(None, error)
+                return self.form_invalid(form)
+
+            response = super().form_valid(form)
+            for row in rows:
+                allocation = UnitPlotAllocation(
+                    industrial_unit=self.object.industrial_unit,
+                    plot=row["plot"],
+                    allocation_type=row["allocation_type"],
+                    allocated_area_sqft=row["allocated_area_sqft"],
+                    allocation_date=self.object.allocation_date,
+                    possession_date=self.object.possession_date,
+                    comments=self.object.comments,
+                )
+                allocation.full_clean()
+                allocation.save()
+
+        if self.object:
+            messages.success(self.request, self.success_message)
+        return response
+
+
+class UnitPlotAllocationCreateView(
+    LoginRequiredMixin, PlotAllocationRowsMixin, CreateView
+):
     model = UnitPlotAllocation
     form_class = UnitPlotAllocationForm
     template_name = "industrial_estate/plot_allocation_form.html"
@@ -1535,25 +1762,27 @@ class UnitPlotAllocationCreateView(LoginRequiredMixin, CreateView):
             estate__in=estates
         ).select_related("estate")
 
-        unit_id = self.request.GET.get("industrial_unit")
+        unit_id = self.request.POST.get("industrial_unit") or self.request.GET.get(
+            "industrial_unit"
+        )
         if unit_id and units.filter(pk=unit_id).exists():
-            form.fields["industrial_unit"].initial = unit_id
+            if self.request.method != "POST":
+                form.fields["industrial_unit"].initial = unit_id
             form.fields["plot"].queryset = Plot.objects.filter(
                 estate_id=units.get(pk=unit_id).estate_id
-            )
+            ).select_related("estate")
 
         return form
-
-    def form_valid(self, form):
-        require_write_access(self.request.user)
-        messages.success(self.request, "প্লট বরাদ্দের তথ্য সংরক্ষণ হয়েছে।")
-        return super().form_valid(form)
 
     def get_success_url(self):
         return reverse("industrial_estate:allocation_list")
 
 
-class UnitPlotAllocationUpdateView(LoginRequiredMixin, UpdateView):
+class UnitPlotAllocationUpdateView(
+    LoginRequiredMixin, PlotAllocationRowsMixin, UpdateView
+):
+    success_message = "প্লট বরাদ্দের তথ্য হালনাগাদ হয়েছে।"
+
     model = UnitPlotAllocation
     form_class = UnitPlotAllocationForm
     template_name = "industrial_estate/plot_allocation_form.html"
@@ -1575,11 +1804,6 @@ class UnitPlotAllocationUpdateView(LoginRequiredMixin, UpdateView):
         ).select_related("estate")
 
         return form
-
-    def form_valid(self, form):
-        require_write_access(self.request.user)
-        messages.success(self.request, "প্লট বরাদ্দের তথ্য হালনাগাদ হয়েছে।")
-        return super().form_valid(form)
 
     def get_success_url(self):
         return reverse("industrial_estate:allocation_list")

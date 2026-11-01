@@ -849,11 +849,30 @@ class UnitPlotAllocation(models.Model):
                 )
 
         if self.plot_id and self.allocated_area_sqft:
-            existing = self.plot.allocations.exclude(pk=self.pk).aggregate(
+            existing_allocations = self.plot.allocations.exclude(pk=self.pk)
+            existing = existing_allocations.aggregate(
                 total=Sum("allocated_area_sqft")
             )["total"] or ZERO
+            existing_full = existing_allocations.filter(
+                allocation_type=self.AllocationType.FULL
+            ).exists()
 
-            if self.plot.area_sqft is not None:
+            if self.plot.area_sqft is None:
+                errors["plot"] = "প্লটের মোট আয়তন নির্ধারিত নেই।"
+            elif self.allocation_type == self.AllocationType.FULL:
+                if existing_allocations.exists():
+                    errors["plot"] = (
+                        "এই প্লটে ইতিমধ্যে বরাদ্দ আছে; পূর্ণ বরাদ্দ দেওয়া যাবে না।"
+                    )
+                if self.allocated_area_sqft != self.plot.area_sqft:
+                    errors["allocated_area_sqft"] = (
+                        "পূর্ণ বরাদ্দে প্লটের সম্পূর্ণ আয়তন বরাদ্দ করতে হবে।"
+                    )
+            elif self.allocation_type == self.AllocationType.PARTIAL:
+                if existing_full:
+                    errors["plot"] = (
+                        "এই প্লটটি পূর্ণ বরাদ্দ দেওয়া হয়েছে; আংশিক বরাদ্দ সম্ভব নয়।"
+                    )
                 if existing + self.allocated_area_sqft > self.plot.area_sqft:
                     errors["allocated_area_sqft"] = (
                         "প্লটের মোট আয়তনের চেয়ে বরাদ্দ বেশি হতে পারবে না।"

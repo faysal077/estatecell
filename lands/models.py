@@ -6,15 +6,10 @@ from django.conf import settings
 class Land(models.Model):
 
     rd_office = models.CharField(max_length=100)
-
     division = models.CharField(max_length=100)
-
     district = models.CharField(max_length=100)
-
     upazila = models.CharField(max_length=100)
-
     owner_name = models.CharField(max_length=150)
-
     # NEW FIELD
     total_area = models.DecimalField(
         max_digits=10,

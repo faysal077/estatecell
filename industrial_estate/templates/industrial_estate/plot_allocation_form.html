@@ -65,6 +65,7 @@
 
                 <div class="row g-4">
                     {% for field in form.visible_fields %}
+                    {% if field.name != 'plot' and field.name != 'allocation_type' and field.name != 'allocated_area_sqft' %}
                     <div class="{% if field.name == 'comments' or field.name == 'remarks' or field.name == 'document' %}col-12{% else %}col-md-6{% endif %}">
 
                         <label for="{{ field.id_for_label }}"
@@ -92,8 +93,116 @@
                             </div>
                         {% endif %}
                     </div>
+                    {% endif %}
                     {% endfor %}
                 </div>
+
+                <section class="mt-4">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                        <div>
+                            <h6 class="mb-1 fw-semibold">প্লট ও বরাদ্দকৃত আয়তন</h6>
+                            <div class="form-text">একটি শিল্প ইউনিটের জন্য একাধিক প্লট যোগ করুন। আংশিক বরাদ্দের ক্ষেত্রে বরাদ্দকৃত আয়তন লিখুন।</div>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="add-allocation-row">
+                            <i class="bi bi-plus-circle me-1"></i>আরও প্লট যোগ করুন
+                        </button>
+                    </div>
+
+                    <div id="allocation-rows" class="d-grid gap-3">
+                        <div class="allocation-row border rounded p-3" data-main-row>
+                            <div class="row g-3 align-items-end">
+                                <div class="col-lg-4">
+                                    <label for="{{ form.plot.id_for_label }}" class="form-label fw-semibold">
+                                        {{ form.plot.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.plot }}
+                                    {% for error in form.plot.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                                </div>
+                                <div class="col-lg-2">
+                                    <label for="{{ form.allocation_type.id_for_label }}" class="form-label fw-semibold">{{ form.allocation_type.label }}</label>
+                                    {{ form.allocation_type }}
+                                    {% for error in form.allocation_type.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                                </div>
+                                <div class="col-lg-3 area-field" {% if form.allocation_type.value != 'PARTIAL' %}hidden{% endif %}>
+                                    <label for="{{ form.allocated_area_sqft.id_for_label }}" class="form-label fw-semibold">{{ form.allocated_area_sqft.label }} <span class="text-danger">*</span></label>
+                                    {{ form.allocated_area_sqft }}
+                                    {% for error in form.allocated_area_sqft.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                                </div>
+                                <div class="col-lg-3">
+                                    <span class="small text-muted plot-info" aria-live="polite"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% for row in extra_allocation_rows %}
+                        <div class="allocation-row border rounded p-3">
+                            <div class="row g-3 align-items-end">
+                                <div class="col-lg-4">
+                                    <label class="form-label fw-semibold">প্লট <span class="text-danger">*</span></label>
+                                    <select name="extra_plot" class="form-select plot-choice">
+                                        <option value="">প্লট নির্বাচন করুন</option>
+                                        {% for plot in allocation_plots %}
+                                        <option value="{{ plot.pk }}" {% if plot.pk|stringformat:"s" == row.plot %}selected{% endif %}>{{ plot.estate.name }} — {{ plot.plot_number }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-lg-2">
+                                    <label class="form-label fw-semibold">বরাদ্দের ধরন</label>
+                                    <select name="extra_allocation_type" class="form-select type-choice">
+                                        {% for value, label in allocation_type_choices %}
+                                        <option value="{{ value }}" {% if value == row.type %}selected{% endif %}>{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-lg-3 area-field" {% if row.type != 'PARTIAL' %}hidden{% endif %}>
+                                    <label class="form-label fw-semibold">বরাদ্দকৃত আয়তন (বর্গফুট) <span class="text-danger">*</span></label>
+                                    <input type="number" name="extra_allocated_area_sqft" class="form-control area-choice" min="0.01" step="0.01" value="{{ row.area }}">
+                                </div>
+                                <div class="col-lg-3 d-flex align-items-center gap-2">
+                                    <span class="small text-muted plot-info" aria-live="polite"></span>
+                                    <button type="button" class="btn btn-outline-danger btn-sm remove-allocation-row" aria-label="প্লট সরান"><i class="bi bi-trash"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <template id="allocation-row-template">
+                        <div class="allocation-row border rounded p-3">
+                            <div class="row g-3 align-items-end">
+                                <div class="col-lg-4">
+                                    <label class="form-label fw-semibold">প্লট <span class="text-danger">*</span></label>
+                                    <select name="extra_plot" class="form-select plot-choice">
+                                        <option value="">প্লট নির্বাচন করুন</option>
+                                        {% for plot in allocation_plots %}
+                                        <option value="{{ plot.pk }}">{{ plot.estate.name }} — {{ plot.plot_number }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-lg-2">
+                                    <label class="form-label fw-semibold">বরাদ্দের ধরন</label>
+                                    <select name="extra_allocation_type" class="form-select type-choice">
+                                        {% for value, label in allocation_type_choices %}
+                                        <option value="{{ value }}">{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-lg-3 area-field" hidden>
+                                    <label class="form-label fw-semibold">বরাদ্দকৃত আয়তন (বর্গফুট) <span class="text-danger">*</span></label>
+                                    <input type="number" name="extra_allocated_area_sqft" class="form-control area-choice" min="0.01" step="0.01">
+                                </div>
+                                <div class="col-lg-3 d-flex align-items-center gap-2">
+                                    <span class="small text-muted plot-info" aria-live="polite"></span>
+                                    <button type="button" class="btn btn-outline-danger btn-sm remove-allocation-row" aria-label="প্লট সরান"><i class="bi bi-trash"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <div class="alert alert-light border mt-3 mb-0">
+                        মোট বরাদ্দকৃত আয়তন: <strong id="allocation-total">0.00</strong> বর্গফুট
+                    </div>
+                </section>
 
                 <hr class="my-4">
 
@@ -118,4 +227,140 @@
     </div>
 
 </div>
+{{ plot_allocation_data|json_script:"plot-allocation-data" }}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const allocationData = JSON.parse(document.getElementById("plot-allocation-data").textContent);
+    const unitSelect = document.getElementById("id_industrial_unit");
+    const rows = document.getElementById("allocation-rows");
+    const total = document.getElementById("allocation-total");
+    const rowTemplate = document.getElementById("allocation-row-template");
+
+    function updateRow(row, selectedChanged) {
+        const plotSelect = row.querySelector(".plot-choice");
+        const areaInput = row.querySelector(".area-choice");
+        const typeSelect = row.querySelector(".type-choice");
+        const areaField = row.querySelector(".area-field");
+        const info = row.querySelector(".plot-info");
+        const estateId = allocationData.units[unitSelect.value];
+
+        Array.from(plotSelect.options).forEach(function (option) {
+            if (!option.value) return;
+            const plot = allocationData.plots[option.value];
+            option.disabled = Boolean(estateId && plot && String(plot.estate) !== String(estateId));
+            option.disabled = option.disabled || Boolean(plot && plot.full_allocated);
+        });
+        if (plotSelect.selectedOptions.length && plotSelect.selectedOptions[0].disabled) {
+            plotSelect.value = "";
+        }
+
+        const plot = allocationData.plots[plotSelect.value];
+        if (!plot) {
+            areaField.hidden = typeSelect.value !== "PARTIAL";
+            info.textContent = "";
+            if (selectedChanged || typeSelect.value === "FULL") areaInput.value = "";
+            return;
+        }
+
+        const available = plot.available === "" ? null : Number(plot.available);
+        const capacity = plot.area === "" ? null : Number(plot.area);
+        info.textContent = plot.full_allocated
+            ? "এই প্লটটি পূর্ণ বরাদ্দ দেওয়া হয়েছে"
+            : capacity === null
+                ? "প্লটের আয়তন পাওয়া যায়নি"
+                : "মোট " + capacity.toFixed(2) + " | অবশিষ্ট " + available.toFixed(2) + " বর্গফুট";
+        const fullOption = Array.from(typeSelect.options).find(function (option) {
+            return option.value === "FULL";
+        });
+        if (fullOption) {
+            fullOption.disabled = Boolean(
+                plot.full_allocated || Number(plot.occupied) > 0
+            );
+        }
+        if (
+            selectedChanged
+            && typeSelect.value === "FULL"
+            && fullOption
+            && fullOption.disabled
+            && !plot.full_allocated
+        ) {
+            typeSelect.value = "PARTIAL";
+            areaInput.value = "";
+        }
+        areaField.hidden = typeSelect.value !== "PARTIAL";
+        areaInput.required = typeSelect.value === "PARTIAL";
+        if (typeSelect.value === "FULL") {
+            areaInput.value = capacity === null ? "" : capacity.toFixed(2);
+        } else if (selectedChanged) {
+            areaInput.value = "";
+        }
+    }
+
+    function updateTotal() {
+        let sum = 0;
+        rows.querySelectorAll(".area-choice").forEach(function (input) {
+            const amount = Number(input.value);
+            if (Number.isFinite(amount)) sum += amount;
+        });
+        total.textContent = sum.toFixed(2);
+    }
+
+    function initializeRow(row) {
+        const plotSelect = row.querySelector(".plot-choice");
+        const areaInput = row.querySelector(".area-choice");
+        const typeSelect = row.querySelector(".type-choice");
+        plotSelect.addEventListener("change", function () {
+            updateRow(row, true);
+            updateTotal();
+        });
+        typeSelect.addEventListener("change", function () {
+            const plot = allocationData.plots[plotSelect.value];
+            if (
+                typeSelect.value === "FULL"
+                && plot
+                && (plot.full_allocated || Number(plot.occupied) > 0)
+            ) {
+                typeSelect.value = "PARTIAL";
+                window.alert("এই প্লটে আগে থেকেই আংশিক বরাদ্দ আছে; পূর্ণ বরাদ্দ করা যাবে না।");
+            }
+            const isPartial = typeSelect.value === "PARTIAL";
+            row.querySelector(".area-field").hidden = !isPartial;
+            areaInput.required = isPartial;
+            if (isPartial) {
+                areaInput.value = "";
+            } else if (plot && plot.area !== "") {
+                areaInput.value = Number(plot.area).toFixed(2);
+            } else {
+                areaInput.value = "";
+            }
+            updateTotal();
+        });
+        areaInput.addEventListener("input", function () {
+            updateTotal();
+        });
+        const removeButton = row.querySelector(".remove-allocation-row");
+        if (removeButton) {
+            removeButton.addEventListener("click", function () {
+                row.remove();
+                updateTotal();
+            });
+        }
+        updateRow(row, false);
+    }
+
+    rows.querySelectorAll(".allocation-row").forEach(initializeRow);
+    unitSelect.addEventListener("change", function () {
+        rows.querySelectorAll(".allocation-row").forEach(function (row) {
+            updateRow(row, false);
+        });
+        updateTotal();
+    });
+    document.getElementById("add-allocation-row").addEventListener("click", function () {
+        const row = rowTemplate.content.firstElementChild.cloneNode(true);
+        rows.appendChild(row);
+        initializeRow(row);
+    });
+    updateTotal();
+});
+</script>
 {% endblock %}
