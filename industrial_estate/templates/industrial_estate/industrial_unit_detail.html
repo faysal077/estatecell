@@ -184,6 +184,208 @@
         </div>
     </div>
 
+    <!-- Section 02: Plot allocation -->
+    <section id="plot-allocations" class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span>
+                <i class="bi bi-grid-3x3-gap me-2"></i>
+                সাব-সেকশন ০২: প্লট বরাদ্দ ও দখল
+            </span>
+            {% if can_edit %}
+            <a href="{% url 'industrial_estate:unit_allocation_create' unit.pk %}"
+               class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-circle"></i> বরাদ্দের তথ্য যোগ
+            </a>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            {% if section_02_allocations %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>প্লট</th>
+                            <th>বরাদ্দের ধরন</th>
+                            <th>বরাদ্দকৃত আয়তন (বর্গফুট)</th>
+                            <th>বরাদ্দের তারিখ</th>
+                            <th>পজেশনের তারিখ</th>
+                            <th>মন্তব্য</th>
+                            {% if can_edit %}<th>কার্যক্রম</th>{% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for allocation in section_02_allocations %}
+                        <tr>
+                            <td>{{ allocation.plot.plot_number }}</td>
+                            <td>{{ allocation.get_allocation_type_display }}</td>
+                            <td>{{ allocation.allocated_area_sqft|floatformat:2 }}</td>
+                            <td>{{ allocation.allocation_date|date:"d-m-Y"|default:"—" }}</td>
+                            <td>{{ allocation.possession_date|date:"d-m-Y"|default:"—" }}</td>
+                            <td>{{ allocation.comments|default:"—" }}</td>
+                            {% if can_edit %}
+                            <td>
+                                <a href="{% url 'industrial_estate:allocation_update' allocation.pk %}"
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-pencil-square"></i> সম্পাদনা
+                                </a>
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">
+                এই শিল্প ইউনিটের কোনো প্লট বরাদ্দের তথ্য এখনো যোগ করা হয়নি।
+            </p>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Section 03: Factory, production and products -->
+    <section id="production-products" class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span>
+                <i class="bi bi-gear me-2"></i>
+                সাব-সেকশন ০৩: কারখানা, উৎপাদন ও পণ্য
+            </span>
+            {% if can_edit %}
+            <a href="{% url 'industrial_estate:unit_production_update' unit.pk %}"
+               class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-circle"></i> উৎপাদনের তথ্য যোগ / সম্পাদনা
+            </a>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <strong>কারখানার নকশা অনুমোদনের তারিখ:</strong>
+                    {{ unit.factory_layout_approval_date|date:"d-m-Y"|default:"—" }}
+                </div>
+                <div class="col-md-6">
+                    <strong>উৎপাদন শুরুর তারিখ:</strong>
+                    {{ unit.production_start_date|date:"d-m-Y"|default:"—" }}
+                </div>
+                <div class="col-12">
+                    <strong>অনুমোদিত লে-আউট প্ল্যান:</strong>
+                    {% if unit.factory_layout_plan %}
+                    <a href="{{ unit.factory_layout_plan.url }}" target="_blank" rel="noopener noreferrer">
+                        ফাইল দেখুন
+                    </a>
+                    {% else %}
+                    —
+                    {% endif %}
+                </div>
+            </div>
+
+            <h6 class="mb-2">উৎপাদিত পণ্য</h6>
+            {% if section_03_products %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>পণ্যের নাম</th>
+                            <th>উৎপাদনের খাত</th>
+                            <th>উৎপাদনের উপখাত</th>
+                            <th>মন্তব্য</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in section_03_products %}
+                        <tr>
+                            <td>{{ product.name }}</td>
+                            <td>{{ product.production_sector|default:"—" }}</td>
+                            <td>{{ product.production_subsector|default:"—" }}</td>
+                            <td>{{ product.comments|default:"—" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">
+                এই শিল্প ইউনিটের উৎপাদিত পণ্যের তথ্য এখনো যোগ করা হয়নি।
+            </p>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Section 04: Employment -->
+    <section id="employment" class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span>
+                <i class="bi bi-people me-2"></i>
+                সাব-সেকশন ০৪: কর্মসংস্থান
+            </span>
+            {% if can_edit %}
+            <a href="{% url 'industrial_estate:employment_create' unit.pk %}"
+               class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-circle"></i> কর্মসংস্থানের তথ্য যোগ
+            </a>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            {% if section_04_employment %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>বছর</th>
+                            <th>মাস</th>
+                            <th>স্থায়ী পুরুষ</th>
+                            <th>স্থায়ী নারী</th>
+                            <th>অস্থায়ী পুরুষ</th>
+                            <th>অস্থায়ী নারী</th>
+                            <th>তৃতীয় লিঙ্গ</th>
+                            <th>মোট কর্মী</th>
+                            <th>মন্তব্য</th>
+                            {% if can_edit %}<th>কার্যক্রম</th>{% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in section_04_employment %}
+                        <tr>
+                            <td>{{ record.year }}</td>
+                            <td>{{ record.month }}</td>
+                            <td>{{ record.permanent_male }}</td>
+                            <td>{{ record.permanent_female }}</td>
+                            <td>{{ record.temporary_male }}</td>
+                            <td>{{ record.temporary_female }}</td>
+                            <td>{{ record.third_gender_workers }}</td>
+                            <td>{{ record.total_employment }}</td>
+                            <td>{{ record.comments|default:"—" }}</td>
+                            {% if can_edit %}
+                            <td>
+                                <div class="d-flex gap-1">
+                                    <a class="btn btn-sm btn-outline-primary"
+                                       href="{% url 'industrial_estate:employment_update' unit.pk record.pk %}">
+                                        সম্পাদনা
+                                    </a>
+                                    <form method="post"
+                                          action="{% url 'industrial_estate:employment_delete' unit.pk record.pk %}"
+                                          onsubmit="return confirm('এই কর্মসংস্থানের রেকর্ড মুছে ফেলতে চান?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            মুছুন
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">
+                এই শিল্প ইউনিটের কর্মসংস্থানের তথ্য এখনো যোগ করা হয়নি।
+            </p>
+            {% endif %}
+        </div>
+    </section>
+
     <!-- Section 05: Floor Space Rental -->
     
     <!-- Section 05: Floor Space Rental -->

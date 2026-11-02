@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django import forms
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, Sum
@@ -1762,8 +1763,24 @@ class UnitPlotAllocationCreateView(
             estate__in=estates
         ).select_related("estate")
 
-        unit_id = self.request.POST.get("industrial_unit") or self.request.GET.get(
-            "industrial_unit"
+        fixed_unit = None
+        if "unit_pk" in self.kwargs:
+            fixed_unit = get_object_or_404(
+                units.select_related("estate"),
+                pk=self.kwargs["unit_pk"],
+            )
+            form.fields["industrial_unit"].queryset = units.filter(
+                pk=fixed_unit.pk
+            )
+            form.fields["industrial_unit"].initial = fixed_unit.pk
+            form.fields["industrial_unit"].widget = forms.HiddenInput()
+            form.fields["industrial_unit"].disabled = True
+
+        unit_id = (
+            fixed_unit.pk
+            if fixed_unit
+            else self.request.POST.get("industrial_unit")
+            or self.request.GET.get("industrial_unit")
         )
         if unit_id and units.filter(pk=unit_id).exists():
             if self.request.method != "POST":
@@ -1774,7 +1791,21 @@ class UnitPlotAllocationCreateView(
 
         return form
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if "unit_pk" in self.kwargs:
+            context["fixed_unit"] = get_object_or_404(
+                get_accessible_units(self.request.user).select_related("estate"),
+                pk=self.kwargs["unit_pk"],
+            )
+        return context
+
     def get_success_url(self):
+        if "unit_pk" in self.kwargs:
+            return reverse(
+                "industrial_estate:industrial_unit_detail",
+                kwargs={"pk": self.kwargs["unit_pk"]},
+            )
         return reverse("industrial_estate:allocation_list")
 
 
@@ -1845,6 +1876,16 @@ def unit_production_update(request, pk):
         pk=pk,
     )
 
+    def product_form_for_unit(*args):
+        form = UnitProductForm(*args)
+        form.fields["industrial_unit"].queryset = IndustrialUnit.objects.filter(
+            pk=unit.pk
+        )
+        form.fields["industrial_unit"].initial = unit.pk
+        form.fields["industrial_unit"].widget = forms.HiddenInput()
+        form.fields["industrial_unit"].disabled = True
+        return form
+
     if request.method == "POST":
         try:
             require_write_access(request.user)
@@ -1857,7 +1898,7 @@ def unit_production_update(request, pk):
                 request.FILES,
                 instance=unit,
             )
-            product_form = UnitProductForm()
+            product_form = product_form_for_unit()
 
             if production_form.is_valid():
                 production_form.save()
@@ -1874,7 +1915,7 @@ def unit_production_update(request, pk):
             production_form = IndustrialUnitProductionForm(
                 instance=unit
             )
-            product_form = UnitProductForm(request.POST)
+            product_form = product_form_for_unit(request.POST)
 
             if product_form.is_valid():
                 product = product_form.save(commit=False)
@@ -1893,11 +1934,11 @@ def unit_production_update(request, pk):
             production_form = IndustrialUnitProductionForm(
                 instance=unit
             )
-            product_form = UnitProductForm()
+            product_form = product_form_for_unit()
 
     else:
         production_form = IndustrialUnitProductionForm(instance=unit)
-        product_form = UnitProductForm()
+        product_form = product_form_for_unit()
 
     products = unit.products.all()
 
@@ -2029,7 +2070,10 @@ def employment_create(request, unit_pk):
             record.save()
 
             messages.success(request, "কর্মসংস্থানের তথ্য যোগ করা হয়েছে।")
-            return redirect("industrial_estate:employment_list")
+            return redirect(
+                "industrial_estate:industrial_unit_detail",
+                pk=unit.pk,
+            )
     else:
         form = EmploymentHistoryForm()
 
@@ -2063,7 +2107,10 @@ def employment_update(request, unit_pk, pk):
             messages.success(
                 request, "কর্মসংস্থানের তথ্য হালনাগাদ হয়েছে।"
             )
-            return redirect("industrial_estate:employment_list")
+            return redirect(
+                "industrial_estate:industrial_unit_detail",
+                pk=unit.pk,
+            )
     else:
         form = EmploymentHistoryForm(instance=record)
 
@@ -2092,7 +2139,10 @@ def employment_delete(request, unit_pk, pk):
     record.delete()
 
     messages.success(request, "কর্মসংস্থানের রেকর্ড মুছে ফেলা হয়েছে।")
-    return redirect("industrial_estate:employment_list")
+    return redirect(
+        "industrial_estate:industrial_unit_detail",
+        pk=unit.pk,
+    )
 
 
 

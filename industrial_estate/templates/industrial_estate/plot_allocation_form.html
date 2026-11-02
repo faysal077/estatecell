@@ -26,9 +26,15 @@
             <p class="text-muted mb-0">
                 সাব-সেকশন ০২: প্লট বরাদ্দ ও দখল
             </p>
+            {% if fixed_unit %}
+            <p class="text-muted mb-0">
+                শিল্প ইউনিট: {{ fixed_unit.name }} |
+                শিল্পনগরী: {{ fixed_unit.estate.name }}
+            </p>
+            {% endif %}
         </div>
 
-        <a href="{% url 'industrial_estate:allocation_list' %}"
+        <a href="{% if fixed_unit %}{% url 'industrial_estate:industrial_unit_detail' fixed_unit.pk %}{% else %}{% url 'industrial_estate:allocation_list' %}{% endif %}"
            class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left me-1"></i>
             তালিকায় ফিরুন
@@ -207,7 +213,7 @@
                 <hr class="my-4">
 
                 <div class="d-flex justify-content-end flex-wrap gap-2">
-                    <a href="{% url 'industrial_estate:allocation_list' %}"
+                    <a href="{% if fixed_unit %}{% url 'industrial_estate:industrial_unit_detail' fixed_unit.pk %}{% else %}{% url 'industrial_estate:allocation_list' %}{% endif %}"
                        class="btn btn-light border">
                         বাতিল
                     </a>

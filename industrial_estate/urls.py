@@ -38,6 +38,11 @@ urlpatterns = [
     # Plot allocations
     path("plot_allocations/", UnitPlotAllocationListView.as_view(), name="allocation_list"),
     path("plot_allocations/add/", UnitPlotAllocationCreateView.as_view(), name="allocation_create"),
+    path(
+        "units/<int:unit_pk>/plot-allocations/add/",
+        UnitPlotAllocationCreateView.as_view(),
+        name="unit_allocation_create",
+    ),
     path("plot_allocations/<int:pk>/edit/", UnitPlotAllocationUpdateView.as_view(), name="allocation_update"),
 
     # Products
