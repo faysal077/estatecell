@@ -457,7 +457,7 @@ class PlotForm(BootstrapModelForm, PDFValidationMixin):
             "estate",
             "plot_number",
             "area_sqft",
-            "area_acre",
+            # "area_acre",
             "plot_type",
             "current_status",
             "allocation_date",

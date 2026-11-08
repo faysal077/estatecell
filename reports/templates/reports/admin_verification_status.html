@@ -457,7 +457,7 @@
 <div class="verification-table-box">
 
     <div class="table-responsive">
-
+        
         <table class="verification-table">
 
             <thead>
@@ -485,13 +485,16 @@
                     </th>
 
                     <th>
+                        Last Verification Date
+                    </th>
+
+                    <th>
                         Verification %
                     </th>
 
                 </tr>
 
             </thead>
-
 
             <tbody>
 
@@ -503,20 +506,13 @@
                         {{ forloop.counter }}
                     </td>
 
-
                     <td class="rd-office-name">
-
                         {{ row.rd_office }}
-
                     </td>
-
 
                     <td class="text-center">
-
                         {{ row.total_lands }}
-
                     </td>
-
 
                     <!-- VERIFIED -->
 
@@ -549,7 +545,6 @@
 
                     </td>
 
-
                     <!-- PENDING -->
 
                     <td class="text-center">
@@ -581,6 +576,25 @@
 
                     </td>
 
+                    <!-- LAST VERIFICATION DATE -->
+
+                    <td class="text-center">
+
+                        {% if row.last_verification_date %}
+
+                            <strong>
+                                {{ row.last_verification_date|date:"d M Y" }}
+                            </strong>
+
+                        {% else %}
+
+                            <span class="text-muted">
+                                Not Verified
+                            </span>
+
+                        {% endif %}
+
+                    </td>
 
                     <!-- PERCENTAGE -->
 
@@ -599,7 +613,7 @@
                 <tr>
 
                     <td
-                        colspan="6"
+                        colspan="7"
                         class="text-center text-muted py-4"
                     >
                         No land records found.

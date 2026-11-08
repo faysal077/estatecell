@@ -307,6 +307,7 @@ class Plot(models.Model):
         ALLOCATABLE = "allocatable", "বরাদ্দযোগ্য"
         ALLOCATED = "allocated", "বরাদ্দকৃত"
         CANCELLED = "cancelled", "বাতিল"
+        COMMON_SPACE = "common_space", "কমন স্পেস / Utilized Area"
         RESERVED = "reserved", "সংরক্ষিত"
 
     class PlotType(models.TextChoices):
@@ -322,13 +323,13 @@ class Plot(models.Model):
     plot_number = models.CharField("প্লট নম্বর", max_length=100)
 
     # Retain old data; new forms should use area_sqft.
-    area_acre = models.DecimalField(
-        "প্লটের আয়তন (পুরোনো একর ফিল্ড)",
-        max_digits=14,
-        decimal_places=4,
-        null=True,
-        blank=True,
-    )
+    # area_acre = models.DecimalField(
+    #     "প্লটের আয়তন (পুরোনো একর ফিল্ড)",
+    #     max_digits=14,
+    #     decimal_places=4,
+    #     null=True,
+    #     blank=True,
+    # )
     area_sqft = models.DecimalField(
         "প্লটের আয়তন (বর্গফুট)",
         max_digits=16,

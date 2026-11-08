@@ -16,6 +16,7 @@ from django.db.models import (
     IntegerField,
     Q,
 )
+from django.utils import timezone
 from functools import wraps
 
 from django.contrib import messages
@@ -175,164 +176,138 @@ def rd_office_report(request):
 # ADMIN VERIFICATION STATUS REPORT
 # ============================================================
 
+@login_required
 @super_admin_required
 def admin_verification_status(request):
 
-    # --------------------------------------------------------
-    # Get all Land records
-    # --------------------------------------------------------
-
+    # Get all land records
     lands = (
         Land.objects
         .select_related(
             "verification",
             "verification__admin_verified_by",
         )
-        .order_by(
-            "rd_office",
-            "owner_name"
-        )
+        .order_by("rd_office", "owner_name")
     )
 
-    # --------------------------------------------------------
-    # Get RD Offices
-    # --------------------------------------------------------
+    # Group lands by RD Office
+    rd_office_groups = {}
 
-    rd_offices = (
-        Land.objects
-        .values_list(
-            "rd_office",
-            flat=True
-        )
-        .distinct()
-        .order_by("rd_office")
-    )
+    for land in lands:
 
-    # --------------------------------------------------------
-    # Build report
-    # --------------------------------------------------------
+        rd_office = land.rd_office or "Not Assigned"
+
+        if rd_office not in rd_office_groups:
+            rd_office_groups[rd_office] = []
+
+        rd_office_groups[rd_office].append(land)
 
     report_rows = []
 
-    for rd_office in rd_offices:
+    total_lands = 0
+    total_verified = 0
+    total_pending = 0
 
-        rd_lands = lands.filter(
-            rd_office=rd_office
-        )
-
-        total_lands = rd_lands.count()
-
-        # ----------------------------------------------------
-        # Verified lands
-        #
-        # IMPORTANT:
-        # Only admin_verified=True is considered verified.
-        # ----------------------------------------------------
-
-        verified_lands = rd_lands.filter(
-            verification__admin_verified=True
-        )
-
-        verified_count = verified_lands.count()
-
-        # ----------------------------------------------------
-        # Pending lands
-        #
-        # This includes:
-        # - no LandVerification record
-        # - LandVerification exists but admin_verified=False
-        # ----------------------------------------------------
-
-        pending_lands = rd_lands.filter(
-            Q(verification__isnull=True) |
-            Q(verification__admin_verified=False)
-        )
-
-        pending_count = pending_lands.count()
-
-        # ----------------------------------------------------
-        # Prepare verified land data
-        # ----------------------------------------------------
+    # Build report for each RD Office
+    for rd_office, rd_lands in rd_office_groups.items():
 
         verified_land_list = []
-
-        for land in verified_lands:
-
-            verified_land_list.append({
-                "id": land.id,
-                "name": land.owner_name,
-                "status": "Verified",
-                "url": (
-                    f"/lands/verification/{land.id}/"
-                ),
-            })
-
-        # ----------------------------------------------------
-        # Prepare pending land data
-        # ----------------------------------------------------
-
         pending_land_list = []
 
-        for land in pending_lands:
+        for land in rd_lands:
 
-            pending_land_list.append({
+            # Get verification record safely
+            verification = getattr(
+                land,
+                "verification",
+                None
+            )
+
+            # Last Admin Verification Date
+            last_verification_date = (
+                verification.admin_verified_date
+                if verification
+                else None
+            )
+
+            # Check CURRENT verification status
+            admin_verified_current = (
+                verification.is_admin_currently_verified()
+                if verification
+                else False
+            )
+
+            land_data = {
                 "id": land.id,
                 "name": land.owner_name,
-                "status": "Pending",
-                "url": (
-                    f"/lands/verification/{land.id}/"
-                ),
-            })
+                "last_verification_date": last_verification_date,
+                "url": f"/lands/verification/{land.id}/",
+            }
 
-        # ----------------------------------------------------
-        # Verification percentage
-        # ----------------------------------------------------
+            if admin_verified_current:
+
+                land_data["status"] = "Verified"
+
+                verified_land_list.append(land_data)
+
+            else:
+
+                land_data["status"] = "Pending"
+
+                pending_land_list.append(land_data)
+
+        # RD Office totals
+        office_total = len(rd_lands)
+
+        verified_count = len(verified_land_list)
+
+        pending_count = len(pending_land_list)
 
         verification_percentage = (
             round(
-                (verified_count / total_lands) * 100,
+                (verified_count / office_total) * 100,
                 2
             )
-            if total_lands
+            if office_total
             else 0
+        )
+        verification_dates = [
+            land["last_verification_date"]
+            for land in verified_land_list + pending_land_list
+            if land["last_verification_date"]
+        ]
+
+        last_verification_date = (
+            max(verification_dates)
+            if verification_dates
+            else None
         )
 
         report_rows.append({
 
             "rd_office": rd_office,
 
-            "total_lands": total_lands,
+            "total_lands": office_total,
 
             "verified_count": verified_count,
 
             "pending_count": pending_count,
 
-            "verification_percentage":
-                verification_percentage,
+            "verification_percentage": verification_percentage,
 
-            "verified_lands":
-                verified_land_list,
+            "verified_lands": verified_land_list,
 
-            "pending_lands":
-                pending_land_list,
+            "pending_lands": pending_land_list,
+
+            "last_verification_date": last_verification_date,
 
         })
 
-    # --------------------------------------------------------
-    # Overall totals
-    # --------------------------------------------------------
+        total_lands += office_total
+        total_verified += verified_count
+        total_pending += pending_count
 
-    total_lands = lands.count()
-
-    total_verified = lands.filter(
-        verification__admin_verified=True
-    ).count()
-
-    total_pending = lands.filter(
-        Q(verification__isnull=True) |
-        Q(verification__admin_verified=False)
-    ).count()
-
+    # Overall verification percentage
     total_percentage = (
         round(
             (total_verified / total_lands) * 100,
@@ -361,6 +336,193 @@ def admin_verification_status(request):
         "reports/admin_verification_status.html",
         context
     )
+
+# @super_admin_required
+# def admin_verification_status(request):
+
+#     # --------------------------------------------------------
+#     # Get all Land records
+#     # --------------------------------------------------------
+
+#     lands = (
+#         Land.objects
+#         .select_related(
+#             "verification",
+#             "verification__admin_verified_by",
+#         )
+#         .order_by(
+#             "rd_office",
+#             "owner_name"
+#         )
+#     )
+
+#     # --------------------------------------------------------
+#     # Get RD Offices
+#     # --------------------------------------------------------
+
+#     rd_offices = (
+#         Land.objects
+#         .values_list(
+#             "rd_office",
+#             flat=True
+#         )
+#         .distinct()
+#         .order_by("rd_office")
+#     )
+
+#     # --------------------------------------------------------
+#     # Build report
+#     # --------------------------------------------------------
+
+#     report_rows = []
+
+#     for rd_office in rd_offices:
+
+#         rd_lands = lands.filter(
+#             rd_office=rd_office
+#         )
+
+#         total_lands = rd_lands.count()
+
+#         # ----------------------------------------------------
+#         # Verified lands
+#         #
+#         # IMPORTANT:
+#         # Only admin_verified=True is considered verified.
+#         # ----------------------------------------------------
+
+#         verified_lands = rd_lands.filter(
+#             verification__admin_verified=True
+#         )
+
+#         verified_count = verified_lands.count()
+
+#         # ----------------------------------------------------
+#         # Pending lands
+#         #
+#         # This includes:
+#         # - no LandVerification record
+#         # - LandVerification exists but admin_verified=False
+#         # ----------------------------------------------------
+
+#         pending_lands = rd_lands.filter(
+#             Q(verification__isnull=True) |
+#             Q(verification__admin_verified=False)
+#         )
+
+#         pending_count = pending_lands.count()
+
+#         # ----------------------------------------------------
+#         # Prepare verified land data
+#         # ----------------------------------------------------
+
+#         verified_land_list = []
+
+#         for land in verified_lands:
+
+#             verified_land_list.append({
+#                 "id": land.id,
+#                 "name": land.owner_name,
+#                 "status": "Verified",
+#                 "url": (
+#                     f"/lands/verification/{land.id}/"
+#                 ),
+#             })
+
+#         # ----------------------------------------------------
+#         # Prepare pending land data
+#         # ----------------------------------------------------
+
+#         pending_land_list = []
+
+#         for land in pending_lands:
+
+#             pending_land_list.append({
+#                 "id": land.id,
+#                 "name": land.owner_name,
+#                 "status": "Pending",
+#                 "url": (
+#                     f"/lands/verification/{land.id}/"
+#                 ),
+#             })
+
+#         # ----------------------------------------------------
+#         # Verification percentage
+#         # ----------------------------------------------------
+
+#         verification_percentage = (
+#             round(
+#                 (verified_count / total_lands) * 100,
+#                 2
+#             )
+#             if total_lands
+#             else 0
+#         )
+
+#         report_rows.append({
+
+#             "rd_office": rd_office,
+
+#             "total_lands": total_lands,
+
+#             "verified_count": verified_count,
+
+#             "pending_count": pending_count,
+
+#             "verification_percentage":
+#                 verification_percentage,
+
+#             "verified_lands":
+#                 verified_land_list,
+
+#             "pending_lands":
+#                 pending_land_list,
+
+#         })
+
+#     # --------------------------------------------------------
+#     # Overall totals
+#     # --------------------------------------------------------
+
+#     total_lands = lands.count()
+
+#     total_verified = lands.filter(
+#         verification__admin_verified=True
+#     ).count()
+
+#     total_pending = lands.filter(
+#         Q(verification__isnull=True) |
+#         Q(verification__admin_verified=False)
+#     ).count()
+
+#     total_percentage = (
+#         round(
+#             (total_verified / total_lands) * 100,
+#             2
+#         )
+#         if total_lands
+#         else 0
+#     )
+
+#     context = {
+
+#         "report_rows": report_rows,
+
+#         "total_lands": total_lands,
+
+#         "total_verified": total_verified,
+
+#         "total_pending": total_pending,
+
+#         "total_percentage": total_percentage,
+
+#     }
+
+#     return render(
+#         request,
+#         "reports/admin_verification_status.html",
+#         context
+#     )
 
 # ============================================================
 # DISTRICT REPORT
